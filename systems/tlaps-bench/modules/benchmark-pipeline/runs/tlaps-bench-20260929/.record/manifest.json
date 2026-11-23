@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "record_id": "tlaps-bench-20260929:summary",
+  "source_id": "tlaps-bench-20260929",
+  "identity": {
+    "system": "tlaps-bench",
+    "module": "benchmark-pipeline",
+    "variant": null,
+    "confidence": "high"
+  },
+  "run": {
+    "id": "tlaps-bench-20260929",
+    "id_status": "curated",
+    "role": "curated-findings-summary",
+    "status": "report-present",
+    "created": "2026-09-29"
+  },
+  "origin": {
+    "source_id": "tlaps-bench-20260929",
+    "relative": "tlaps-bench-20260929-gpt6sol-fast"
+  },
+  "layout": {
+    "payload": "run-root",
+    "metadata": ".record",
+    "file_manifest": ".record/files.tsv"
+  },
+  "source_revision": "ef53d032e3d263a7e425c13bbc20e5eba5e3eabf",
+  "counts": {
+    "findings": 7,
+    "payload_files": 3
+  },
+  "metadata_files": {
+    "README.md": {
+      "bytes": 1560,
+      "sha256": "8806571d6d479f1055c7e97c4d487ef55a6eb7c8736d296cd6f616177f3f1b57"
+    },
+    "findings.json": {
+      "bytes": 1405,
+      "sha256": "0ae3a6da72d98e1d495519d1cdcff64440e798ac5a833a39756d0f69129b4eca"
+    },
+    "provenance.json": {
+      "bytes": 837,
+      "sha256": "4f9130287f52d70ec3578476b7868b6877e61b274b43f41e08d6160e00acf018"
+    },
+    ".record/files.tsv": {
+      "bytes": 267,
+      "sha256": "637f0f676031b8807841bef4ba6ac0debcaf7c9af296b7a659d53572a22009e5"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "findings": [
+    {
+      "Finding": "A crash during task regeneration leaves a mixed suite that the loader accepts",
+      "Status": "Confirmed",
+      "Reference": "",
+      "Link": ""
+    },
+    {
+      "Finding": "Module resume reports full progress while a submission still awaits grading",
+      "Status": "Confirmed",
+      "Reference": "",
+      "Link": ""
+    },
+    {
+      "Finding": "Renaming a bound variable also renames a record field and turns a valid theorem false",
+      "Status": "Fixed",
+      "Reference": "PR #178",
+      "Link": "https://github.com/specular-org/TLAPS-Bench/pull/178"
+    },
+    {
+      "Finding": "Proof-completion resume reuses a PASS recorded under a different backend, model, or source",
+      "Status": "Confirmed",
+      "Reference": "",
+      "Link": ""
+    },
+    {
+      "Finding": "Resume ignores a saved task result missing from results.json and repeats the paid attempt",
+      "Status": "Confirmed",
+      "Reference": "",
+      "Link": ""
+    },
+    {
+      "Finding": "A partial stdout line from a Docker agent blocks the runner past its deadline",
+      "Status": "Fixed",
+      "Reference": "PR #180",
+      "Link": "https://github.com/specular-org/TLAPS-Bench/pull/180"
+    },
+    {
+      "Finding": "Standalone scoring reports a partial selection as complete",
+      "Status": "Confirmed",
+      "Reference": "",
+      "Link": ""
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "run_id": "tlaps-bench-20260929-gpt6sol-fast",
+  "source_repository": "https://github.com/specular-org/TLAPS-Bench",
+  "source_revision": "ef53d032e3d263a7e425c13bbc20e5eba5e3eabf",
+  "source_report_counts": {
+    "reproduced": 9,
+    "environment_limited": 1,
+    "dropped_duplicate": 2,
+    "false_positive": 1
+  },
+  "source_artifacts": {
+    "confirmed-bugs.md": {
+      "bytes": 57682,
+      "sha256": "253c9fd7123c9ea1b171f3f689544f110f6e008e496abd7a872225e4dc7775b6"
+    },
+    "summary.md": {
+      "bytes": 5777,
+      "sha256": "a4f5905498f88963e5ed41afc54a77e83775c0722f8fc87c1e2b7e7912a1c95c"
+    },
+    "bug-severity.md": {
+      "bytes": 3699,
+      "sha256": "def38385bc28609cf8f3f835b7524acf1797f5b5a1f114fd1d8f292c2b27461e"
+    }
+  },
+  "archive_role": "curated-findings-summary",
+  "status_checked": "2026-11-23"
+}
