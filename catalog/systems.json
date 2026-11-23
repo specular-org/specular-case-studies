@@ -1,6 +1,6 @@
 {
-  "system_count": 79,
-  "run_count": 462,
+  "system_count": 80,
+  "run_count": 463,
   "systems": [
     {
       "system": "aeron",
@@ -1063,6 +1063,17 @@
         {
           "module": "core",
           "run_count": 2
+        }
+      ]
+    },
+    {
+      "system": "tlaps-bench",
+      "run_count": 1,
+      "module_count": 1,
+      "modules": [
+        {
+          "module": "benchmark-pipeline",
+          "run_count": 1
         }
       ]
     },
