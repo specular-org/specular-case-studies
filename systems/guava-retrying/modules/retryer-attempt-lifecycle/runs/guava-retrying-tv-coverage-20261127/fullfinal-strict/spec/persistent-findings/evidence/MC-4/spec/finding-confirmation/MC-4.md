@@ -1,0 +1,353 @@
+# MC-4
+
+Status: REPRODUCED
+Run: guava-retrying-opus55max-20261126
+
+running pwd && ls -la && git status 2>&1 | head -5; ls -la /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specu...
+running ls -la /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation/* ; ls -la...
+running ls -la /home/ubuntu/guava-retrying-20261126/Specular/.claude/skills/ ; ls -la /home/ubuntu/guava-retrying-20261126/Specular/.claude/skills/bug-confirmation 2...
+Reading the skill in full.
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat SKILL.md && echo ===== && cat guide.md
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat phases/01-investigation.md
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat phases/02-reproduction.md
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat references/persistent-findings.md && echo ====== && cat references/repair-req...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4 && cat .resume-leas...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree && find sr...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree && cat -n...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying && ls -la; ls -la .specular-output | head -50; find /h...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && cat persistent-findings-context.js...
+Skill 已读完。下面进入 Phase 1：先看构建配方和 Guava 22.0 的 `SimpleTimeLimiter` 源码。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && cat analysis-evidence/build/pom.xm...
+running find / -path /proc -prune -o \( -name "SimpleTimeLimiter.java" -o -name "guava-22.0-sources.jar" \) -print 2>/dev/null | head -20; ls /home/ubuntu/scratch/ 2...
+running cd /home/ubuntu/scratch/guava22-sources-dl && sha1sum guava-22.0-sources.jar; cat -n extracted/com/google/common/util/concurrent/SimpleTimeLimiter.java | sed...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && ls -la hunt_s2_interru...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && head -c 6000 hunt_s2_i...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && awk '/^State [0-9]+:/{...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && for f in hunt_s2_inter...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && awk '/^State [0-9]+:/{...
+Phase 1 Step 1（代码审计）已有足够事实。现在做 Step 2/3：查 git 历史与上游 issue/PR，确认是否已有人报告过这个机制。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree && git log...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree && git sho...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree && cat -n...
+running which gh && gh auth status 2>&1 | head -5; timeout 60 gh api -X GET search/issues -f q='repo:rholder/guava-retrying interrupt' -f per_page=50 --jq '.total_co...
+running for q in 'repo:rholder/guava-retrying InterruptedException' 'repo:rholder/guava-retrying interrupted' 'repo:rholder/guava-retrying interruption' 'repo:rholde...
+Search API 触发了速率限制（并行 worker 共用账号）。改用普通 REST API 拉取上游全部 issue/PR（含已关闭/已合并）到本地再 grep。
+running WD=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4; mkdir -p $WD/notes...
+running WD=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4; python3 -I -c " im...
+running WD=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4; timeout 120 gh api...
+running which specular; OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output; timeout 60 specular...
+running ls /home/ubuntu/guava-retrying-20261126/Specular/ | head -40; ls /home/ubuntu/guava-retrying-20261126/Specular/bin 2>/dev/null; find /home/ubuntu/guava-retry...
+running cd /home/ubuntu/guava-retrying-20261126/Specular && head -20 specular; OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-202611...
+running cd /home/ubuntu/guava-retrying-20261126/Specular && ls case-studies | head -80; grep -ril "guava-retrying\|rholder" case-studies 2>/dev/null | head
+running F11=$(find /home/ubuntu/scratch/jdk11u-src -name FutureTask.java -path "*java/util/concurrent*" 2>/dev/null | head -1); F21=$(find /home/ubuntu/scratch/jdk-s...
+running ls /home/ubuntu/scratch/jdk11u-src /home/ubuntu/scratch/jdk-src | head; find /home/ubuntu/scratch/jdk11u-src /home/ubuntu/scratch/jdk-src -name FutureTask.ja...
+running for v in 11 21; do F=/home/ubuntu/scratch/jdk-src/$v/java/util/concurrent/FutureTask.java; echo "=== JDK $v: $F"; grep -n "private int awaitDone" $F; awk '/p...
+running for v in 11 21; do echo "=== installed JDK $v src.zip"; unzip -p /usr/lib/jvm/java-$v-openjdk-amd64/lib/src.zip java.base/java/util/concurrent/FutureTask.jav...
+running unzip -l /usr/lib/jvm/java-11-openjdk-amd64/lib/src.zip 2>&1 | grep -i "concurrent/FutureTask" | head; ls -la /usr/lib/jvm/java-11-openjdk-amd64/lib/src.zip;...
+running ls ~/.m2/repository/com/google/code/findbugs/jsr305/ 2>/dev/null; find ~/.m2 -name "jsr305-2.0.2.jar" -o -name "junit-4.11.jar" -o -name "hamcrest-core-1.3.j...
+running WD=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4; python3 -I -c " im...
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/investigation.md
+Phase 1 记录完成。进入 Phase 2：先确认 builder 默认值和 block 策略实现，再写复现程序。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree/src/main/j...
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/test_bugMC-4_interrupt_swallowed.sh
+Fix one hack in the script (use `Thread.yield()` directly, drop the `sed`) and tighten F's classification (r1 = benign regardless of when the interrupt lands).
+running F=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/test_bugMC-4_interrupt_swallowed...
+Now run it (bounded by an outer `timeout`), capturing the full output.
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && timeout 900 bash repro/test_bugMC-...
+running cd /home/ubuntu/guava-retrying-20261126/Specular && grep -rln "def.*validate\|\"dependencies\"\|'dependencies'" src/specular | head; F=$(grep -rln "inherited...
+running cd /home/ubuntu/guava-retrying-20261126/Specular && grep -n "REQUIRED\|required\|ALLOWED\|allowed\|\"root\"\|'root'\|roots\|title\|160\|status\|def validate\...
+running cd /home/ubuntu/guava-retrying-20261126/Specular && sed -n '245,278p;340,460p' src/specular/persistent_findings.py
+running SRC=/home/ubuntu/scratch/guava-retrying-src/guava-retrying; WT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-ret...
+源码根目录与 worktree 一致。再跑一次复现，确认结果稳定（确定性场景应每次都触发）。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && /usr/bin/time -f "wall=%es" timeou...
+结果稳定：A/B/B2/C/D 两次都确定性触发，F 的计数也一致。现在写 `issue.json`，先核对依赖边界行在源码根中是否唯一。
+running SRC=/home/ubuntu/scratch/guava-retrying-src/guava-retrying/src/main/java/com/github/rholder/retry; python3 -I - "$SRC" <<'PY' import sys src=sys.argv[1] chec...
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/issue.json
+running cd /home/ubuntu/guava-retrying-20261126/Specular && OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/....
+`issue.json` 校验通过（`valid: true`）。最后确认 worktree 未被改动，并列出本 finding 产物。
+running OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output; git -C $OUT/confirmation/MC-4/workt...
+## MC-4 确认结果：REPRODUCED（Level 0，JDK 21 和 JDK 11 都复现）
+
+- **Source**: MC
+- **Novelty**: NEW
+- **Location**: `src/main/java/com/github/rholder/retry/Retryer.java:162`
+- **Severity**: High
+- **Status**: REPRODUCED（主场景 A/B/B2/C/D 是 Level 0；bfs2 子场景 F 是 Level 1，按统计计数）
+- **Reproduction test**: `repro/test_bugMC-4_interrupt_swallowed.sh`
+- **Persistent record**: `confirmation/MC-4/issue.json`，已通过 `specular findings validate`（`"valid": true`）
+
+## Description
+用 `AttemptTimeLimiters.fixedTimeLimit` 时，调用 `Retryer.call()` 的线程在整个尝试期间都停在 Guava `SimpleTimeLimiter.callWithTimeout` 的 `future.get` 里（`AttemptTimeLimiters.java:107`，`amInterruptible=true`）。这时中断它，会依次发生：
+
+1. JDK 的 `FutureTask.awaitDone` 先**清除中断位**，再抛 `InterruptedException`（JDK 11 `FutureTask.java:416-418`，JDK 21 `:469-471`）。
+2. Guava 执行 `future.cancel(true)`，然后把这个异常原样抛出（`SimpleTimeLimiter.java:155-157`）。它不检查 `cancel` 是否成功，所以一个已经完成的尝试结果也会被丢掉。
+3. `Retryer.call` 的 `catch (Throwable t)`（`:162-163`）把它当成一次普通的失败尝试，交给拒绝谓词和停止策略处理。
+4. 中断位只在 `blockStrategy.block` 抛异常时恢复（`:179-181`）。但中断位此时已经被清掉，`Thread.sleep` 不会抛，所以这条恢复路径走不到。
+
+结果是中断被吞掉，重试继续。按配置不同，`call()` 会正常返回、抛 `ExecutionException(InterruptedException)` 或抛 `RetryException`，三种情况中断位都是清除的。这违反了 `Retryer.java:151-153`（"if the thread is interrupted, this exception is thrown and the thread's interrupt status is set"）和 `:59-61`（"retry ... unless ... the thread is interrupted"）。
+
+## Trigger scenario
+只用公开 API：`RetryerBuilder` + `fixedTimeLimit(10, SECONDS)` + `Retryer.call` / `Retryer.wrap`，用 `Thread.interrupt` 或 `ExecutorService.shutdownNow` 发中断。
+
+| 场景 | 配置与操作 | 结果 | 对应 trace / invariant |
+|---|---|---|---|
+| A | `retryIfException()`；attempt 1 进行中时中断调用线程 | 中断被吞，发起 attempt 2，正常返回 | bfs5 `InterruptPreserved` + bfs3 `NoRetryAfterObservedInterrupt` |
+| B | `retryIfExceptionOfType(IOException)`；线程进入 `call()` 时已带中断位 | `ExecutionException(InterruptedException)`；callable 多数情况一次都没运行，却计了 attempt #1 | narrow_bfs1 `ExecutionExceptionMeansCallableThrew` + bfs1 `CountedImpliesInvoked` |
+| B2 | 同 B 的谓词，中断发生在尝试中途 | `ExecutionException(InterruptedException)` | — |
+| C | `retryIfException()` + `stopAfterAttempt(1)` | 抛 `RetryException`，但中断位清除 | ledger D-5 的这个出口 |
+| D | 把 `retryer.wrap(svc)` 提交给 `ExecutorService`，然后 `shutdownNow()` + `awaitTermination(2s)` | 停不下来 | 真实调用方 |
+| F | 让 attempt 1 完成的时刻和中断时刻相互竞争（随机时序，统计） | 已完成的结果被丢弃，callable 又跑一次 | bfs2 `NoDiscardedCompletion` |
+
+每个场景都配了对照组：同样的 callable 和配置，只去掉 `fixedTimeLimit`。callable 是"配合中断、不吞中断位"的写法（检测到中断就抛 `InterruptedIOException`，中断位保持置位，和 NIO `ClosedByInterruptException` 的约定一样）。这样对照组走的是 `:179-181` 的正常路径，把 MC-4 和 MC-5/MC-6（callable 自己吞掉中断）分开了。
+
+## Developer intent
+- **契约**：`Retryer.java:151-153` 和 `:59-61`。
+- **已有测试**：`RetryerBuilderTest.java:384-414` `testInterruption` 断言抛 `RetryException` 且 `Thread.currentThread().isInterrupted()`。它只覆盖不带时间限制的路径。`AttemptTimeLimiterTest` 只测超时，没有中断相关测试。
+- **历史**：`7e474be`（2013，上游 PR #1）把 `callable.call()` 换成 `attemptTimeLimiter.call(callable)`，在调用线程上引入了库自己的可中断等待，但 catch-all 和中断处理都没改。附近没有 TODO/FIXME。
+- **上游检索**：拉取了全部 106 个 issue/PR（含已关闭/已合并，最新到 2026-09 关闭的 #107）和全部 185 条评论，另外跑了 search API 查询（之后触发了速率限制）。没有任何条目报告这个机制。#67 也在 `Retryer.java:162`，但讲的是 catch-all 捕获 `Error`/OOME，机制不同。#29、#63、#92、#94 都无关。上游 master 最新提交仍是 `177b6c9`，没有修复。
+- `specular findings lookup` 返回 `[]`。
+
+## Reproduction result
+- **级别**：Level 0。库源码未改动（`177b6c9`，worktree clean）；Guava 22.0 的 sha1 与随 jar 发布的 `.sha1` 一致。测试线程只负责排定中断的时机：等 attempt 1 已开始、调用线程已 park 之后再中断。
+- **命令**（在 `.specular-output/` 下执行）：`timeout 900 bash repro/test_bugMC-4_interrupt_swallowed.sh`
+- **退出码**：0（两个 JDK 都是 `RESULT: BUG REPRODUCED`）。完整输出在 `confirmation/MC-4/repro-run1.log`，第二次运行 `repro-run2.log` 结果一致。
+
+JDK 21 的关键输出（log 第 10、35、65、90、98、110 行）：
+```
+=== A: retryIfException() (stop=never, wait=none); caller interrupted while attempt 1 runs   [bfs5, bfs3]
+  [fixedTimeLimit] returned normally {value=result-of-invocation-2}, interruptStatusAfterCall=false, callableInvocations=2, attemptsSeenByListener=[#1 InterruptedException, #2 result(result-of-invocation-2)], elapsed=7ms
+      caller stack when interrupted:
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=6ms
+=== B: retryIfExceptionOfType(IOException); thread already interrupted when call() starts   [narrow_bfs1, bfs1]
+  [fixedTimeLimit] ExecutionException {cause=java.lang.InterruptedException}, interruptStatusAfterCall=false, callableInvocations=0, attemptsSeenByListener=[#1 InterruptedException], elapsed=0ms
+  [fixedTimeLimit] 200 runs: {ExecutionException / status=clear / invocations=0=190, ExecutionException / status=clear / invocations=1=10}
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, ...
+=== C: retryIfException() + stopAfterAttempt(1); caller interrupted while attempt 1 runs   [ledger D-5 RetryException exit]
+  [fixedTimeLimit] RetryException {failedAttempts=1, last=#1 InterruptedException}, interruptStatusAfterCall=false, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedException], elapsed=4ms
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, ...
+=== D: real consumer -- ExecutorService.submit(retryer.wrap(svc)); shutdownNow(); awaitTermination(2 s)
+  [fixedTimeLimit] invocations at shutdownNow=2, awaitTermination(2s)=false after 2000ms, invocations started after shutdownNow=18, terminated after service recovered=true, task outcome: returned ok (invocation 21)
+  [control       ] invocations at shutdownNow=2, awaitTermination(2s)=true after 0ms, invocations started after shutdownNow=0, terminated after service recovered=true, task outcome: ExecutionException(com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 2 attempts.)
+=== F: retryIfException() + stopAfterAttempt(3); attempt 1 returns at t0+offset, caller interrupted at t0   [bfs2]
+  [fixedTimeLimit] 3000 trials: attempt 1 result returned (benign)=921, attempt cancelled+retried with status cleared=1973, COMPLETED attempt discarded+retried with status cleared=106, other=0
+      example: attempt-1 FutureTask state: done, NOT cancelled, value=r1; attempt-1 body: returned r1; listener: [#1 InterruptedException, #2 result(r2)]; call() returned r2; interrupt status after call: false; callable invocations: 2
+  controls (no time limiter) violating the contract: 0
+RESULT: BUG REPRODUCED
+```
+
+JDK 11.0.33.1 结果相同：
+
+| 场景 | JDK 11 结果 |
+|---|---|
+| A | 正常返回，`interruptStatusAfterCall=false` |
+| B | 200/200 次抛 `ExecutionException`、中断位清除，其中 186 次 callable 调用数为 0 |
+| C | `RetryException`，中断位清除 |
+| D | `awaitTermination(2s)=false`，之后又调用 18 次 |
+| F | 134/3000 次已完成的尝试被丢弃 |
+
+对照组 0 违例。
+
+**和反例的对照**：
+- A 的动作序列和 bfs5 一致：Submit → 在 `Wait` 处被中断 → `GetInterrupted`（清除中断位）→ 取消 → 零等待 → `BlockZero` 不抛 → 提交第 2 次尝试 → 正常返回，`intr=FALSE`。
+- 差别：bfs5 中被中断时 t1 还没开始运行（NotStarted），A 中 attempt 1 已经开始。NotStarted 这个变体由 B 覆盖（190/200 次调用数为 0）。
+- bfs2 trace 里 callable 是抛异常完成的（EXCEPTIONAL），F 里是正常返回（NORMAL）。违反的是同一个 invariant。
+
+## Recommendation
+1. **`Retryer.call` 处理中断**：`attemptTimeLimiter.call(callable)` 抛出 `InterruptedException` 时，按中断处理，与 `:179-181` 一致：`Thread.currentThread().interrupt(); throw new RetryException(attemptNumber, attempt);`。不要交给拒绝谓词或停止策略。
+2. **区分两种中断来源**：在 `FixedAttemptTimeLimit` 中区分"调用线程被中断"和"callable 自己抛的异常"。可以改用 Guava 22 的三参数 `callWithTimeout(callable, d, unit)`：它只在调用线程被中断时抛 `InterruptedException`，callable 的异常走 `ExecutionException`。或者自己包装 callable。
+3. **已完成的结果不丢弃**：中断时如果 future 已经完成，就用它的结果（至少不要再重试），同时恢复中断位。
+4. **回归测试**：在 `fixedTimeLimit` 尝试进行中中断调用线程，断言抛 `RetryException` 且 `isInterrupted()` 为 true。可直接改编本脚本的 A、C 两个场景。
+
+## REPRODUCED 前的核对清单
+1. **只用 Level 0 / Level 1 就触发了吗？** **yes**。A/B/B2/C/D 只用公开 API 和正常操作，库、Guava、JDK 都没有注入或修改。F 只是在用户 callable 里用自旋控制完成时刻（Level 1），只用于 bfs2 子结论。
+2. **用了 Level 2/3 吗？** 没有。
+3. **哪个真实调用方看到了错误结果？**
+   - `Retryer.call` 的直接调用方：复现中是 `MC4Repro.java:99`，即任何依赖 `Retryer.java:151-153` 契约的用户代码。中断后它拿到正常返回值或 `ExecutionException`，且中断位为 false。
+   - JDK `ThreadPoolExecutor` 执行的 `Retryer.RetryerCallable.call()`（`Retryer.java:317-319`，由 `Retryer.wrap` 在 `Retryer.java:195-197` 创建）：`shutdownNow()` 后 `awaitTermination(2s)` 返回 false，服务又被调用 18 次，任务最后正常返回。
+4. **坏状态是永久的吗？** 是。`call()` 返回或抛出之后中断位一直是清除的，没有任何机制补回。D 场景中重试循环一直跑到服务恢复才结束（测试主动把 `svc.down` 置为 false），和中断无关。没有可称为 MASKED 的掩盖机制。
+
+## Repair round 1 evidence
+<!-- specular-repair-token: 3eefa76b5b37ed587e41b6cbdb823026 -->
+- **Current violation analysis**: With fixedTimeLimit (amInterruptible=true, AttemptTimeLimiters.java:107), an interrupt of the thread running call() is consumed by Future.get (status cleared, JDK11 FutureTask.java:416-419); Guava cancels the attempt and rethrows InterruptedException (SimpleTimeLimiter.java:155-157). Retryer.call catches it like any Throwable (Retryer.java:162-163) and lets the rejection predicate decide; the status is restored only around blockStrategy.block (:179-181). TLC: with retryIfException() the next attempt runs and call() returns normally with the status clear (hunt_s2_interrupt_fixed_bfs5.out, 25 s…
+- **Counterexample**: `spec/output/hunt_s2_interrupt_fixed_bfs5.out`
+
+## Phase 4 confirmation after repair round 1
+
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4 && ls -la && echo -...
+running ls -la ~/.claude/skills 2>/dev/null; echo ---; ls -la /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation /home/ubuntu/guava-retrying-20261...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat SKILL.md && echo ======= && cat guide.md
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat phases/01-investigation.md && echo ======= && cat phases/02-reproduction.md
+running cd /home/ubuntu/guava-retrying-20261126/Specular/skills/bug-confirmation && cat references/persistent-findings.md && echo ======= && cat references/repair-re...
+Skill 已读完。现在读取该 finding 的已有证据（`verdict.json` body、`investigation.md`、`issue.json` 等），在此基础上继续，而不是重做。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4 && python3 -I -c "...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4 && cat investigatio...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && cat confirmation/MC-4/issue.json &...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && sha256sum repro/test_bugMC-4_inter...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && cat -n repro/test_bugMC-4_interrup...
+running OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output; WT=$OUT/confirmation/MC-4/worktree;...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output/repair-r1 && head -c 5000...
+running mkdir -p /tmp/mc4-tools && cat > /tmp/mc4-tools/tracediff.py <<'PY' import re, sys def parse(path): txt = open(path).read() hdr = re.findall(r'^Error: .*$',...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output/repair-r1 && python3 -I /...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && for f in hunt_s2_inter...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4 && grep -n -E 'wall...
+running N=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/notes; timeout 60 gh...
+running N=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/notes; python3 -I -...
+#63、#65 都不涉及这个机制，Novelty 保持 NEW。再按 persistent-findings 流程跑一次 `lookup`。
+running cd /home/ubuntu/guava-retrying-20261126/Specular && OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/....
+已确认没有新报告。接下来扩展复现，覆盖 repair-r1 新增的路径。先核对 `fixedTimeLimit(d, unit, executor)` 和 `RetryerCallable` 的公开签名。
+running WT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree/src/main/j...
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/test_bugMC-4_wrap_cancel_sharing.sh
+脚本已写好。用外层 `timeout` 执行，输出保存到 `confirmation/MC-4/repro-r1-run1.log`。
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && chmod +x repro/test_bugMC-4_wrap_c...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output && /usr/bin/time -f "wall=%es" timeou...
+running cd /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/output && for f in hunt_s2_inter...
+reading /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/investigation.md
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/investigation.md
+接下来更新 `issue.json`：补充新的触发方式、反例、invariant 名称和证据文件，然后用 `specular findings validate` 校验。
+reading /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/issue.json
+editing /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/issue.json
+running cd /home/ubuntu/guava-retrying-20261126/Specular && OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/....
+`issue.json` 校验通过（`"valid": true`，标题 152 字符）。最后确认 worktree 未被改动，并列出本轮产物。
+running OUT=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output; git -C $OUT/confirmation/MC-4/workt...
+所有产物都已就位。写最终结论前，再核对一个推荐修复依赖的事实：Guava 22.0 是否已有三参数 `callWithTimeout`。
+running S=/home/ubuntu/scratch/guava22-sources-dl/extracted/com/google/common/util/concurrent; grep -n -E 'public <T> T callWithTimeout|@since|throws (TimeoutExcepti...
+## MC-4 续跑结论（repair round 1 之后）：REPRODUCED
+
+- **Source**: MC
+- **Novelty**: NEW
+- **Location**: `src/main/java/com/github/rholder/retry/Retryer.java:162`
+- **Severity**: High
+- **Status**: REPRODUCED。主体是 Level 0；"attempt 完成与中断赛跑"的子结论（F/W2/S2）用了 Level 1 计时辅助。
+- **Reproduction test**:
+  - 原有脚本：`repro/test_bugMC-4_interrupt_swallowed.sh`（场景 A/B/B2/C/D/F），本轮回归运行一次。
+  - 本轮新增：`repro/test_bugMC-4_wrap_cancel_sharing.sh`（场景 W1/W2/S1/S2，覆盖 repair-r1 的三条反例）。
+- **Persistent record**: `confirmation/MC-4/issue.json` 已更新，`specular findings validate` 返回 `"valid": true`。`investigation.md` 新增了 repair round 1 一节。
+
+### 本轮对已有证据的更正与补充
+- **前提未变**：源码、Guava 22.0 jar（sha1 `3564ef38…`）、JDK 21.0.13.1 / 11.0.33.1 都没有变化。worktree 在 `177b6c9`，没有改动，4 个相关源文件与 source root 字节一致。上一轮的 A/B/B2/C/D/F 结论全部保留，本轮回归运行 `repro-run3.log` 再次全部复现。
+- **RR-001 不影响本 finding**：RR-001 把 `NoDiscardedCompletion` 收窄为只看中断路径（超时路径即原 MC-3，已撤回）。本 finding 引用的 bfs1/2/3/5 和 narrow_bfs1 都是中断路径，trace 中 `mc.timeout = 0`。场景 F 也是：限时 10 s，attempt 在约 300 µs 内完成，不会发生超时。所以这些证据在收窄后的 invariant 下仍然有效。
+- **三条新反例逐一说明**：
+  - `repair1_ctl_s2_wrap_cancel_ndc.out`：新的只是中断来源。外层 Future 的 `cancel(true)`（`MCCancelOuter`）中断了正在跑 `retryer.wrap(...)` 的线程；库内走的路径不变。
+  - `repair1_ctl_sharing_ndc.out` 和 `repair1_ctl_sharing_cir.out`：c2 全程处于 `Idle`。**更正**："with two callers"不是一个新的跨 caller 机制，只是双 caller 配置里的单 caller 交错。CIR 在 repair 后的名称是 `CountedImpliesInvokedNoStartRace`。
+- **精化（上一轮描述 bfs2 时没有提到）**：bfs2 和 wrap_cancel_ndc 里，`MCGetInterrupted` 发生在 t1 已经离开 NEW 之后。
+  - JDK 的 `awaitDone` 一旦读到 `state >= COMPLETING`，就不会再抛 IE。
+  - 所以这个顺序要成立，调用线程必须先读到 NEW，然后被抢占，直到中断之后才执行 `Thread.interrupted()`。这是可达的，只是窗口窄；模型把"读 state"和"检查中断"合成了一个动作。
+  - 现实中更宽的窗口是 sharing_ndc 的顺序：IE 在 t1 还是 NEW 时抛出，随后 t1 在 Guava 执行 `cancel(true)` 之前完成，`cancel` 返回的 false 被忽略。
+  - 两种顺序走的是同一段代码，违反同一个 invariant。F/W2/S2 测到的是后一种。
+- **更正**：上一轮写"上游最新到 2026-09 关闭的 #107"不准确。最近关闭的是 #84（PR，2026-09-20 未合并即关闭）。两者都与中断无关。
+
+## Description
+使用 `AttemptTimeLimiters.fixedTimeLimit` 时，调用 `Retryer.call()` 的线程在整个 attempt 期间都停在 Guava `SimpleTimeLimiter.callWithTimeout` 的 `future.get` 中（`AttemptTimeLimiters.java:107`，`amInterruptible=true`）。这时中断该线程，会依次发生：
+
+1. JDK `FutureTask.awaitDone` 清除中断位，抛出 `InterruptedException`。
+2. Guava 执行 `future.cancel(true)` 后把异常原样抛出（`SimpleTimeLimiter.java:155-157`），不检查 `cancel` 是否成功。
+3. `Retryer.call` 的 `catch (Throwable)`（`:162-163`）把它当作普通的失败 attempt，交给拒绝谓词和停止策略处理。
+4. 中断位只在 `blockStrategy.block` 抛异常时才恢复（`:179-181`）。由于中断位已经被清除，这条路径走不到。
+
+结果是重试继续进行。`call()` 可能正常返回，也可能抛 `ExecutionException(InterruptedException)` 或 `RetryException`，但三种情况下中断位都是清除的。此外：
+- 某个 attempt 被计数了，但它的 callable 从未运行。
+- 已经完成的 attempt 结果会被丢弃，callable 被再执行一次。
+- `Future.cancel(true)` 和 `shutdownNow()` 都停不下 `wrap()` 出来的任务。
+
+这违反了 `Retryer.java:151-153`（"if the thread is interrupted, this exception is thrown and the thread's interrupt status is set"）和 `:59-61`（中断后不再重试）。
+
+## Trigger scenario
+所有场景只用公开 API：`RetryerBuilder`、`fixedTimeLimit(10, SECONDS[, executor])`，以及 `Retryer.call` / `Retryer.wrap`。中断来源是 `Thread.interrupt`、`Future.cancel(true)` 或 `ExecutorService.shutdownNow`。
+
+| 场景 | 配置 / 操作 | 结果（`fixedTimeLimit`） | 对应反例 |
+|---|---|---|---|
+| A | `retryIfException()`，attempt 1 进行中时中断 | 发起 attempt 2，正常返回，中断位清除 | bfs5 `InterruptPreserved`，bfs3 |
+| B | `retryIfExceptionOfType(IOException)`，进入 `call()` 前已带中断位 | `ExecutionException(IE)`，多数运行中 callable 0 次调用，却计了 #1 | narrow_bfs1，bfs1 |
+| B2 / C | 同上谓词但在中途中断 / `stopAfterAttempt(1)` | `ExecutionException(IE)` / `RetryException`，中断位都清除 | ledger D-5 |
+| D | `ExecutorService` 上跑 `wrap()` 任务，调用 `shutdownNow()` | `awaitTermination(2s)=false`，之后又调用 18 次 | — |
+| F | attempt 1 的完成与中断赛跑 | 已完成的 r1 被丢弃并重跑 | bfs2 `NoDiscardedCompletion` |
+| **W1** | `wrap()` 任务 attempt 1 进行中时，外层 `outer.cancel(true)` | `cancel` 返回 true，之后又调用 18 次，线程被占 2 s，最后正常返回，中断位清除 | wrap_cancel_ndc（`MCCancelOuter`） |
+| **W2** | 同 W1，attempt 1 在 cancel 前后完成（NORMAL 或 EXCEPTIONAL） | 已完成的结果（r1 或 IOException）被丢弃并重跑 | wrap_cancel_ndc（NDC） |
+| **S1** | 两个线程共享一个 Retryer 和 executor；c1 进入前已带中断位，c2 持续调用 | 计了 #1 但 callable 从未进入；之后重试并正常返回，中断位清除 | sharing_cir |
+| **S2** | 同 S1 的共享配置，c1 的 attempt 1 与中断赛跑 | 已完成的 r1 被丢弃并重跑；c2 无异常 | sharing_ndc |
+
+每个场景都有对照组，用同样的 callable 但不加时间限制。callable 配合中断：抛 `InterruptedIOException` 并保留中断位。对照组都按契约抛 `RetryException`，且中断位保持置位，从而把 MC-4 和 callable 自己吞掉中断的情况（MC-5/MC-6）区分开。
+
+## Developer intent
+- **契约**：`Retryer.java:151-153`、`:59-61`（构造器文档 `:76-78`、`:94-96`、`:113-115` 有同样的表述）。
+- **现有测试**：`RetryerBuilderTest.java:384-414` 中的 `testInterruption` 断言抛 `RetryException` 且 `isInterrupted()` 为 true，但只覆盖不限时的路径。没有任何测试覆盖 `fixedTimeLimit` 下的中断。
+- **代码历史**：`7e474be`（上游 PR #1）在调用线程上引入了可中断的 `future.get`，但没有同步修改 catch-all 和中断处理逻辑。代码附近没有 TODO 或 FIXME。
+- **上游检索**：保存了全部 106 个 issue/PR 和 185 条评论，本轮又查了一遍最新动态（#84 和 #107 都未合并即关闭，master 仍是 `177b6c9`）。关键词 `interrupt` 只命中 #63（BlockStrategy 不 sleep 的问题）；`cancel`、`shutdownNow`、`RetryerCallable` 没有命中；`wrap` 的命中都与这个问题无关。没有任何条目报告过这个机制。#67 虽然也在 `:162`，但讲的是 `Error` 被捕获，机制不同。
+- `specular findings lookup` 返回 `[]`。
+
+## Reproduction result
+- **级别**：Level 0（A/B/B2/C/D、W1、S1）和 Level 1（F、W2、S2：用户 callable 自旋到指定时刻）。库、Guava、JDK 都没有修改。W2/S 中传给 `fixedTimeLimit(d, unit, executor)` 的 executor 等价于 `newCachedThreadPool()`，只额外记录每个 attempt 的 FutureTask 以及 callable 是否被进入。
+- **命令**（在 `.specular-output/` 下执行）：
+  - `timeout 900 bash repro/test_bugMC-4_wrap_cancel_sharing.sh` → exit 0，wall 12.09 s，输出在 `confirmation/MC-4/repro-r1-run1.log`。
+  - `timeout 900 bash repro/test_bugMC-4_interrupt_swallowed.sh` → exit 0，wall 9.66 s，输出在 `confirmation/MC-4/repro-run3.log`（回归运行）。
+
+`repro-r1-run1.log` 在 JDK 21 上的输出：
+```
+=== W1: outer.cancel(true) of ExecutorService.submit(<task running retryer.wrap(svc)>) while attempt 1 is in flight   [repair1_ctl_s2_wrap_cancel_ndc: MCCancelOuter]
+  [fixedTimeLimit] outer.cancel(true)=true, outer.get(): CancellationException; invocations at cancel=1, invocations started in the 2 s after cancel=18, next task on the pool started 2006 ms after cancel
+      RetryerCallable.call(): returned ok (invocation 19), interrupt status after call()=false, ended 2006 ms after cancel
+      listener (pool thread): [#1 InterruptedException, #2 IOException, #3 IOException, ... (19 attempts in total) ..., #18 IOException, #19 result(ok (invocation 19))]
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+  [control       ] outer.cancel(true)=true, ... invocations started in the 2 s after cancel=0, next task on the pool started 0 ms after cancel
+      RetryerCallable.call(): RetryException: Retrying failed to complete successfully after 1 attempts., interrupt status after call()=true, ended 0 ms after cancel
+  [fixedTimeLimit, attempt 1 NORMAL] 2000 trials: attempt-1 outcome observed (benign)=578, ..., attempt cancelled+retried after cancel(true)=1403, COMPLETED attempt discarded+retried=19, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, value=r1; listener: [#1 InterruptedException, #2 result(r2)]; RetryerCallable.call(): returned r2; interrupt status after: false; callable invocations: 2
+  [fixedTimeLimit, attempt 1 EXCEPTIONAL] 2000 trials: ... COMPLETED attempt discarded+retried=26, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, threw java.io.IOException: attempt-1 failed; listener: [#1 InterruptedException, #2 result(r2)]; ...
+  [S1 c1 pre-interrupted] 200 runs: {returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable NEVER entered)=196, returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable entered)=4}
+  [S2 c1 interrupted at t0] 3000 trials: attempt-1 result returned (benign)=823, attempt cancelled+retried with status cleared=2105, COMPLETED attempt discarded+retried=72, other=0
+  [c2, sharing the Retryer, never interrupted] 64753 calls during S, anomalies=0
+  controls violating the contract + anomalies on the non-interrupted sharer: 0
+RESULT: BUG REPRODUCED
+```
+
+JDK 11.0.33.1 上的结果一致：
+
+| 场景 | JDK 11 结果 |
+|---|---|
+| W1 | `cancel` 之后又调用 18 次，下一个任务延迟 2007 ms，最后正常返回，中断位 false；对照组 0 次调用、0 ms、`RetryException` 且中断位 true |
+| W2 | 已完成的结果被丢弃 47/4000（NORMAL 24，EXCEPTIONAL 23） |
+| S1 | 179/200 次 callable 从未进入 |
+| S2 | 已完成的结果被丢弃 70/3000 |
+| c2 | 71019 次调用，0 异常 |
+
+回归运行 `repro-run3.log` 的结果：
+
+| 场景 | JDK 21 | JDK 11 |
+|---|---|---|
+| A | `returned normally {value=result-of-invocation-2}, interruptStatusAfterCall=false` | 相同 |
+| B | 200/200 抛 `ExecutionException(IE)` 且中断位清除，其中 185 次 0 调用 | 200/200，其中 192 次 0 调用 |
+| C | `RetryException`，中断位清除 | 相同 |
+| D | `awaitTermination(2s)=false`，之后又调用 18 次 | 相同 |
+| F | 已完成的结果被丢弃 101/3000 | 87/3000 |
+
+对照组在两个 JDK 上都是 0 违例。
+
+**与反例的对照**：
+- **W1**：与 wrap_cancel_ndc 的中断来源一致，都是对外层 Future 调 `cancel(true)` 去中断运行 `RetryerCallable` 的线程。
+- **W2**：EXCEPTIONAL 分支与 trace 中 body 抛异常、attempt 已完成却被丢弃的情形对应。执行顺序有差别，原因见上文的"精化"一条。
+- **S1**：与 sharing_cir 对应，attempt 在 NEW 状态被 cancel，计数了但 callable 0 次调用。
+- **S2**：与 sharing_ndc 对应，调用线程拿到 IE 之后、cancel 之前，t1 完成为 NORMAL。
+- **c2**：trace 中 c2 不动作；这里 c2 持续调用共享的 Retryer，作为更强的配置，结果 0 异常。
+
+## Recommendation
+1. **`Retryer.call` 正确处理中断**：调用线程自己等待时收到 `InterruptedException`，应按中断处理，与 `:179-181` 一致——执行 `Thread.currentThread().interrupt(); throw new RetryException(attemptNumber, attempt);`，而不是交给拒绝谓词或停止策略。
+2. **区分两种 `InterruptedException` 的来源**：`FixedAttemptTimeLimit` 应区分"调用线程被中断"和"callable 自己抛出的异常"。Guava 22.0 已经提供三参数的 `callWithTimeout(callable, d, unit)`（`SimpleTimeLimiter.java:171-188`），它只在调用线程被中断时抛 IE，callable 的异常则包装为 `ExecutionException`。
+3. **不丢弃已完成的结果**：Guava 在收到 IE 后仍会无条件 `cancel(true); throw e;`，所以要做到这一点，需要在 `FixedAttemptTimeLimit` 里自己用 executor 实现 submit/get。`cancel` 返回 false 时，采用 future 已有的结果，同时恢复中断位。
+4. **回归测试**：覆盖三种情形——`fixedTimeLimit` attempt 进行中被中断（A/C）、`wrap()` 任务被 `Future.cancel(true)`（W1）、共享 Retryer 时 c1 被中断（S1）。断言：抛 `RetryException`，`isInterrupted()` 为 true，cancel 之后没有新的调用。
+
+## REPRODUCED 前的核对清单
+1. **只用 Level 0 或 Level 1 就触发了吗？** **yes**。W1、S1 以及 A/B/B2/C/D 只用公开 API 和正常操作，测试线程只负责安排事件顺序。W2、S2、F 只是让用户 callable 自旋到指定时刻（Level 1）。库、Guava、JDK 都没有修改，也没有注入状态。
+2. 没有使用 Level 2 或 Level 3。
+3. **看到错误结果的真实调用方**：
+   - `Retryer.call` 的直接调用方（场景 A/B/C 和 S 中的 c1 线程）：中断之后拿到的是正常返回值或 `ExecutionException`，中断位为 false。
+   - JDK `ThreadPoolExecutor` 执行的 `Retryer.RetryerCallable.call()`（`Retryer.java:317-318`，由 `wrap` 在 `:195-196` 创建），它的提交方受到影响：`outer.cancel(true)` 返回 true，但服务又被调用 18 次，pool 线程被占用 2006 ms，`RetryerCallable.call()` 最终正常返回且中断位清除；用 `shutdownNow()` 时 `awaitTermination(2s)=false`。
+   - 在 W2、S2、F 中，已完成的结果（r1 或 IOException）被丢弃，callable 被重新执行，产生重复的副作用。
+4. **坏状态是永久的吗？** 是。被清除的中断位不会被任何机制重新投递，重试循环会一直跑到成功或停止策略结束为止；W1 中循环之所以结束，是因为测试主动让服务恢复。外层 Future 丢弃 `RetryerCallable` 的结果并不构成掩盖，因为危害在那之前已经发生：取消之后的额外调用、线程被占用、中断丢失。共享 Retryer 的 c2 没有受影响，但这也不会掩盖 c1 受到的危害。因此不存在 MASKED 意义上的掩盖机制。

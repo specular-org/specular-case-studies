@@ -1,0 +1,78 @@
+{
+  "id": "MC-5",
+  "title": "Retryer.call retries an InterruptedException thrown by the callable (noTimeLimit) and returns with the interrupt status cleared",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "With noTimeLimit the callable runs on the caller thread (AttemptTimeLimiters.NoAttemptTimeLimit.call). When that thread is interrupted while the callable is in an interruptible blocking call, the JDK clears the interrupt status and the callable throws InterruptedException; Retryer.call's catch (Throwable t) records it as an ordinary ExceptionAttempt and never restores the status. The only interrupt guard (Retryer.call's catch around blockStrategy.block) does not fire because Thread.sleep sees a clear status.",
+  "trigger": "Retryer built with retryIfException() (matches InterruptedException) and any stop strategy allowing a second attempt (default neverStop), default noTimeLimit/noWait; the caller thread (or a pool worker running retryer.wrap(callable)) is interrupted via Thread.interrupt, Future.cancel(true) or ExecutorService.shutdownNow while the callable is blocked in queue.take()/sleep/wait.",
+  "consequence": "The interrupted attempt is retried; call() returns the next attempt's value normally with the interrupt status clear instead of throwing RetryException with the status set (Retryer.call Javadoc). Interrupt-responsive tasks wrapped in a Retryer become non-cancellable: ExecutorService.shutdownNow() cannot stop the task (awaitTermination(2s)=false), the worker blocks in a new attempt, and the task later completes normally. With a predicate that does not match InterruptedException the call ends with ExecutionException(InterruptedException) and the status is still lost.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:NoAttemptTimeLimit.call",
+    "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call"
+  ],
+  "actions": [
+    "MCCallerBodyStart",
+    "MCInterrupt",
+    "MCCallerBodyThrows",
+    "MCWaitStrategyComputes",
+    "MCBlockZero",
+    "MCCallerBodyReturns",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptPreserved",
+    "NoRetryAfterObservedInterrupt"
+  ],
+  "premises": [
+    "No attempt time limiter is configured (RetryerBuilder.build defaults to AttemptTimeLimiters.noTimeLimit()), so the callable runs on the interrupted thread.",
+    "The callable blocks in an interruptible JDK call and propagates the resulting InterruptedException (allowed by Callable.call() throws Exception); the JDK clears the interrupt status when throwing it.",
+    "For the retry consequence, the rejection predicate matches InterruptedException (retryIfException(), retryIfExceptionOfType(InterruptedException.class or a supertype), or a matching retryIfException(Predicate)) and the stop strategy allows another attempt; otherwise call() ends with ExecutionException or RetryException but the interrupt status is still clear.",
+    "The documented contract (Retryer.call Javadoc and constructor rejectionPredicate Javadoc) is that an interrupted thread gets RetryException with its interrupt status set and is not retried.",
+    "Reproduced with Guava 22.0 on JDK 21.0.13.1 and JDK 11.0.33.1; the mechanism does not depend on the Guava version on this path (no Guava code between Retryer.call and the callable).",
+    "Reported against the inherited code only in the hard fork rhuffman/re-retrying (issues #32, #36; fixed there by PR #37); unfixed in rholder/guava-retrying 2.0.0 and master 177b6c9."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class NoAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return callable.call();"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "            return exceptionClass.isAssignableFrom(attempt.getExceptionCause().getClass());"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_interrupt_nolimit.cfg"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-5/investigation.md",
+    "repro/test_bugMC-5_callable_interrupt_retried.sh",
+    "repro/MC-5.log",
+    "spec/output/hunt_s2_interrupt_nolimit_bfs1.out",
+    "spec/output/hunt_s2_interrupt_nolimit_bfs2.out"
+  ]
+}

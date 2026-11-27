@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "id": "MC-6",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Retryer.wrap() task cancelled via Future.cancel(true)/shutdownNow() keeps retrying (or returns normally) and never releases its executor worker",
+  "cause": "RetryerCallable.call() only runs Retryer.call() on the executor worker, so Future.cancel(true) and ExecutorService.shutdownNow() reach it solely as a thread interrupt. The interrupt is consumed during the attempt (Future.get inside Guava SimpleTimeLimiter.callWithTimeout(..., true) under fixedTimeLimit, or the callable's own interruptible wait); the resulting InterruptedException is caught by catch (Throwable) at Retryer.java:162 and treated as an ordinary failed attempt, and with the flag cleared the only interrupt check (block() at Retryer.java:177-182) never fires.",
+  "trigger": "Submit retryer.wrap(callable) built with retryIfException() (builder defaults neverStop and noWait; with or without fixedTimeLimit) to an ExecutorService while the callable keeps failing, then call future.cancel(true) or executor.shutdownNow() while an attempt is in flight.",
+  "consequence": "The cancelled task keeps invoking the user callable indefinitely (496 attempts within 10 s after cancel(true)); the executor worker is never released, awaitTermination never returns true even after repeated shutdownNow(), and a JVM using a default non-daemon executor never exits. If a later attempt succeeds, the cancelled task commits that attempt's side effects and RetryerCallable.call() returns normally with the interrupt status clear, contrary to the Retryer.call Javadoc (RetryException with the interrupt status set).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:Retryer.call",
+    "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call"
+  ],
+  "actions": [
+    "MCCancelOuter",
+    "MCGetInterrupted",
+    "MCCancelCASWon",
+    "MCListenersBegin",
+    "MCWaitStrategyComputes",
+    "MCBlockZero",
+    "MCSubmitNewWorker",
+    "MCSubmitHandoff",
+    "MCBodyThrows",
+    "MCGetReturn",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptedCallEventuallyExits",
+    "NoRetryAfterObservedInterrupt",
+    "InterruptPreserved"
+  ],
+  "premises": [
+    "The rejection predicate accepts InterruptedException (retryIfException(), retryIfExceptionOfType(Exception.class) or an equivalent Predicate<Throwable>); with retryIfExceptionOfType(IOException.class) the call exits after the cancellation.",
+    "The interrupt is consumed before block(): by Future.get in Guava 22 SimpleTimeLimiter.callWithTimeout(..., true) under fixedTimeLimit, or by the callable's own interruptible wait; an interrupt still pending when block() runs is handled correctly at Retryer.java:179-181.",
+    "Endless retrying additionally needs a stop strategy that never stops (neverStop, the builder default) and a callable that keeps failing; otherwise post-cancel attempts continue until the stop strategy fires or an attempt succeeds and call() returns normally.",
+    "Library built from unmodified sources against Guava 22.0 (last version with the SimpleTimeLimiter API it calls) on JDK 21 with --release 8.",
+    "The live counterexample hunt_s2_live_bfs.out predates the repair-round-1 edit of spec/base.tla and was not regenerated. The post-repair S2 control run (spec/output/repair-r1/repair1_ctl_s2_wrap_cancel_ndc.out) still reaches MCCancelOuter -> MCGetInterrupted. The REPRODUCED classification rests on the Level 0 run against the unmodified source, which was re-executed after the repair."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "        return new RetryerCallable<V>(this, callable);",
+      "sha256": "d38bd0042e83cbbe4f866c5c0d112e10012c6a11b1098359030ec0b00994a024"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "be8b629fbd06f55946249accc973fdccefb6a2529c3798db27dec244211db09e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class FixedAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "9cecb8803bf76a701388b1ecf422542bd3cf4f595124139a5055e249f0c6314d"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "        rejectionPredicate = Predicates.or(rejectionPredicate, new ExceptionClassPredicate<V>(Exception.class));",
+      "sha256": "53ef3c3fc9cd04d521b2c111b35201cfe83e7bc19430332794d66d7eae9276e6"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_live.cfg",
+      "sha256": "dba73d7227a9f898f998682c6a46078fa1ee8dbe0d8774dfade23f24a46eb3f5"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla",
+      "sha256": "16ca9770fd8f99ada6f40405e410339ac7a211d0b526b907d7b21a22c8f491ae"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-6.md",
+      "path": "spec/persistent-findings/evidence/MC-6/spec/finding-confirmation/MC-6.md",
+      "sha256": "d7c7d92457e3f721fce7bb411a9989287eef96f00e8e9898c7712216666f610e"
+    },
+    {
+      "original": "confirmation/MC-6/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-6/confirmation/MC-6/investigation.md",
+      "sha256": "c8f4c9b4a9c5c35e69bfee91514f3407119eba8892e88f845f894fecd4622052"
+    },
+    {
+      "original": "repro/test_bugMC-6_wrap_cancel_endless_retry.sh",
+      "path": "spec/persistent-findings/evidence/MC-6/repro/test_bugMC-6_wrap_cancel_endless_retry.sh",
+      "sha256": "e57bd0c7ea8d08fae5e9c9b0d8e8b4e15ccfad35c8a729b5460bd4ea86818d16"
+    },
+    {
+      "original": "repro/MC-6.log",
+      "path": "spec/persistent-findings/evidence/MC-6/repro/MC-6.log",
+      "sha256": "35fb00ee847b13f42bc209bb2484c0d6155c4f1c36e44e7fdf17ed309bf15818"
+    },
+    {
+      "original": "spec/output/hunt_s2_live_bfs.out",
+      "path": "spec/persistent-findings/evidence/MC-6/spec/output/hunt_s2_live_bfs.out",
+      "sha256": "3e4be17e3194ffd2a33ef2b63ed651cfa6ad0d07f16ffaf632759b41a7c348e9"
+    },
+    {
+      "original": "spec/output/hunt_s2_wrap_cancel_bfs3.out",
+      "path": "spec/persistent-findings/evidence/MC-6/spec/output/hunt_s2_wrap_cancel_bfs3.out",
+      "sha256": "bb93427edbe60fb1ab15a4980e72c1f8600a3f6cb6e6c985769f5fcb5e962965"
+    },
+    {
+      "original": "spec/output/hunt_s2_wrap_cancel_bfs6.out",
+      "path": "spec/persistent-findings/evidence/MC-6/spec/output/hunt_s2_wrap_cancel_bfs6.out",
+      "sha256": "618ba303344a12668ed9a526387c3cb9b7464aa172f0bc3e5fbced4a9e55fb91"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+after 3s: attempts made=58, callable executions=0, f1.done=false, f2.done=false
+1s after shutdownNow: attempts made=60, pool terminated=true, f1.done=true, f2.done=true
+f1.get -> java.util.concurrent.ExecutionException: java.util.concurrent.ExecutionException: java.lang.InterruptedException
+exit=0

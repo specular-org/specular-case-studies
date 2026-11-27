@@ -1,0 +1,162 @@
+== environment
+java:   openjdk version "21.0.13.1" 2026-11-17
+javac:  javac 21.0.13.1
+source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-11/worktree  (git HEAD 177b6c9; src diff vs v2.0.0: '')
+guava:  /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar  sha256=1158e94c7de4da48…
+jsr305: /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar
+site:   57:    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) { 69:    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit, @Nonnull ExecutorService executorService) { 
+
+################ PRIMARY RUN: guava-retrying 2.0.0 source + Guava 22.0 ################
+== C0 control: other parameterized built-in factories reject bad values eagerly
+  [CTRL ok] WaitStrategies.fixedWait(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): sleepTime must be >= 0 but is %d [-1000]
+  [CTRL ok] WaitStrategies.randomWait(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): maximum must be > minimum but maximum is %d and minimum is [-1000, 0]
+  [CTRL ok] StopStrategies.stopAfterAttempt(0) -> IllegalArgumentException at the factory call (eager validation): maxAttemptNumber must be >= 1 but is %d [0]
+  [CTRL ok] StopStrategies.stopAfterDelay(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): maxDelay must be >= 0 but is %d [-1000]
+== C1 control: positive limit, default predicate -> callable runs once, call() returns
+  [CTRL ok] fixedTimeLimit(1, SECONDS): call() returned 'ok', callable invocations=1, tasks submitted to user executor=n/a
+  [CTRL ok] fixedTimeLimit(1, SECONDS, userExecutor): call() returned 'ok', callable invocations=1, tasks submitted to user executor=1
+== B1: fixedTimeLimit with a zero / negative duration is accepted at construction and build()
+  [BUG    ] fixedTimeLimit(0, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+== B2: default rejection predicate -> call() throws ExecutionException(IAE) although the callable never ran
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a; cause thrown at:
+        at com.google.common.base.Preconditions.checkArgument(Preconditions.java:191)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.checkPositiveTimeout(SimpleTimeLimiter.java:318)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:147)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at CrD11Repro.main(CrD11Repro.java:175)
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfExceptionOfType(UncheckedTimeoutException): ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), invocations=0
+== B3: retry predicate + stopAfterAttempt(5) + fixedWait(20ms) -> RetryException('after 5 attempts') with 0 runs
+  [BUG    ] fixedTimeLimit(0, SECONDS) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: -1, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + retryIfRuntimeException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+== C4 control: retryIfException + builder defaults (neverStop, noWait), positive limit, callable fails twice then succeeds
+  [CTRL ok] fixedTimeLimit(1, SECONDS): call() returned 'ok' after 3 attempts, callable invocations=3
+== B4: same configuration with fixedTimeLimit(0, MILLISECONDS) -> call() never returns, busy-loops, callable never runs
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfException() + defaults neverStop()/noWait(): after 3000 ms call() has not returned (caller alive=true), attempts so far=828422, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=n/a, caller CPU time=2956 ms (98% of wall)
+        (cleanup) after interrupting the caller: alive=false, call() ended with com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 828621 attempts.
+== B4b: README 'retry forever with exponential backoff' config + fixedTimeLimit(0, MILLISECONDS, userExecutor)
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS, userExecutor) + README: retryIfExceptionOfType(IOException).retryIfRuntimeException().exponentialWait(100, 5, MINUTES).neverStop(): after 3000 ms call() has not returned (caller alive=true), attempts so far=4, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=0, caller CPU time=0 ms (0% of wall)
+        (cleanup) after interrupting the caller: alive=false, call() ended with com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 4 attempts.
+== B5: Retryer.wrap() submitted to an executor (retryIfRuntimeException, neverStop, noWait, fixedTimeLimit(-1, SECONDS))
+  [BUG    ] fixedTimeLimit(-1, SECONDS): Future of wrap(callable) not done after 2000 ms; pool thread made 523402 attempts; callable invocations=0
+        (cleanup) after shutdownNow(): Future failed with com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 523461 attempts.
+== C5 contrast: a positive but far-too-small limit is a real timeout AFTER submission (not an argument error)
+  [CTRL ok] fixedTimeLimit(1, NANOSECONDS, userExecutor): ExecutionException(cause=com.google.common.util.concurrent.UncheckedTimeoutException), tasks submitted to user executor=1
+
+SUMMARY: bug observations 19/19, controls ok 8/8
+RESULT: BUG REPRODUCED
+primary exit status: 0
+
+################ SECONDARY RUN: library rebuilt against Guava 10.0.1 ################
+== C0 control: other parameterized built-in factories reject bad values eagerly
+== C1 control: positive limit, default predicate -> callable runs once, call() returns
+== B1: fixedTimeLimit with a zero / negative duration is accepted at construction and build()
+  [BUG    ] fixedTimeLimit(0, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+== B2: default rejection predicate -> call() throws ExecutionException(IAE) although the callable never ran
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a; cause thrown at:
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfExceptionOfType(UncheckedTimeoutException): ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), invocations=0
+== B3: retry predicate + stopAfterAttempt(5) + fixedWait(20ms) -> RetryException('after 5 attempts') with 0 runs
+  [BUG    ] fixedTimeLimit(0, SECONDS) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: -1, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + retryIfRuntimeException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+== C4 control: retryIfException + builder defaults (neverStop, noWait), positive limit, callable fails twice then succeeds
+== B4: same configuration with fixedTimeLimit(0, MILLISECONDS) -> call() never returns, busy-loops, callable never runs
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfException() + defaults neverStop()/noWait(): after 1000 ms call() has not returned (caller alive=true), attempts so far=272648, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=n/a, caller CPU time=971 ms (97% of wall)
+== B4b: README 'retry forever with exponential backoff' config + fixedTimeLimit(0, MILLISECONDS, userExecutor)
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS, userExecutor) + README: retryIfExceptionOfType(IOException).retryIfRuntimeException().exponentialWait(100, 5, MINUTES).neverStop(): after 1000 ms call() has not returned (caller alive=true), attempts so far=3, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=0, caller CPU time=0 ms (0% of wall)
+== B5: Retryer.wrap() submitted to an executor (retryIfRuntimeException, neverStop, noWait, fixedTimeLimit(-1, SECONDS))
+  [BUG    ] fixedTimeLimit(-1, SECONDS): Future of wrap(callable) not done after 1000 ms; pool thread made 283410 attempts; callable invocations=0
+== C5 contrast: a positive but far-too-small limit is a real timeout AFTER submission (not an argument error)
+SUMMARY: bug observations 19/19, controls ok 8/8
+RESULT: BUG REPRODUCED
+Guava 10.0.1 exit status: 0
+
+################ SECONDARY RUN: library rebuilt against Guava 14.0.1 ################
+== C0 control: other parameterized built-in factories reject bad values eagerly
+== C1 control: positive limit, default predicate -> callable runs once, call() returns
+== B1: fixedTimeLimit with a zero / negative duration is accepted at construction and build()
+  [BUG    ] fixedTimeLimit(0, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+== B2: default rejection predicate -> call() throws ExecutionException(IAE) although the callable never ran
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a; cause thrown at:
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfExceptionOfType(UncheckedTimeoutException): ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), invocations=0
+== B3: retry predicate + stopAfterAttempt(5) + fixedWait(20ms) -> RetryException('after 5 attempts') with 0 runs
+  [BUG    ] fixedTimeLimit(0, SECONDS) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: -1, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + retryIfRuntimeException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+== C4 control: retryIfException + builder defaults (neverStop, noWait), positive limit, callable fails twice then succeeds
+== B4: same configuration with fixedTimeLimit(0, MILLISECONDS) -> call() never returns, busy-loops, callable never runs
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfException() + defaults neverStop()/noWait(): after 1000 ms call() has not returned (caller alive=true), attempts so far=274737, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=n/a, caller CPU time=980 ms (98% of wall)
+== B4b: README 'retry forever with exponential backoff' config + fixedTimeLimit(0, MILLISECONDS, userExecutor)
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS, userExecutor) + README: retryIfExceptionOfType(IOException).retryIfRuntimeException().exponentialWait(100, 5, MINUTES).neverStop(): after 1000 ms call() has not returned (caller alive=true), attempts so far=3, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=0, caller CPU time=0 ms (0% of wall)
+== B5: Retryer.wrap() submitted to an executor (retryIfRuntimeException, neverStop, noWait, fixedTimeLimit(-1, SECONDS))
+  [BUG    ] fixedTimeLimit(-1, SECONDS): Future of wrap(callable) not done after 1000 ms; pool thread made 283363 attempts; callable invocations=0
+== C5 contrast: a positive but far-too-small limit is a real timeout AFTER submission (not an argument error)
+SUMMARY: bug observations 19/19, controls ok 8/8
+RESULT: BUG REPRODUCED
+Guava 14.0.1 exit status: 0
+
+################ SECONDARY RUN: library rebuilt against Guava 16.0.1 ################
+== C0 control: other parameterized built-in factories reject bad values eagerly
+== C1 control: positive limit, default predicate -> callable runs once, call() returns
+== B1: fixedTimeLimit with a zero / negative duration is accepted at construction and build()
+  [BUG    ] fixedTimeLimit(0, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS) + RetryerBuilder.build(): accepted, no exception
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + RetryerBuilder.build(): accepted, no exception
+== B2: default rejection predicate -> call() throws ExecutionException(IAE) although the callable never ran
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a; cause thrown at:
+  [BUG    ] fixedTimeLimit(0, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 1: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) round 2: ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: -1), callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfExceptionOfType(UncheckedTimeoutException): ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0), invocations=0
+== B3: retry predicate + stopAfterAttempt(5) + fixedWait(20ms) -> RetryException('after 5 attempts') with 0 runs
+  [BUG    ] fixedTimeLimit(0, SECONDS) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=n/a
+  [BUG    ] fixedTimeLimit(-1, SECONDS, userExecutor) + retryIfException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: -1, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+  [BUG    ] fixedTimeLimit(0, SECONDS, userExecutor) + retryIfRuntimeException: RetryException("Retrying failed to complete successfully after 5 attempts."), getNumberOfFailedAttempts()=5, lastFailedAttempt.getExceptionCause()=java.lang.IllegalArgumentException: timeout must be positive: 0, listener saw 5 failed attempts, waited ~80 ms between them, callable invocations=0, tasks submitted to user executor=0
+== C4 control: retryIfException + builder defaults (neverStop, noWait), positive limit, callable fails twice then succeeds
+== B4: same configuration with fixedTimeLimit(0, MILLISECONDS) -> call() never returns, busy-loops, callable never runs
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS) + retryIfException() + defaults neverStop()/noWait(): after 1000 ms call() has not returned (caller alive=true), attempts so far=254218, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=n/a, caller CPU time=982 ms (98% of wall)
+== B4b: README 'retry forever with exponential backoff' config + fixedTimeLimit(0, MILLISECONDS, userExecutor)
+  [BUG    ] fixedTimeLimit(0, MILLISECONDS, userExecutor) + README: retryIfExceptionOfType(IOException).retryIfRuntimeException().exponentialWait(100, 5, MINUTES).neverStop(): after 1000 ms call() has not returned (caller alive=true), attempts so far=3, last attempt cause=java.lang.IllegalArgumentException: timeout must be positive: 0, callable invocations=0, tasks submitted to user executor=0, caller CPU time=0 ms (0% of wall)
+== B5: Retryer.wrap() submitted to an executor (retryIfRuntimeException, neverStop, noWait, fixedTimeLimit(-1, SECONDS))
+  [BUG    ] fixedTimeLimit(-1, SECONDS): Future of wrap(callable) not done after 1000 ms; pool thread made 228487 attempts; callable invocations=0
+== C5 contrast: a positive but far-too-small limit is a real timeout AFTER submission (not an argument error)
+SUMMARY: bug observations 19/19, controls ok 8/8
+RESULT: BUG REPRODUCED
+Guava 16.0.1 exit status: 0
+script exit status: 0

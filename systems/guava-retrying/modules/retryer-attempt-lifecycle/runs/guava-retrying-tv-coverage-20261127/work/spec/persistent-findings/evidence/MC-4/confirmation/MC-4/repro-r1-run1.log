@@ -1,0 +1,124 @@
+== MC-4 repro (repair-round-1 paths): worktree=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree
+== library HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f  dirty-files: 0
+== guava: /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+
+################ openjdk version "21.0.13.1" 2026-11-17
+java.version=21.0.13.1  vm=OpenJDK 64-Bit Server VM
+
+=== W1: outer.cancel(true) of ExecutorService.submit(<task running retryer.wrap(svc)>) while attempt 1 is in flight   [repair1_ctl_s2_wrap_cancel_ndc: MCCancelOuter]
+  retryIfException(), fixedWait(10 ms), stop=never; cancel(true) interrupts the pool thread running RetryerCallable.call() -> Retryer.call()
+  expected: RetryException with interrupt status set, no further attempt (Retryer.java:59-61, 151-153); no invocation after cancel; the pool thread is free for the next task
+  [fixedTimeLimit] outer.cancel(true)=true, outer.get(): CancellationException; invocations at cancel=1, invocations started in the 2 s after cancel=18, next task on the pool started 2006 ms after cancel
+      RetryerCallable.call(): returned ok (invocation 19), interrupt status after call()=false, ended 2006 ms after cancel
+      listener (pool thread): [#1 InterruptedException, #2 IOException, #3 IOException, ... (19 attempts in total) ..., #18 IOException, #19 result(ok (invocation 19))]
+      pool thread stack at cancel:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+  [control       ] outer.cancel(true)=true, outer.get(): CancellationException; invocations at cancel=1, invocations started in the 2 s after cancel=0, next task on the pool started 0 ms after cancel
+      RetryerCallable.call(): RetryException: Retrying failed to complete successfully after 1 attempts., interrupt status after call()=true, ended 0 ms after cancel
+      listener (pool thread): [#1 InterruptedIOException [interrupt pending]]
+      pool thread stack at cancel:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+        at MC4ReproR1$FlakyService.call(MC4ReproR1.java:67)
+        at MC4ReproR1$FlakyService.call(MC4ReproR1.java:57)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+  >> BUG: cancel(true) of the wrapped task was swallowed; the retry loop kept calling the service and returned normally with the status clear
+
+=== W2: attempt 1 completes at t0+offset, outer.cancel(true) of the wrapped task at t0 (statistical, Level 1)   [repair1_ctl_s2_wrap_cancel_ndc: NoDiscardedCompletion]
+  retryIfException() + stopAfterAttempt(3), fixedTimeLimit(10 s, user executor keeping each attempt's FutureTask); offset random in [-40,160] us
+  even trials: attempt 1 returns r1 (NORMAL); odd trials: attempt 1 throws IOException (EXCEPTIONAL, as the trace's MCBodyThrows)
+  [fixedTimeLimit, attempt 1 NORMAL] 2000 trials: attempt-1 outcome observed (benign)=578, observed but interrupt swallowed in a later attempt=0, attempt cancelled+retried after cancel(true)=1403, COMPLETED attempt discarded+retried=19, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, value=r1; listener: [#1 InterruptedException, #2 result(r2)]; RetryerCallable.call(): returned r2; interrupt status after: false; callable invocations: 2
+  [fixedTimeLimit, attempt 1 EXCEPTIONAL] 2000 trials: attempt-1 outcome observed (benign)=511, observed but interrupt swallowed in a later attempt=25, attempt cancelled+retried after cancel(true)=1438, COMPLETED attempt discarded+retried=26, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, threw java.io.IOException: attempt-1 failed; listener: [#1 InterruptedException, #2 result(r2)]; RetryerCallable.call(): returned r2; interrupt status after: false; callable invocations: 2
+  >> BUG: NoDiscardedCompletion reached through cancel(true) of a wrapped task
+
+=== S: two threads share ONE Retryer (one fixedTimeLimit, one executor); c2 calls it continuously while c1 is interrupted   [repair1_ctl_sharing_cir, repair1_ctl_sharing_ndc]
+  retryIfException() + stopAfterAttempt(3), fixedTimeLimit(10 s, shared user executor); c2 is never interrupted
+  expected for c1: RetryException with interrupt status set, no further attempt (Retryer.java:59-61, 151-153); expected for c2: every call returns its result after 1 attempt, status clear
+  [S1 c1 pre-interrupted] 200 runs: {returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable NEVER entered)=196, returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable entered)=4}
+      example: attempt-1 FutureTask: cancelled, callable NEVER entered; listener: [#1 InterruptedException, #2 result(c1-ok)]; call(): returned c1-ok; interrupt status after: false; callable invocations: 1
+  >> BUG: attempt counted with 0 invocations, interrupt swallowed, retry continued (CountedImpliesInvokedNoStartRace + InterruptPreserved)
+  [S2 c1 interrupted at t0] 3000 trials: attempt-1 result returned (benign)=823, attempt cancelled+retried with status cleared=2105, COMPLETED attempt discarded+retried=72, other=0
+      example: attempt-1 FutureTask: done NOT cancelled, value=r1; listener: [#1 InterruptedException, #2 result(r2)]; call() returned r2; interrupt status after: false; callable invocations: 2
+  >> BUG: NoDiscardedCompletion on the shared Retryer
+  [c2, sharing the Retryer, never interrupted] 64753 calls during S, anomalies=0
+
+=== SUMMARY (21.0.13.1)
+  BUG  W1: after outer.cancel(true) returned true, the wrapped retry loop kept invoking the service, held the pool thread, and RetryerCallable.call() finally RETURNED NORMALLY with interrupt status CLEAR
+  BUG  W2: 2841/4000 trials: after outer.cancel(true) the interrupted attempt was cancelled and the callable re-run (status clear)
+  BUG  W2: 45/4000 trials discarded an attempt whose FutureTask had COMPLETED (NORMAL 19, EXCEPTIONAL 26) and re-ran the callable after outer.cancel(true)
+  BUG  S1: 196/200 runs on the shared Retryer counted attempt #1 (InterruptedException) whose callable was NEVER entered, then retried and returned with interrupt status CLEAR
+  BUG  S2: 72/3000 trials on the shared Retryer discarded c1's COMPLETED attempt (value r1) and re-ran the callable
+  controls violating the contract + anomalies on the non-interrupted sharer: 0
+RESULT: BUG REPRODUCED
+== exit code: 0
+
+################ openjdk version "11.0.33.1" 2026-11-17
+java.version=11.0.33.1  vm=OpenJDK 64-Bit Server VM
+
+=== W1: outer.cancel(true) of ExecutorService.submit(<task running retryer.wrap(svc)>) while attempt 1 is in flight   [repair1_ctl_s2_wrap_cancel_ndc: MCCancelOuter]
+  retryIfException(), fixedWait(10 ms), stop=never; cancel(true) interrupts the pool thread running RetryerCallable.call() -> Retryer.call()
+  expected: RetryException with interrupt status set, no further attempt (Retryer.java:59-61, 151-153); no invocation after cancel; the pool thread is free for the next task
+  [fixedTimeLimit] outer.cancel(true)=true, outer.get(): CancellationException; invocations at cancel=1, invocations started in the 2 s after cancel=18, next task on the pool started 2007 ms after cancel
+      RetryerCallable.call(): returned ok (invocation 19), interrupt status after call()=false, ended 2007 ms after cancel
+      listener (pool thread): [#1 InterruptedException, #2 IOException, #3 IOException, ... (19 attempts in total) ..., #18 IOException, #19 result(ok (invocation 19))]
+      pool thread stack at cancel:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:234)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:444)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at app//com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+  [control       ] outer.cancel(true)=true, outer.get(): CancellationException; invocations at cancel=1, invocations started in the 2 s after cancel=0, next task on the pool started 0 ms after cancel
+      RetryerCallable.call(): RetryException: Retrying failed to complete successfully after 1 attempts., interrupt status after call()=true, ended 0 ms after cancel
+      listener (pool thread): [#1 InterruptedIOException [interrupt pending]]
+      pool thread stack at cancel:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:357)
+        at app//MC4ReproR1$FlakyService.call(MC4ReproR1.java:67)
+        at app//MC4ReproR1$FlakyService.call(MC4ReproR1.java:57)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+  >> BUG: cancel(true) of the wrapped task was swallowed; the retry loop kept calling the service and returned normally with the status clear
+
+=== W2: attempt 1 completes at t0+offset, outer.cancel(true) of the wrapped task at t0 (statistical, Level 1)   [repair1_ctl_s2_wrap_cancel_ndc: NoDiscardedCompletion]
+  retryIfException() + stopAfterAttempt(3), fixedTimeLimit(10 s, user executor keeping each attempt's FutureTask); offset random in [-40,160] us
+  even trials: attempt 1 returns r1 (NORMAL); odd trials: attempt 1 throws IOException (EXCEPTIONAL, as the trace's MCBodyThrows)
+  [fixedTimeLimit, attempt 1 NORMAL] 2000 trials: attempt-1 outcome observed (benign)=563, observed but interrupt swallowed in a later attempt=0, attempt cancelled+retried after cancel(true)=1413, COMPLETED attempt discarded+retried=24, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, value=r1; listener: [#1 InterruptedException, #2 result(r2)]; RetryerCallable.call(): returned r2; interrupt status after: false; callable invocations: 2
+  [fixedTimeLimit, attempt 1 EXCEPTIONAL] 2000 trials: attempt-1 outcome observed (benign)=470, observed but interrupt swallowed in a later attempt=56, attempt cancelled+retried after cancel(true)=1451, COMPLETED attempt discarded+retried=23, other=0
+      example: outer.cancel(true)=true; attempt-1 FutureTask: done NOT cancelled, threw java.io.IOException: attempt-1 failed; listener: [#1 InterruptedException, #2 result(r2)]; RetryerCallable.call(): returned r2; interrupt status after: false; callable invocations: 2
+  >> BUG: NoDiscardedCompletion reached through cancel(true) of a wrapped task
+
+=== S: two threads share ONE Retryer (one fixedTimeLimit, one executor); c2 calls it continuously while c1 is interrupted   [repair1_ctl_sharing_cir, repair1_ctl_sharing_ndc]
+  retryIfException() + stopAfterAttempt(3), fixedTimeLimit(10 s, shared user executor); c2 is never interrupted
+  expected for c1: RetryException with interrupt status set, no further attempt (Retryer.java:59-61, 151-153); expected for c2: every call returns its result after 1 attempt, status clear
+  [S1 c1 pre-interrupted] 200 runs: {returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable NEVER entered)=179, returned c1-ok / status=clear / #1 InterruptedException (attempt-1 callable entered)=21}
+      example: attempt-1 FutureTask: cancelled, callable NEVER entered; listener: [#1 InterruptedException, #2 result(c1-ok)]; call(): returned c1-ok; interrupt status after: false; callable invocations: 1
+  >> BUG: attempt counted with 0 invocations, interrupt swallowed, retry continued (CountedImpliesInvokedNoStartRace + InterruptPreserved)
+  [S2 c1 interrupted at t0] 3000 trials: attempt-1 result returned (benign)=822, attempt cancelled+retried with status cleared=2108, COMPLETED attempt discarded+retried=70, other=0
+      example: attempt-1 FutureTask: done NOT cancelled, value=r1; listener: [#1 InterruptedException, #2 result(r2)]; call() returned r2; interrupt status after: false; callable invocations: 2
+  >> BUG: NoDiscardedCompletion on the shared Retryer
+  [c2, sharing the Retryer, never interrupted] 71019 calls during S, anomalies=0
+
+=== SUMMARY (11.0.33.1)
+  BUG  W1: after outer.cancel(true) returned true, the wrapped retry loop kept invoking the service, held the pool thread, and RetryerCallable.call() finally RETURNED NORMALLY with interrupt status CLEAR
+  BUG  W2: 2864/4000 trials: after outer.cancel(true) the interrupted attempt was cancelled and the callable re-run (status clear)
+  BUG  W2: 47/4000 trials discarded an attempt whose FutureTask had COMPLETED (NORMAL 24, EXCEPTIONAL 23) and re-ran the callable after outer.cancel(true)
+  BUG  S1: 179/200 runs on the shared Retryer counted attempt #1 (InterruptedException) whose callable was NEVER entered, then retried and returned with interrupt status CLEAR
+  BUG  S2: 70/3000 trials on the shared Retryer discarded c1's COMPLETED attempt (value r1) and re-ran the callable
+  controls violating the contract + anomalies on the non-interrupted sharer: 0
+RESULT: BUG REPRODUCED
+== exit code: 0
+wall=12.09s

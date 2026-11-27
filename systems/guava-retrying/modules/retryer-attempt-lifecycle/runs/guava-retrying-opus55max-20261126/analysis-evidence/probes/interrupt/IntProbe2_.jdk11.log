@@ -1,0 +1,18 @@
+java.version=11.0.33.1
+sleep(0) with flag set: threw InterruptedException, flag after=false
+sleep(-1) with flag set: IAE, flag after=true
+H2.2 fixed5s retryIfException pre-interrupted, fast callable, 300 trials:
+   298 x  RETURNED ok | flagAtExit=false | invocations=1
+   2 x  RETURNED ok | flagAtExit=false | invocations=2
+H2.2 fixed5s retryIfRuntimeException pre-interrupted, fast callable, 300 trials:
+   296 x  ExecutionException cause=java.lang.InterruptedException | flagAtExit=false | invocations=0
+   4 x  ExecutionException cause=java.lang.InterruptedException | flagAtExit=false | invocations=1
+H2.2n noLimit retryIfException pre-interrupted, callable ignores interrupt: RETURNED ok | flagAtExit=true | invocations=1
+H2.2n2 noLimit retryIfException pre-interrupted, callable sleeps(10) on attempt 1: RETURNED ok | flagAtExit=false | invocations=2
+H2.4a listener-interrupt, rejected(result), neverStop, noWait (sleep(0)): RetryException attempts=1 cause=null | flagAtExit=true | invocations=1
+H2.4b listener-interrupt, rejected(result), stopAfterAttempt(1): RetryException attempts=1 cause=null | flagAtExit=true | invocations=1
+H2.4c listener-interrupt, accepted: RETURNED ok | flagAtExit=true | invocations=1
+H2.4d listener-interrupt, fixed5s, rejected(exception), neverStop, noWait: RetryException attempts=1 cause=java.io.IOException: x | flagAtExit=true | invocations=1
+H2.6a join overflow, no interrupt: OTHER java.lang.IllegalArgumentException: timeout value is negative | flagAtExit=false | invocations=1
+H2.6b join overflow, interrupt arrives in listener: OTHER java.lang.IllegalArgumentException: timeout value is negative | flagAtExit=true | invocations=1
+exit=0

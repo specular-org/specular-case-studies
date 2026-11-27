@@ -1,0 +1,561 @@
+{
+  "schema_version": "2",
+  "system": "guava-retrying",
+  "generated_by": "consolidate",
+  "findings": [
+    {
+      "id": "MC-1",
+      "title": "A timed-out attempt keeps running alongside later attempts and after `call()` has returned or thrown",
+      "source": "model-checking",
+      "scenario": "S1 time-limited attempts escape the attempt sequence (also via caller interrupt, S2) — ledger D-1",
+      "severity": "High",
+      "invariant": "SequentialAttempts",
+      "config": "MC_hunt_s1_overlap.cfg",
+      "counterexample": "spec/output/hunt_s1_overlap_bfs1.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+        "src/main/java/com/github/rholder/retry/Retryer.java:157",
+        "src/main/java/com/github/rholder/retry/Retryer.java:160",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:155",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:164"
+      ],
+      "summary": "With fixedTimeLimit, when an attempt times out (or the caller is interrupted) Guava's SimpleTimeLimiter.callWithTimeout calls future.cancel(true) and returns immediately without waiting for the worker (SimpleTimeLimiter.java:155-157, 164-166). A callable that ignores interrupts (e.g. a blocking socket read) keeps running on its pool thread while Retryer.call (Retryer.java:157-184) immediately starts the next attempt on another thread or returns/throws. TLC shows two bodies of the same call() — the same Callable instance — running at once (hunt_s1_overlap_bfs1.out, 20 states) and call() returning attempt 2's result while attempt 1 is still running (hunt_s1_overlap_bfs2.out, NoActivityAfterOutcome, 28 states); its late result/exception is silently dropped. The same happens with a caller-interrupt trigger (hunt_s2_interrupt_narrow_bfs3.out) and under a saturated bounded limiter executor, where the timed-out body keeps the only thread while call() ends with RetryException (spec/output/repair-r1/repair1_s4_executor_bfs1.out); repair round 1 re-ran MC_hunt_s1_timelimit.cfg on the current spec and got the same two violations (repair-r1/repair1_s1_timelimit_bfs1.out, _bfs2.out). The Retryer Javadoc describes attempts as a sequence (Retryer.java:32-35); AttemptTimeLimiter only says an attempt is 'possibly interrupted'."
+    },
+    {
+      "id": "MC-2",
+      "title": "A never-returning timed-out attempt pins a pool thread forever, and each further attempt takes another thread",
+      "source": "model-checking",
+      "scenario": "S1 — ledger D-3 (related known #92 covers only the ~60 s idle-thread exit delay)",
+      "severity": "High",
+      "invariant": "StuckBodiesPerCallAtMostOne",
+      "config": "MC_hunt_s1_overlap.cfg",
+      "counterexample": "spec/output/hunt_s1_overlap_d3b.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:57",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:90",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:83",
+        "src/main/java/com/github/rholder/retry/Retryer.java:157"
+      ],
+      "summary": "The two-argument fixedTimeLimit(d, unit) creates new SimpleTimeLimiter() (AttemptTimeLimiters.java:57-60, 89-91), i.e. a private Executors.newCachedThreadPool() (SimpleTimeLimiter.java:82-83) with non-daemon threads, no shutdown path and no API access. Because cancellation only interrupts the runner (MC-1), an attempt whose callable blocks uninterruptibly keeps its thread forever, and the cached pool starts a new thread for the next attempt. TLC (MCHunt.tla filtered checks on the s1_overlap model) shows one call() pinning two pool threads with stuck bodies (hunt_s1_overlap_d3b.out, 20 states) and call() returning while a stuck body still holds a thread (hunt_s1_overlap_d3a.out, StuckBodiesEndWithCall, 28 states). Repair round 1 reproduced both on the current spec in MC_hunt_s1_timelimit.cfg, which now checks the same model and properties as s1_overlap (spec/output/repair-r1/repair1_s1_timelimit_d3a.out, repair1_s1_timelimit_d3b.out). Thread count grows with the number of timed-out attempts (unbounded under neverStop); by code inspection the non-daemon threads also keep the JVM from exiting."
+    },
+    {
+      "id": "MC-3",
+      "title": "A completed attempt is reported as a timeout; its result is discarded and the work is executed again",
+      "source": "model-checking",
+      "scenario": "S1 — ledger D-2",
+      "severity": "Medium",
+      "invariant": "NoDiscardedCompletion",
+      "config": "MC_hunt_s1_timelimit.cfg",
+      "counterexample": "spec/output/hunt_s1_timelimit_bfs1.out",
+      "affected_code": [
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:165",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:156",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+        "src/main/java/com/github/rholder/retry/Retryer.java:162"
+      ],
+      "summary": "If the callable finishes in the window between FutureTask.get(timeout) deciding that the deadline passed (state NEW or COMPLETING, JDK11 FutureTask.java:437-438, 202-204) and Guava's future.cancel(true), cancel returns false but SimpleTimeLimiter ignores it and throws UncheckedTimeoutException anyway (SimpleTimeLimiter.java:164-166). Retryer records a timeout (Retryer.java:162-163) for an attempt whose Future holds a normal result: the result is discarded, and under retryIfException()/retryIfRuntimeException() the callable runs again (duplicated non-idempotent side effects); with a narrower predicate call() fails although the callable succeeded. TLC: hunt_s1_timelimit_bfs1.out (10 states: body returns, set CAS -> COMPLETING, deadline re-read sees COMPLETING, NORMAL published, timeout recorded). The interrupt-path variant (cancel result ignored at :156) is part of MC-4.",
+      "dedup_note": "Also covers the discarded-completion part of code-review Scenario 1 (the boolean result of future.cancel(true) is ignored, SimpleTimeLimiter.java:164-166). Absorbs ledger row D-2: same code sites (SimpleTimeLimiter.java:154,164-166; AttemptTimeLimiters.java:107) and same mechanism; the NoDiscardedCompletion counterexample is the row's race (the deadline is decided while the task is still COMPLETING, the task reaches NORMAL, a timeout is recorded and the work can run again). The caller-interrupt variant of the same race (cancel result ignored at SimpleTimeLimiter.java:156) is carried by MC-4.",
+      "ledger_ids": [
+        "D-2"
+      ]
+    },
+    {
+      "id": "MC-4",
+      "title": "A caller interrupt during a time-limited attempt is swallowed: retrying continues, `call()` returns normally or throws `ExecutionException`, and the interrupt status is lost",
+      "source": "model-checking",
+      "scenario": "S2 interrupts consumed inside an attempt (fixedTimeLimit) — ledger D-5",
+      "severity": "High",
+      "invariant": "InterruptPreserved",
+      "config": "MC_hunt_s2_interrupt_fixed.cfg",
+      "counterexample": "spec/output/hunt_s2_interrupt_fixed_bfs5.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:170",
+        "src/main/java/com/github/rholder/retry/Retryer.java:179",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:155"
+      ],
+      "summary": "With fixedTimeLimit (amInterruptible=true, AttemptTimeLimiters.java:107), an interrupt of the thread running call() is consumed by Future.get (status cleared, JDK11 FutureTask.java:416-419); Guava cancels the attempt and rethrows InterruptedException (SimpleTimeLimiter.java:155-157). Retryer.call catches it like any Throwable (Retryer.java:162-163) and lets the rejection predicate decide; the status is restored only around blockStrategy.block (:179-181). TLC: with retryIfException() the next attempt runs and call() returns normally with the status clear (hunt_s2_interrupt_fixed_bfs5.out, 25 states; retry itself in bfs3, 14 states); with retryIfExceptionOfType(IOException) call() throws ExecutionException(InterruptedException) with the status clear although the callable never ran (hunt_s2_interrupt_narrow_bfs1.out, 12 states); attempts are counted with 0 invocations (bfs1; with two callers also spec/output/repair-r1/repair1_ctl_sharing_cir.out) and a just-completed attempt can be discarded (bfs2; the interrupt path is the part of NoDiscardedCompletion kept by RR-001, and repair round 1 also reaches it through a wrap() cancellation interrupt and with two callers: spec/output/repair-r1/repair1_ctl_s2_wrap_cancel_ndc.out, repair1_ctl_sharing_ndc.out). The timeout-path counterpart (former MC-3) was withdrawn by RR-001 as the documented timeout outcome. Contradicts Retryer.java:151-153 and 59-61. Same root cause as MC-5 and MC-6."
+    },
+    {
+      "id": "MC-5",
+      "title": "Without a time limit, an `InterruptedException` thrown by the callable on the caller thread is retried and the interrupt status is lost",
+      "source": "model-checking",
+      "scenario": "S2 (noTimeLimit) — ledger D-6",
+      "severity": "High",
+      "invariant": "InterruptPreserved",
+      "config": "MC_hunt_s2_interrupt_nolimit.cfg",
+      "counterexample": "spec/output/hunt_s2_interrupt_nolimit_bfs2.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:170",
+        "src/main/java/com/github/rholder/retry/Retryer.java:179",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:78"
+      ],
+      "summary": "With noTimeLimit the callable runs on the caller thread (AttemptTimeLimiters.java:77-78). If that thread is interrupted while the callable is in an interruptible blocking call, the callable throws InterruptedException and the status is cleared; Retryer.call records it as an ordinary failed attempt (Retryer.java:162-163) and, with a predicate that matches it, retries. TLC: attempt 2 starts after the interrupt was observed (hunt_s2_interrupt_nolimit_bfs1.out, 11 states) and call() returns normally with the status clear (hunt_s2_interrupt_nolimit_bfs2.out, 16 states), contradicting Retryer.java:151-153 and 59-61. Same catch-all as MC-4; one fix in Retryer.call covers both."
+    },
+    {
+      "id": "MC-6",
+      "title": "A `wrap()` task cancelled with `cancel(true)` / `shutdownNow()` keeps retrying forever (or returns normally), and its worker thread is never released",
+      "source": "model-checking",
+      "scenario": "S2 (wrap() on an executor) — ledger D-7",
+      "severity": "High",
+      "invariant": "InterruptedCallEventuallyExits",
+      "config": "MC_hunt_s2_live.cfg",
+      "counterexample": "spec/output/hunt_s2_live_bfs.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:195",
+        "src/main/java/com/github/rholder/retry/Retryer.java:318",
+        "src/main/java/com/github/rholder/retry/Retryer.java:179"
+      ],
+      "summary": "RetryerCallable.call just runs retryer.call on the executor thread (Retryer.java:195-197, 317-319), so an outer Future.cancel(true) or shutdownNow() reaches call() only as a thread interrupt, which MC-4/MC-5's catch-all turns into an ordinary failed attempt. TLC (LiveSpec with weak fairness on caller and pool-worker steps only) finds a lasso in which, after the cancellation interrupt is consumed by Future.get, the always-failing callable is retried forever under retryIfException() and neverStop (hunt_s2_live_bfs.out, 43 states, back to state 30); the violation persists with the attempt-counter bound raised (hunt_s2_live_cap3.out), the premise is reachable (NoInterruptDeliveredInv violated) and the control retryIfExceptionOfType(IOException) satisfies the property. Safety views: attempt 2 starts after the cancellation (hunt_s2_wrap_cancel_bfs3.out) and the cancelled task's call() returns normally with the status clear (hunt_s2_wrap_cancel_bfs6.out). The outer worker thread is never released and awaitTermination never succeeds."
+    },
+    {
+      "id": "MC-7",
+      "title": "Adding a listener to the builder while a built `Retryer` runs makes `call()` throw `ConcurrentModificationException` after the attempt executed; its outcome is lost",
+      "source": "model-checking",
+      "scenario": "S3 listener list aliased between RetryerBuilder and running Retryers — ledger D-8 (new consequence of known #48)",
+      "severity": "Medium",
+      "invariant": "DocumentedOutcomesOnly",
+      "config": "MC_hunt_s3_listeners.cfg",
+      "counterexample": "spec/output/hunt_s3_listeners_bfs1.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+        "src/main/java/com/github/rholder/retry/Retryer.java:137",
+        "src/main/java/com/github/rholder/retry/Retryer.java:166"
+      ],
+      "summary": "RetryerBuilder.build() hands the builder's own ArrayList of listeners to the Retryer (RetryerBuilder.java:40, 196), which stores it without copying (Retryer.java:137) and iterates it with a fail-fast iterator outside the attempt's try/catch (Retryer.java:166-168). If another thread calls builder.withRetryListener (ArrayList.add: modCount++) while a call is inside its listener loop, next() throws ConcurrentModificationException out of call() after the callable already ran. TLC: hunt_s3_listeners_bfs1.out (7 states) — the attempt returns a value, the iterator is created, the builder adds a listener, call() throws CME; the result is lost and the predicate and stop strategy never run (NoLostAttemptOutcome also violated); also with two callers in hunt_sharing_bfs1.out. Contradicts 'A retryer is thread-safe' (Retryer.java:39-40) and the documented outcomes (Retryer.java:146-153)."
+    },
+    {
+      "id": "MC-8",
+      "title": "With a bounded limiter executor, attempts that time out in the queue or are rejected are counted as failed attempts although the callable never ran; `wrap()` on the limiter's own pool times out every attempt",
+      "source": "model-checking",
+      "scenario": "S1/S4 executor saturation, wrap() on the limiter's pool — ledger D-4",
+      "severity": "Medium",
+      "invariant": "CountedImpliesInvokedNoStartRace",
+      "config": "MC_hunt_s4_executor.cfg",
+      "counterexample": "spec/output/hunt_s4_executor_bfs1.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:69",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:149",
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:173"
+      ],
+      "summary": "fixedTimeLimit(d, unit, executor) measures the per-attempt deadline from submit (SimpleTimeLimiter.java:149-154), so time spent waiting in a bounded executor's queue counts against the attempt, a cancelled task stays in the queue, and Retryer.call counts every limiter failure — queued timeout or RejectedExecutionException — as a failed attempt of the callable (Retryer.java:162-163) for listeners, the stop budget and RetryException. TLC: two callers sharing a Retryer on TPE(1,1,ArrayBlockingQueue(1)): the second caller's attempt times out in the queue and is counted unrun (hunt_s4_executor_bfs1.out, 9 states); executor.submit(retryer.wrap(c)) on the limiter's own one-thread pool: every attempt waits behind the RetryerCallable and times out unrun (hunt_s4_wrap_samepool_bfs1.out, 7 states; a livelock under neverStop); a call's own timed-out zombie plus another caller fill the pool, the next attempt is rejected and the call ends with RetryException counting 2 attempts with 1 invocation (hunt_s4_executor_bfs3.out).",
+      "dedup_note": "Also covers the executor-saturation part of code-review Scenario 1 (zombie attempts hold workers and cancelled tasks stay in a bounded queue) and the attribution part of Scenario 4 (queued timeouts and rejections become ExceptionAttempts at Retryer.java:162-163). Absorbs ledger row D-4: same code sites (AttemptTimeLimiters.java:69-72,93-95,105-108; SimpleTimeLimiter.java:149,164-166; Retryer.java:157-174) and same mechanism; the CountedImpliesInvokedNoStartRace counterexamples reproduce queued timeouts counted although the callable never ran, the wrap()-on-the-limiter's-own-pool livelock and a rejected attempt counted in RetryException. The bounded-queue rejection case overlaps ledger row D-10, which is absorbed into MC-9.",
+      "ledger_ids": [
+        "D-4"
+      ]
+    },
+    {
+      "id": "MC-9",
+      "title": "After the limiter's executor is shut down, `RejectedExecutionException` is recorded as the callable's failure: `call()` throws `ExecutionException` though the callable never ran, or spins through attempts that never run",
+      "source": "model-checking",
+      "scenario": "S4 attempt-outcome attribution at the limiter boundary — ledger D-10",
+      "severity": "Medium",
+      "invariant": "ExecutionExceptionMeansCallableThrewExcept29",
+      "config": "MC_hunt_s4_shutdown.cfg",
+      "counterexample": "spec/output/repair-r1/repair1_s4_shutdown_bfs2.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:171",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:149",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:69"
+      ],
+      "summary": "When the ExecutorService passed to fixedTimeLimit(d, unit, executor) has been shut down, executor.submit throws RejectedExecutionException (SimpleTimeLimiter.java:149) and Retryer.call records it as the attempt's Throwable (Retryer.java:162-163) as if the callable had thrown it. TLC: shutdown, call(), the submit is rejected and counted as attempt 1 (CountedImpliesInvokedNoStartRace, which after RR-002 still rejects a rejection by a shut-down executor: spec/output/repair-r1/repair1_ctl_s4_shutdown_cir.out, 4 states; originally hunt_s4_shutdown_bfs1.out); with retryIfExceptionOfType(IOException) call() throws ExecutionException(RejectedExecutionException) (spec/output/repair-r1/repair1_s4_shutdown_bfs2.out, 8 states, regenerated on the repaired spec; originally hunt_s4_shutdown_bfs2.out), documented only for 'the given callable throws an exception' (Retryer.java:148-150) although the callable never ran. With retryIfException()/retryIfRuntimeException() the rejection is retried as a callable failure, a busy loop of attempts that never run under neverStop and noWait."
+    },
+    {
+      "id": "MC-10",
+      "title": "A negative computed sleep makes `call()` throw `IllegalArgumentException` — an undocumented outcome that also pre-empts the `RetryException` owed to an interrupted thread",
+      "source": "model-checking",
+      "scenario": "S5 post-attempt decision steps (composition of the block step with D-16/D-17)",
+      "severity": "Medium",
+      "invariant": "DocumentedOutcomesOnly",
+      "config": "MC_hunt_s5_decision.cfg",
+      "counterexample": "spec/output/hunt_s5_decision_bfs3.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:176",
+        "src/main/java/com/github/rholder/retry/Retryer.java:178",
+        "src/main/java/com/github/rholder/retry/Retryer.java:179",
+        "src/main/java/com/github/rholder/retry/BlockStrategies.java:46",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:225",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:390"
+      ],
+      "summary": "Retryer.call passes waitStrategy.computeSleepTime(attempt) to the block strategy unvalidated and catches only InterruptedException (Retryer.java:176-182); ThreadSleepStrategy calls Thread.sleep directly (BlockStrategies.java:46), which throws IllegalArgumentException for a negative value before it checks the interrupt status. Negative sleeps come from the unchecked join sum (WaitStrategies.java:225-230, 365-371) and exceptionWait's unclamped user value (:386-394) (code-review ledger D-16/D-17). TLC: the IAE escapes call() after a failed attempt (hunt_s5_decision_bfs1.out, 9 states, DocumentedOutcomesOnly) and, when the thread was interrupted during the listener loop, replaces the documented RetryException with interrupt status set (hunt_s5_decision_bfs3.out, 10 states, MCHunt.tla InterruptedCallThrowsRetryException), losing the last failure and attempt count."
+    },
+    {
+      "id": "MC-11",
+      "title": "(Known #48) A listener added to the builder after `build()` is notified by an already-built Retryer, including by a call already in flight",
+      "source": "model-checking",
+      "scenario": "S3 — ledger D-9; KNOWN upstream issue #48 (open, unfixed)",
+      "severity": "Medium",
+      "invariant": "ListenersFixedAtBuild",
+      "config": "MC_hunt_s3_listeners.cfg",
+      "counterexample": "spec/output/hunt_s3_listeners_bfs2.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+        "src/main/java/com/github/rholder/retry/Retryer.java:137",
+        "src/main/java/com/github/rholder/retry/Retryer.java:166"
+      ],
+      "summary": "KNOWN: upstream issue #48 (open). Because build() shares the builder's ArrayList with every Retryer it built (RetryerBuilder.java:40, 196; Retryer.java:137), a withRetryListener call after build() changes the listener set of existing Retryers. TLC reproduces it in flight: the builder completes an add while attempt 1's callable runs, and the running call notifies both the configured listener and the new one (hunt_s3_listeners_bfs2.out, 9 states); with two callers the add can straddle the iterator creation so no CME occurs and the new listener is still notified (hunt_sharing_bfs4.out). Same root cause as MC-7; included to mark the known issue as reproduced, not as a new defect."
+    },
+    {
+      "id": "MC-12",
+      "title": "(Known #29) The first attempt timeout ends retrying with `ExecutionException(UncheckedTimeoutException)` unless the predicate matches Guava's exception",
+      "source": "model-checking",
+      "scenario": "S4 attribution at the limiter boundary — ledger D-14; KNOWN upstream issue #29 (open; still present in 2.0.0)",
+      "severity": "Medium",
+      "invariant": "TimeoutDoesNotEndCallWithExecutionException",
+      "config": "MC_hunt_s4_shutdown.cfg",
+      "counterexample": "spec/output/hunt_s4_shutdown_k29.out",
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162",
+        "src/main/java/com/github/rholder/retry/Retryer.java:171",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:166"
+      ],
+      "summary": "KNOWN: upstream issue #29 (open, acknowledged by the maintainer, reported against 1.0.6); the guidance asks whether 2.0.0 still has it — it does. A per-attempt timeout becomes an ordinary attempt failure (Retryer.java:162-163) judged by the user's predicate, so with a predicate that does not match Guava's UncheckedTimeoutException (e.g. retryIfExceptionOfType(IOException), or no retryIf at all) the first timeout ends call() with ExecutionException(UncheckedTimeoutException) (Retryer.java:170-171) without consulting the stop or wait strategy, although the limit is documented as per attempt (RetryerBuilder.java:113). TLC: hunt_s4_shutdown_k29.out (11 states, derived cfg hunt/s4_shutdown-k29.cfg on MCHunt.tla)."
+    },
+    {
+      "id": "CR-D-11",
+      "title": "`fixedTimeLimit` accepts a zero or negative duration; every attempt then fails with `IllegalArgumentException` before the callable runs and is treated as a callable failure",
+      "source": "code-review",
+      "scenario": "4 (attempt-outcome attribution at the time-limiter boundary); ledger row D-11, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:57-60",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:69-72",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:97-103",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:147",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:317-319"
+      ],
+      "summary": "AttemptTimeLimiters.fixedTimeLimit(duration, unit[, executor]) (AttemptTimeLimiters.java:57-60, 69-72) and the FixedAttemptTimeLimit constructor (:97-103) never validate the duration, so fixedTimeLimit(0 or negative, unit) is accepted when the Retryer is built. Every attempt then fails inside Guava's SimpleTimeLimiter.callWithTimeout at checkPositiveTimeout (SimpleTimeLimiter.java:147, 317-319) with IllegalArgumentException(\"timeout must be positive\") before the task is submitted, so the callable never runs. Retryer.call records that exception as the callable's failure (Retryer.java:162-163): under a predicate that matches it and neverStop the retryer busy-loops through attempts that never run, otherwise call() ends with ExecutionException(IllegalArgumentException). The analysis probe timelimit/P5Duration measured about 25,000 attempts in 100 ms with 0 invocations for durations 0 and -1, while other factories validate eagerly (WaitStrategies.java:237, StopStrategies.java:103).",
+      "dedup_note": "Same attribution catch-all (Retryer.java:162-163) as MC-8, MC-9 and MC-12, but a different trigger and code site (the unvalidated duration reaching SimpleTimeLimiter.java:147) that the model did not include; no MC counterexample reproduces it.",
+      "ledger_ids": [
+        "D-11"
+      ]
+    },
+    {
+      "id": "CR-D-12",
+      "title": "Under `fixedTimeLimit`, Guava's `throwCause(e, true)` appends the caller's stack to the callable's exception on every attempt, so a reused exception's stack trace grows without bound",
+      "source": "code-review",
+      "scenario": "4 (attempt-outcome attribution at the time-limiter boundary); ledger row D-12, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:162-163",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:251-260"
+      ],
+      "summary": "FixedAttemptTimeLimit.call uses Guava's deprecated four-argument callWithTimeout (AttemptTimeLimiters.java:107), which unwraps a callable failure with throwCause(e, combineStackTraces=true) (SimpleTimeLimiter.java:162-163) and mutates the user's exception by concatenating the caller's stack onto it with setStackTrace (:251-260). When the callable throws a reused exception instance (a static or cached exception with a writable stack trace) and attempts repeat, its stack trace grows by the caller's stack on every attempt without bound, costing memory and log volume. The analysis probe timelimit/P6StackGrowth measured growth from 1 frame to 66,667 frames over 11,111 attempts (about 6 frames per attempt) with fixedTimeLimit, while the same callable without a time limit stayed at 1 frame.",
+      "ledger_ids": [
+        "D-12"
+      ]
+    },
+    {
+      "id": "CR-D-13",
+      "title": "Under `fixedTimeLimit`, a callable `Throwable` that is neither `Exception` nor `Error` reaches predicates still wrapped in `ExecutionException`, so `retryIfExceptionOfType` stops matching",
+      "source": "code-review",
+      "scenario": "4 (attempt-outcome attribution at the time-limiter boundary); ledger row D-13, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:267-268",
+        "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:77-79",
+        "src/main/java/com/github/rholder/retry/RetryerBuilder.java:208-213"
+      ],
+      "summary": "When the callable throws a Throwable that is neither an Exception nor an Error (a sneaky throw), Guava's throwCause rethrows the outer ExecutionException instead of the cause (SimpleTimeLimiter.java:267-268), so under fixedTimeLimit the attempt's cause is ExecutionException(t), whereas under noTimeLimit (AttemptTimeLimiters.java:77-79) it is t itself. ExceptionClassPredicate matches on attempt.getExceptionCause().getClass() (RetryerBuilder.java:208-213), so retryIfExceptionOfType(T.class) stops matching once a time limit is configured: the call ends after one attempt with ExecutionException(ExecutionException(t)), while the same configuration without a time limit retries. The analysis probe timelimit/P7Weird showed 3 attempts then RetryException(cause=t) without a limit and 1 attempt then ExecutionException(ExecutionException(t)) with fixedTimeLimit, on JDK 11 and 21.",
+      "ledger_ids": [
+        "D-13"
+      ]
+    },
+    {
+      "id": "CR-D-15",
+      "title": "(Known #67) `Retryer.call` catches an `Error` thrown by the callable as an ordinary attempt outcome, wraps it in `ExecutionException` and may retry it",
+      "source": "code-review",
+      "scenario": "4 (attempt-outcome attribution at the time-limiter boundary); ledger row D-15, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:162-164",
+        "src/main/java/com/github/rholder/retry/Retryer.java:253-257",
+        "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:264-265"
+      ],
+      "summary": "Retryer.call catches every Throwable from the attempt (catch (Throwable t), Retryer.java:162-164), so an Error thrown by the callable (OutOfMemoryError, StackOverflowError, AssertionError, ...), with or without a time limit (Guava rethrows it at SimpleTimeLimiter.java:264-265), becomes an ordinary ExceptionAttempt. The Error is delivered to listeners, wrapped in a checked ExecutionException (Retryer.java:253-257; call() documents ExecutionException only for 'the given callable throws an exception', Retryer.java:148-150), and retried when a predicate accepts Throwable. The analysis probe strategies/OutcomeProbe (cases 1-2) showed an AssertionError surfacing as ExecutionException after 1 attempt under retryIfException() and as RetryException after 3 attempts under retryIfExceptionOfType(Throwable.class). The ledger marks this as known upstream issue #67 (open, unanswered).",
+      "dedup_note": "The model has an Error-throwing callable mode but no property on the Error policy (brief-coverage: '#67 = Err mode classified as an attempt (policy, CR)'), so no MC candidate covers this row.",
+      "ledger_ids": [
+        "D-15"
+      ]
+    },
+    {
+      "id": "CR-D-16",
+      "title": "`WaitStrategies.join` sums component sleeps without overflow protection; a total of 2^63 ms or more wraps negative and `call()` throws `IllegalArgumentException`",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-16, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:225-230",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:365-371",
+        "src/main/java/com/github/rholder/retry/BlockStrategies.java:46",
+        "src/main/java/com/github/rholder/retry/Retryer.java:176-182"
+      ],
+      "summary": "CompositeWaitStrategy.computeSleepTime, built by join (WaitStrategies.java:225-230, 365-371), adds the component sleeps with plain long addition, so components summing to 2^63 ms or more wrap negative, e.g. join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)), a component whose TimeUnit.toMillis saturates such as fixedWait(Long.MAX_VALUE, DAYS), or join(exceptionWait(X.class, e -> Long.MAX_VALUE), randomWait(1, SECONDS)). Retryer.call passes the value unvalidated to the block strategy (Retryer.java:176-182), and Thread.sleep(negative) in ThreadSleepStrategy (BlockStrategies.java:46) throws IllegalArgumentException(\"timeout value is negative\"), which escapes call() because only InterruptedException is caught: an undocumented outcome that loses the last failure and the attempt count, although join is documented to wait for the total of its strategies (WaitStrategies.java:220). On an interrupted thread the IAE also pre-empts the documented RetryException with the interrupt status set, because Thread.sleep checks the sign before the interrupt. Analysis probes strategies/EscapeProbe cases (a), (d), (e) and interrupt/IntProbe2 H2.6a/b reproduced both.",
+      "dedup_note": "MC-10 models the downstream half of this row (an abstract Negative sleep escaping call() as IllegalArgumentException and pre-empting RetryException) but not the join arithmetic that produces the value, so the row is not absorbed: its defect site is the unchecked sum (WaitStrategies.java:365-371), MC-10's is the unvalidated block call in Retryer.call.",
+      "ledger_ids": [
+        "D-16"
+      ]
+    },
+    {
+      "id": "CR-D-17",
+      "title": "`exceptionWait` returns the user function's negative value unclamped; `Thread.sleep` then throws `IllegalArgumentException` out of `call()`",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-17, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:211-216",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:386-394"
+      ],
+      "summary": "ExceptionWaitStrategy.computeSleepTime, built by exceptionWait (WaitStrategies.java:211-216, 386-394), returns function.apply(cause) without clamping, unlike the other built-ins, which clamp to >= 0 (WaitStrategies.java:283, 308, 330-334). A function such as retryAtMillis - now returns a negative value once the server-supplied retry time has passed; Retryer.call hands it unvalidated to ThreadSleepStrategy (Retryer.java:176-182, BlockStrategies.java:46), Thread.sleep throws IllegalArgumentException, and it escapes call() after the attempt as an undocumented outcome. Inside join the negative value also lowers the total wait. The analysis probe strategies/EscapeProbe case (b) showed the IAE escaping after 1 invocation.",
+      "dedup_note": "MC-10 models the downstream IAE escape with an abstract Negative sleep but not the exceptionWait pass-through, so the row is not absorbed: its defect site is ExceptionWaitStrategy (WaitStrategies.java:386-394).",
+      "ledger_ids": [
+        "D-17"
+      ]
+    },
+    {
+      "id": "CR-D-18",
+      "title": "`exceptionWait` with a function that returns `null` makes `call()` throw `NullPointerException` from auto-unboxing",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-18, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:390"
+      ],
+      "summary": "ExceptionWaitStrategy.computeSleepTime returns function.apply((T) cause), a Long, as a primitive long (WaitStrategies.java:390), so an exceptionWait(E.class, fn) whose fn returns null (permitted by Guava 22's @Nullable Function.apply) throws NullPointerException during auto-unboxing. The wait is computed outside the attempt's try/catch (Retryer.java:176), so the NPE escapes call() after the attempt has run, an outcome not among those documented for call() (Retryer.java:146-153). The analysis probe strategies/EscapeProbe case (c) reproduced it.",
+      "dedup_note": "Not covered by MC-10, whose counterexample concerns a negative sleep reaching Thread.sleep, not an exception raised inside computeSleepTime.",
+      "ledger_ids": [
+        "D-18"
+      ]
+    },
+    {
+      "id": "CR-D-19",
+      "title": "The `int` attempt counter in `Retryer.call` wraps after 2^31-1 attempts: attempt numbers become non-positive, `RetryException` reports the count modulo 2^32, and growing waits collapse to 0",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-19, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:157",
+        "src/main/java/com/github/rholder/retry/Retryer.java:161",
+        "src/main/java/com/github/rholder/retry/Retryer.java:163",
+        "src/main/java/com/github/rholder/retry/Retryer.java:174",
+        "src/main/java/com/github/rholder/retry/Retryer.java:181",
+        "src/main/java/com/github/rholder/retry/RetryException.java:34",
+        "src/main/java/com/github/rholder/retry/RetryException.java:44-46",
+        "src/main/java/com/github/rholder/retry/Attempt.java:73-78"
+      ],
+      "summary": "Retryer.call counts attempts in an int (for (int attemptNumber = 1; ; attemptNumber++), Retryer.java:157) and RetryException stores the count as an int (RetryException.java:34, 44-46), although Attempt.getAttemptNumber() is a long documented as 'the number, starting from 1, of this attempt' (Attempt.java:73-78). Under neverStop, or stopAfterDelay with zero waits, more than 2^31-1 attempts in one call() wrap the counter to Integer.MIN_VALUE; with the builder defaults (neverStop, noWait, Thread.sleep(0)) the analysis measured about 6.1e5 attempts/s, so roughly 59 minutes. After the wrap, listeners and strategies see attempt numbers <= 0, RetryException.getNumberOfFailedAttempts() reports the count modulo 2^32 (4,439,235,284 attempts reported as 144,267,988), and exponential, Fibonacci and incrementing waits collapse to 0. Analysis probes strategies/WrapProbe, strategies/RateProbe and archaeology-repro/AttemptOverflow.",
+      "ledger_ids": [
+        "D-19"
+      ]
+    },
+    {
+      "id": "CR-D-20",
+      "title": "`incrementingWait` overflows `initial + increment * (n - 1)` for increments near `Long.MAX_VALUE`, alternating sleeps with immediate retries",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-20, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:108-116",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:273-284"
+      ],
+      "summary": "IncrementingWaitStrategy.computeSleepTime computes initialSleepTime + increment * (attemptNumber - 1) in unchecked long arithmetic and only clamps negative results to 0 (WaitStrategies.java:281-283); the constructor validates only initialSleepTime >= 0 (:275), and the factory converts both values with saturating TimeUnit.toMillis (:108-116). With an increment within initialSleepTime of Long.MAX_VALUE, e.g. incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS) or the saturating incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS), the product overflows and the requested sleeps are 1000, 0, 998, 0, 996, 0, ... instead of incrementing, alternating with immediate retries. The ledger notes extreme parameters only (analysis probe strategies/IncProbe).",
+      "ledger_ids": [
+        "D-20"
+      ]
+    },
+    {
+      "id": "CR-D-21",
+      "title": "`fibonacciWait` overflow wraps to a positive value that the guard misses, so the sleep drops below the cap instead of growing up to the maximum",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-21, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:326-335",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:337-352"
+      ],
+      "summary": "FibonacciWaitStrategy computes fib(attemptNumber) and multiplier * fib in unchecked long arithmetic (WaitStrategies.java:326-352) and catches only overflows that land negative or above the cap (result > maximumWait || result < 0L, :330). With the uncapped fibonacciWait() (maximum Long.MAX_VALUE, :166-168) at attempt 94 or later, or fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS) at attempt 80 or later, the value wraps to a positive number below the cap (n=93 gives Long.MAX_VALUE, n=94 gives 1,293,530,146,158,671,551), so the sleep decreases instead of growing 'up to the maximumTime' (WaitStrategies.java:172). The ledger notes this is reachable only with a block strategy that does not really sleep or when the strategy is evaluated directly; realistic capped settings (e.g. 100 ms multiplier, 2 min cap) showed no decrease for n up to 1e8 (analysis probe strategies/FibScan).",
+      "ledger_ids": [
+        "D-21"
+      ]
+    },
+    {
+      "id": "CR-D-22",
+      "title": "`stopAfterDelay(d, unit)` truncates the delay to whole milliseconds, so a sub-millisecond limit becomes 0 ms and retrying stops after the first failed attempt",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic); ledger row D-22, code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/StopStrategies.java:85-88",
+        "src/main/java/com/github/rholder/retry/StopStrategies.java:122-125"
+      ],
+      "summary": "stopAfterDelay(duration, timeUnit) accepts any TimeUnit but converts the delay with the truncating timeUnit.toMillis (StopStrategies.java:85-88), and StopAfterDelayStrategy stops once getDelaySinceFirstAttempt() >= maxDelay (:122-125). With a sub-millisecond component, e.g. stopAfterDelay(500, MICROSECONDS), the limit becomes 0 ms, so retrying stops after the first failed attempt although the delay has not 'exceeded' 500 us as documented (:75-79); in general the limit is shortened by up to 0.999 ms. The interfaces document millisecond resolution for waits and delays (WaitStrategy.java:27, Attempt.java:81-83); the analysis report lists this row among the extreme-parameter or weak ones (analysis probe strategies/StrategyMath).",
+      "ledger_ids": [
+        "D-22"
+      ]
+    },
+    {
+      "id": "CR-D-23",
+      "title": "`RetryException` is `Serializable` but holds a non-transient `Attempt` whose implementations are not serializable, so serializing it fails",
+      "source": "code-review",
+      "scenario": "none (ledger row D-23 is not part of a brief Scenario); code review only, not model-checked",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/RetryException.java:32",
+        "src/main/java/com/github/rholder/retry/RetryException.java:35",
+        "src/main/java/com/github/rholder/retry/Retryer.java:199-200",
+        "src/main/java/com/github/rholder/retry/Retryer.java:247-248"
+      ],
+      "summary": "RetryException extends Exception and is therefore Serializable (RetryException.java:32), but it keeps the last attempt in the non-transient field Attempt<?> lastFailedAttempt (:35), whose implementations Retryer.ResultAttempt and Retryer.ExceptionAttempt (Retryer.java:199-200, 247-248) are not serializable. Any Java serialization of a RetryException thrown by call() (RMI, remote task frameworks, session replication, ObjectOutputStream.writeObject) fails with NotSerializableException: com.github.rholder.retry.Retryer$ExceptionAttempt (or ResultAttempt). The analysis probe main/SerProbe reproduced the exception. The ledger records it as not reported upstream but reported against the fork rhuffman/re-retrying (#40, open).",
+      "ledger_ids": [
+        "D-23"
+      ]
+    },
+    {
+      "id": "CR-5",
+      "title": "Code-review Scenario 5: post-attempt decision steps run outside the attempt's try/catch and built-in wait/stop arithmetic is unchecked",
+      "source": "code-review",
+      "scenario": "5 (post-attempt decision steps: undocumented exits and wait/stop arithmetic)",
+      "severity": "Medium",
+      "invariant": null,
+      "config": null,
+      "counterexample": null,
+      "affected_code": [
+        "src/main/java/com/github/rholder/retry/Retryer.java:157",
+        "src/main/java/com/github/rholder/retry/Retryer.java:166-182",
+        "src/main/java/com/github/rholder/retry/BlockStrategies.java:46",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:225-230",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:365-371",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:386-394",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:273-284",
+        "src/main/java/com/github/rholder/retry/WaitStrategies.java:326-352",
+        "src/main/java/com/github/rholder/retry/StopStrategies.java:85-88",
+        "src/main/java/com/github/rholder/retry/RetryException.java:34"
+      ],
+      "summary": "Mechanism hypothesis, model-checked only in MC-10's block-step composition: in Retryer.call the listener loop, rejection predicate, stop check, wait computation and block run outside the attempt's try/catch (Retryer.java:166-182), and nothing validates the computed sleep before Thread.sleep (BlockStrategies.java:46). Built-in arithmetic (the join sum, WaitStrategies.java:225-230 and 365-371; the exceptionWait pass-through, :386-394; the int attempt counter, Retryer.java:157 and RetryException.java:34; incrementing and Fibonacci overflow, WaitStrategies.java:273-284 and 326-352; millisecond truncation in stopAfterDelay, StopStrategies.java:85-88) can produce values that end call() with an undocumented unchecked exception or a wrong count, against the outcomes documented at Retryer.java:146-153 and the strategy factories' Javadoc. The analysis refuted RandomWait's Math.abs(Long.MIN_VALUE) case, exponential-wait overflow and stopAfterAttempt boundary errors in the same area. Ledger rows D-16, D-17, D-18, D-19, D-20, D-21, D-22 are confirmed as separate candidates; look for other defects in this mechanism, and report plainly if there are none.",
+      "dedup_note": "Only partly represented by MC: MC-10 covers the block-step composition (an abstract negative sleep escaping call() as IllegalArgumentException and pre-empting RetryException) and MC-7 the listener loop's ConcurrentModificationException, but the wait/stop arithmetic that is this Scenario's main mechanism was kept out of the model by design (brief Scenario 5: 'do not model the arithmetic or a 2^31 counter'; brief section 3.2), so the Scenario stays a candidate. Scenarios 1-4 are covered by MC candidates (see the dedup_note of MC-1, MC-2, MC-3, MC-4, MC-5, MC-6, MC-7, MC-8, MC-9, MC-11 and MC-12) and have no separate candidate.",
+      "ledger_ids": [
+        "D-16",
+        "D-17",
+        "D-18",
+        "D-19",
+        "D-20",
+        "D-21",
+        "D-22"
+      ]
+    }
+  ],
+  "ledger_dispositions": [
+    {
+      "id": "D-1",
+      "disposition": "absorbed",
+      "into": "MC-1",
+      "reason": "Same code sites (AttemptTimeLimiters.java:105-108, Retryer.java:157-184, SimpleTimeLimiter.java:155-157,164-166) and same mechanism (cancel without waiting for the worker): MC-1's SequentialAttempts and NoActivityAfterOutcome counterexamples (hunt_s1_overlap_bfs1.out, hunt_s1_overlap_bfs2.out; caller-interrupt trigger hunt_s2_interrupt_narrow_bfs3.out) reproduce the overlapping attempts, the activity after call() ended and the dropped late outcome."
+    },
+    {
+      "id": "D-2",
+      "disposition": "absorbed",
+      "into": "MC-3",
+      "reason": "Same code sites (SimpleTimeLimiter.java:154,164-166; AttemptTimeLimiters.java:107) and same mechanism (the false result of cancel(true) is ignored): MC-3's NoDiscardedCompletion counterexample (hunt_s1_timelimit_bfs1.out) is the row's race, in which a task that reached NORMAL is recorded as a timeout."
+    },
+    {
+      "id": "D-3",
+      "disposition": "absorbed",
+      "into": "MC-2",
+      "reason": "Same code sites (AttemptTimeLimiters.java:57-60,89-91; SimpleTimeLimiter.java:81-84) and same mechanism (private non-daemon cached pool whose threads stay pinned by uninterruptible timed-out attempts): MC-2's StuckBodiesPerCallAtMostOne and StuckBodiesEndWithCall counterexamples (hunt_s1_overlap_d3b.out, hunt_s1_overlap_d3a.out) reproduce one pinned thread per timed-out attempt and threads outliving call(); the JVM-exit consequence rests on code inspection and the analysis probe, as noted on MC-2."
+    },
+    {
+      "id": "D-4",
+      "disposition": "absorbed",
+      "into": "MC-8",
+      "reason": "Same code sites (AttemptTimeLimiters.java:69-72,93-95,105-108; SimpleTimeLimiter.java:149,164-166; Retryer.java:157-174) and same mechanism (a bounded limiter executor held by zombie attempts, other callers or wrap() tasks): MC-8's CountedImpliesInvokedNoStartRace counterexamples (hunt_s4_executor_bfs1.out, hunt_s4_wrap_samepool_bfs1.out, hunt_s4_executor_bfs3.out) reproduce queued timeouts and rejections counted as attempts that never ran, and the wrap()-on-the-same-pool livelock."
+    },
+    {
+      "id": "D-5",
+      "disposition": "absorbed",
+      "into": "MC-4",
+      "reason": "Same code sites (Retryer.java:159-164,170-174; AttemptTimeLimiters.java:107; SimpleTimeLimiter.java:152-158) and same mechanism (Future.get consumes the caller's interrupt and the catch-all records it as a failed attempt): MC-4's counterexamples (hunt_s2_interrupt_fixed_bfs1/2/3/5.out, hunt_s2_interrupt_narrow_bfs1.out) reproduce the retry, the normal return and the ExecutionException(InterruptedException) exit with the status clear, the attempt counted without the callable running and the discarded finished attempt."
+    },
+    {
+      "id": "D-6",
+      "disposition": "absorbed",
+      "into": "MC-5",
+      "reason": "Same code sites (Retryer.java:159-164,170-174; AttemptTimeLimiters.java:77-79) and same mechanism (the callable's InterruptedException on the caller thread caught as an ordinary failure): MC-5's counterexamples (hunt_s2_interrupt_nolimit_bfs1.out, hunt_s2_interrupt_nolimit_bfs2.out) reproduce the retry and the normal return with the status clear."
+    },
+    {
+      "id": "D-7",
+      "disposition": "absorbed",
+      "into": "MC-6",
+      "reason": "Same code sites (Retryer.java:195-197,301-320,159-164,170-183) and same mechanism (a wrap() task's cancellation arrives only as an interrupt that the catch-all consumes): MC-6's InterruptedCallEventuallyExits lasso (hunt_s2_live_bfs.out) and safety traces (hunt_s2_wrap_cancel_bfs3.out, hunt_s2_wrap_cancel_bfs6.out) reproduce endless retrying after cancel(true) and the never-released worker."
+    },
+    {
+      "id": "D-8",
+      "disposition": "absorbed",
+      "into": "MC-7",
+      "reason": "Same code sites (RetryerBuilder.java:40,61-65,196; Retryer.java:52,137,166-168) and same mechanism (the builder's ArrayList is aliased and iterated fail-fast outside the attempt's try/catch): MC-7's DocumentedOutcomesOnly / NoLostAttemptOutcome counterexample (hunt_s3_listeners_bfs1.out) reproduces the CME after the attempt ran, with predicate and stop skipped. The row's JMM stale/null-read note lies outside the sequentially consistent model and is flagged in MC-7's dedup_note."
+    },
+    {
+      "id": "D-9",
+      "disposition": "absorbed",
+      "into": "MC-11",
+      "reason": "Same code sites (RetryerBuilder.java:40,63,196; Retryer.java:137,166-168) and same mechanism (the known #48 aliasing): MC-11's ListenersFixedAtBuild counterexample (hunt_s3_listeners_bfs2.out) reproduces a running call notifying a listener added after build()."
+    },
+    {
+      "id": "D-10",
+      "disposition": "absorbed",
+      "into": "MC-9",
+      "reason": "Same code sites (SimpleTimeLimiter.java:149; Retryer.java:162-163,170-174) and same mechanism (the RejectedExecutionException from submit is recorded as the callable's failure): MC-9's counterexamples (hunt_s4_shutdown_bfs1.out, hunt_s4_shutdown_bfs2.out) reproduce the rejected attempt being counted and ExecutionException(RejectedExecutionException) although the callable never ran; the bounded-queue rejection trigger also appears in MC-8 (hunt_s4_executor_bfs3.out)."
+    },
+    {
+      "id": "D-14",
+      "disposition": "absorbed",
+      "into": "MC-12",
+      "reason": "Same code sites (SimpleTimeLimiter.java:164-166; Retryer.java:162-163,170-172) and same mechanism (known #29: a timeout is judged by the user's predicate like a callable failure): MC-12's TimeoutDoesNotEndCallWithExecutionException counterexample (hunt_s4_shutdown_k29.out) reproduces the first timeout ending call() with ExecutionException(UncheckedTimeoutException)."
+    }
+  ]
+}

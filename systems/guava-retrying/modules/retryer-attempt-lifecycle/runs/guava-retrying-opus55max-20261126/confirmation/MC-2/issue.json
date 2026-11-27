@@ -1,0 +1,79 @@
+{
+  "id": "MC-2",
+  "title": "fixedTimeLimit(d, unit): a timed-out attempt that ignores interrupts pins a non-daemon pool thread forever; each retry pins another and the JVM cannot exit",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "The two-argument AttemptTimeLimiters.fixedTimeLimit creates new SimpleTimeLimiter(), i.e. a private Executors.newCachedThreadPool() (unbounded, non-daemon threads, no shutdown path, not reachable through the API). On timeout SimpleTimeLimiter.callWithTimeout only calls future.cancel(true), which sets the worker's interrupt flag but cannot stop a body that ignores interrupts, and Retryer.call immediately submits the next attempt, which the cached pool runs on a new thread because the old one is still busy.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit(d, unit) and retryIfException()/retryIfRuntimeException() calls a callable that blocks in an operation that ignores Thread.interrupt() (a java.net.Socket read without SO_TIMEOUT against a peer that accepts but never answers, or entering a monitor held by a hung thread); every attempt times out.",
+  "consequence": "Each timed-out attempt permanently pins one non-daemon pool thread: one call() with 2 attempts leaves 2 stuck threads; call() can return 42 while attempt 1 still runs; under the default neverStop the pinned threads grow linearly (100 after 5 s at a 50 ms limit) until thread creation fails and call() throws ExecutionException(OutOfMemoryError: unable to create native thread); after main() returns the JVM does not exit (still alive 95 s later, beyond the 60 s keep-alive behind issue #92).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:57",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:90",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "src/main/java/com/github/rholder/retry/Retryer.java:160",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:83",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:165"
+  ],
+  "actions": [
+    "MCSubmitNewWorker",
+    "MCGetTimeout",
+    "MCBodyStart",
+    "MCCancelDoInterrupt",
+    "MCGetReturn",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "StuckBodiesPerCallAtMostOne",
+    "StuckBodiesEndWithCall"
+  ],
+  "premises": [
+    "The callable is arbitrary user code that may block in an operation that ignores Thread.interrupt() (classic socket read without timeout, monitor entry, swallowed InterruptedException).",
+    "Built and run against Guava 22.0: SimpleTimeLimiter() delegates to Executors.newCachedThreadPool() (SimpleTimeLimiter.java:81-84) and callWithTimeout reacts to a timeout only with future.cancel(true) (SimpleTimeLimiter.java:164-166).",
+    "JDK Executors.newCachedThreadPool() creates non-daemon threads with an unbounded maximum pool size; its 60 s keep-alive reaps only idle threads.",
+    "Timeouts are retried only when the rejection predicate accepts UncheckedTimeoutException (retryIfException/retryIfRuntimeException); without that each call() pins at most one thread, but repeated calls still accumulate pinned threads.",
+    "Scope is the 2-argument fixedTimeLimit overload; with the 3-argument overload a user-supplied daemon pool avoids the JVM-exit hang but not the per-attempt thread growth."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiter.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "                    blockStrategy.block(sleepTime);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_overlap.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_timelimit.cfg"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-2/investigation.md",
+    "repro/test_bugMC-2_stuck_attempt_thread_leak.sh",
+    "repro/MC-2.log",
+    "repro/MC-2.run2.log",
+    "spec/output/hunt_s1_overlap_d3b.out",
+    "spec/output/hunt_s1_overlap_d3a.out",
+    "repro/MC-2.r1.log",
+    "spec/output/repair-r1/repair1_s1_timelimit_d3b.out",
+    "spec/output/repair-r1/repair1_s1_timelimit_d3a.out"
+  ]
+}

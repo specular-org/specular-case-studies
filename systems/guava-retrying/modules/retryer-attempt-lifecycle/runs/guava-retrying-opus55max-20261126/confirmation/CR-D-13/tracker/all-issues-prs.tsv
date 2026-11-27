@@ -1,0 +1,106 @@
+107	closed	PR	2026-09-05	2026-09-05	Modernize
+106	open	ISSUE	2024-12-31		Caused by: java.lang.ClassNotFoundException: com.github.rholder.retry.RetryerBuilder
+105	open	PR	2023-03-28		Fix ## titles in README
+104	open	ISSUE	2022-08-02		Failed to collect dependencies at com.github.rholder:guava-retrying:jar:2.0.0
+103	closed	PR	2022-07-30	2022-07-30	Upgradejdk8
+102	open	ISSUE	2022-01-13		Feature Request: remove final modifier from com.github.rholder.retry.Retryer
+101	open	PR	2021-09-29		Not calling Thread.sleep() if sleepTime is Zero #1
+100	open	ISSUE	2021-09-07		Since this project has not been maintained for a long time, I fork this project and fix the problem
+99	open	PR	2021-06-30		Printing error when the number of retries is 0
+98	open	PR	2020-10-20		Fix StopStrategies&StopStrategies will throw unformatted message
+97	open	ISSUE	2020-10-20		Bug: StopStrategies&StopStrategies will throw unformatted message
+96	closed	ISSUE	2020-08-15	2020-12-02	doubts about SimpleTimeLimiter has private Constructor，but FixedAttemptTimeLimit new it？
+95	open	PR	2020-07-10		Include Full Jitter BackOff support, fixing new Guava compatibility issues and update Gradle to 4.8.1
+94	open	ISSUE	2020-04-16		The problem with 'AttemptTimeLimiters.fixedTimeLimit'
+93	open	ISSUE	2019-12-16		WaitStrategies documentation should mention milliseconds
+92	open	ISSUE	2019-11-19		When I run demo , when successNum coming my process can not exit immediately
+91	open	PR	2019-10-30		Fix headings in README.md
+90	open	PR	2019-08-02		update headers to be more readable
+89	open	PR	2019-03-28		Patch 1
+88	open	PR	2018-08-28		update README and add spaces after headings to fix markdown rendering
+87	open	ISSUE	2018-07-31		When i should use Fibonacci WaitStrategy
+86	open	ISSUE	2018-06-15		Initial wait time in an exponential retry strategy.
+84	closed	PR	2017-12-07	2026-09-20	minor changes to README to improve rendered formatting
+83	closed	PR	2017-10-29	2017-10-29	first attempt
+82	closed	PR	2017-09-26	2017-09-26	Fix dependency on Guava.
+81	open	ISSUE	2017-09-26		Project appears to be dead: it has been forked to rhuffman/re-retrying
+80	closed	PR	2017-08-18	2017-08-18	Add pom and blazar
+79	open	PR	2017-07-25		Update README.md doc
+78	closed	PR	2017-07-24	2023-04-18	Make ExceptionAttempt and ResultAttempt public
+77	open	PR	2017-07-11		Add type to RetryListener class
+76	open	ISSUE	2017-07-05		RetryerBuilder having protected constructor
+75	open	PR	2017-06-23		jsr305 should be an optional dependency
+74	open	ISSUE	2017-06-22		artifact has a compile time dependency on jsr305
+73	open	PR	2017-03-23		add retrying of a Runnable
+72	open	ISSUE	2017-01-27		Is there a way to do this on something that is not a callable?
+71	closed	ISSUE	2017-01-11	2018-01-17	is there a way to make it log what it's doing? 
+70	open	ISSUE	2017-01-05		./gradlew build on macOS Sierra with JDK 1.8 throwing a Java compile error
+69	open	ISSUE	2016-12-31		Could I build the Retryer with different executors?
+68	closed	PR	2016-12-21	2016-12-21	57 lock version
+67	open	ISSUE	2016-11-15		Retryer.call should not catch Errors like OOME
+66	open	ISSUE	2016-10-10		The lib is crashing when used in Ratpack (guava-20.0rc1)
+65	open	ISSUE	2016-10-03		Any interest in a Future's retryer?
+64	open	PR	2016-10-03		Changing the version range for guava to be strictly maven compatible
+63	open	ISSUE	2016-08-10		Why WaitStrategy use BlockStrategy#block to sleep ?
+62	open	ISSUE	2016-08-03		Make RetryListener use a generic type on the interface not on method.
+61	open	ISSUE	2016-07-20		Support creating Retryer instance using a spec string
+60	open	ISSUE	2016-06-03		[Question] Modify callable in case of a particular exception using RetryListener
+59	open	PR	2016-05-06		Retryer: add a constructor with a default rejection predicate
+58	open	PR	2016-05-06		Clean deprecated API usages (StopStrategies.stopAfterDelay)
+57	open	ISSUE	2016-03-07		Lock to RELEASE version of com.google.guava:guava dependency
+56	open	ISSUE	2016-02-27		using RetryListener, do I have to trigger the retry-predicate ?
+55	open	ISSUE	2016-02-26		Is java connection manager works more efficiently than "guava retry ?
+54	open	ISSUE	2016-02-25		Is there any way I can mark a tasks that "succeeded only after a retry" ?
+53	closed	PR	2016-02-01	2022-02-21	#52 Added clock abstraction.
+52	open	ISSUE	2016-02-01		Use Clock/Timer abstraction to read nanoTime
+51	open	ISSUE	2015-12-16		Can I retry on arbitrary predicate?
+50	open	PR	2015-12-10		Add a random exponential wait strategy; Fixes #28
+49	open	ISSUE	2015-08-24		Logging retry attempts before retry is cumbersome
+48	open	ISSUE	2015-08-24		Multiple builders constructed from the same builder always use the same listeners
+47	open	ISSUE	2015-08-24		`RetryListener`s are not only called on retry
+46	open	ISSUE	2015-07-28		AttemptTimeLimiter does not have to be generic
+45	open	ISSUE	2015-07-03		Expose Attempt implementations publicly
+44	closed	ISSUE	2015-06-23	2015-07-01	Guava version
+43	open	PR	2015-06-20		Return builder from a Retryer instance
+42	closed	PR	2015-05-26	2015-06-22	Retryer: fix checkNotNull error message
+41	open	ISSUE	2015-05-25		`retryIf(BooleanSupplier)`: when your boolean logic does not depend on the return of the Callable
+40	open	PR	2015-05-16		Added BlockStrategiesTest
+39	closed	PR	2015-05-03	2015-05-04	Fix for issue #30
+38	closed	ISSUE	2015-05-03	2015-05-09	Update to Gradle 2.x
+37	closed	PR	2015-04-21	2015-05-04	Add RetryListener implementation
+36	closed	ISSUE	2015-04-16	2015-07-01	Retry Listener
+35	closed	ISSUE	2015-04-10	2015-04-20	Reuse Retryer across threads
+34	open	ISSUE	2015-04-01		Non-generic Retryer?
+33	closed	ISSUE	2015-02-09	2018-06-01	use com.google.code.findbugs:annotations instead of com.google.code.findbugs:jsr305
+32	closed	ISSUE	2015-01-23	2015-07-01	Remove use of Maven dependency ranges for Guava dependency
+31	closed	ISSUE	2015-01-21	2015-01-22	Releasing 1.0.7 to maven central?
+30	closed	ISSUE	2015-01-17	2015-07-01	Be consistent about "duration" method parameters 
+29	open	ISSUE	2015-01-17		Retry following timeout
+28	open	ISSUE	2014-12-04		Support WaitStrategy.randomExponentialWait()
+27	open	ISSUE	2014-12-04		Additional criteria: .retryIfCause(Predicate<Throwable>), .retryIfCauseOfType(Class<? extends Throwable>)
+26	closed	PR	2014-11-04	2015-05-10	Calculate sleep time from failed attempt
+25	closed	ISSUE	2014-11-04	2015-07-01	Calculate sleep time from failed attempt
+24	closed	PR	2014-11-03	2014-11-04	new strategy AttemptWaitStrategy
+23	open	ISSUE	2014-05-15		Getting attempt number on success
+22	closed	ISSUE	2014-05-12	2015-05-03	Retry on success
+21	closed	PR	2014-05-10	2018-04-28	Failed attempt event
+20	closed	PR	2014-04-24	2014-05-03	Adding block strategies to the retryer to decide how to block
+19	closed	ISSUE	2014-04-02	2022-08-31	Failed try event which is called after every failed try
+18	open	ISSUE	2014-03-28		Suggest to use HashedWheelTimer for timeout management
+17	closed	PR	2014-03-27	2014-05-03	Issue #12 - New composite wait strategy.
+16	closed	PR	2014-03-26	2014-03-26	switch time measurement over to System.nanoTime() #15
+15	closed	ISSUE	2014-03-26	2014-03-28	System.nanoTime() should be used instead of System.currentTimeMillis()
+14	closed	ISSUE	2014-03-21	2014-03-25	Where to write the my business handling after executing the stop strategy?
+13	open	ISSUE	2014-03-17		Make it possible to get a builder from a Retryer instance for further customisation
+12	closed	ISSUE	2014-03-15	2014-05-03	New strategy
+11	closed	PR	2014-03-09	2014-03-16	Cleanup/javadoc correction
+10	closed	PR	2014-03-09	2014-03-16	Updated javadoc to reflect the real purpose of defining a stop strategy.
+9	closed	PR	2013-12-03	2013-12-03	Implement FibonacciWaitStrategy
+8	closed	PR	2013-12-03	2013-12-03	Fix JUnit imports in AttemptTimeLimiterTest
+7	closed	PR	2013-12-03	2013-12-03	Dependency updates
+6	closed	PR	2013-12-03	2013-12-03	Add Java 8 to Travis CI build matrix
+5	open	ISSUE	2013-11-24		Phi accrual error detector
+4	closed	PR	2013-05-20	2013-05-21	Upgrade to Guava 14.0.1
+3	closed	ISSUE	2013-05-16	2013-06-08	The last retry Attempt's Exception should appear in the full stacktrace if available
+2	open	ISSUE	2013-03-12		Turn RetryException into RuntimeException?
+1	closed	PR	2013-01-16	2013-01-16	added a per attempt time limit

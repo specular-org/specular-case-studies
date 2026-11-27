@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "id": "MC-11",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Listener added to a RetryerBuilder after build() is notified by already-built Retryers, including a call already in flight (known #48)",
+  "cause": "RetryerBuilder keeps one mutable ArrayList of listeners (RetryerBuilder.java:40) and build() hands that same object to every Retryer it builds (RetryerBuilder.java:196 -> Retryer.java:137, no copy); withRetryListener appends to it (RetryerBuilder.java:63) and Retryer.call iterates the live list after every attempt (Retryer.java:166-168). Upstream issue #48 (open, unfixed).",
+  "trigger": "Public API only: build a Retryer from a builder, then call builder.withRetryListener(L2) - either before the Retryer's next call() (Level 0, one thread) or from another thread while call() is running an attempt (Level 1, MC trace hunt_s3_listeners_bfs2.out: add completes during attempt 1's callable, iterator created afterwards so no CME). JPF also reaches the straddle variant of hunt_sharing_bfs4.out (iterator created between ArrayList.add's modCount++ and its size store).",
+  "consequence": "The already-built Retryer, including a call() already in flight, invokes L2.onRetry for attempts L2 was never registered for; the set of notified listeners changes between attempts of one call. Per-retryer metrics/audit listeners receive another Retryer's attempts (repro: metricsB counted retryerA's attempts [1, 2] while retryerB never ran). Permanent for the Retryer's lifetime; no removal API.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+    "src/main/java/com/github/rholder/retry/Retryer.java:137",
+    "src/main/java/com/github/rholder/retry/Retryer.java:166"
+  ],
+  "actions": [
+    "MCAddListenerBegin",
+    "MCAddListenerEnd",
+    "MCListenersBegin",
+    "MCListenerNotify",
+    "MCCallerBodyStart",
+    "MCCallerBodyReturns"
+  ],
+  "invariants": [
+    "ListenersFixedAtBuild"
+  ],
+  "premises": [
+    "build() passes the builder's listener ArrayList by reference and neither RetryerBuilder.build() nor the Retryer constructor copies it.",
+    "withRetryListener has no built/frozen guard, so application code can keep using the builder after build() (issue #48's template-builder pattern).",
+    "No time limiter, fault, or special configuration is needed; the default noTimeLimit/neverStop/noWait setup triggers it.",
+    "Retryer is documented as thread-safe (Retryer.java:39-40) and the maintainer endorses sharing one across threads (issue #35); RetryListener is @Beta.",
+    "Upstream master is still 177b6c9 and issue #48 is OPEN with no fixing PR (checked 2026-11-26)."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();",
+      "end": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();",
+      "sha256": "07186f570f1f06b04786bf7be82f1c44bf0bba9622ac96613a4403699b1ae652"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> withRetryListener(@Nonnull RetryListener listener) {",
+      "end": "        listeners.add(listener);",
+      "sha256": "148b7a23ab6a2f6c31ea668c4318abc2ece8a812ee1172512f7561134efa4e64"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": " * is thread-safe, provided the arguments passed to its constructor are thread-safe.",
+      "end": "    private final Collection<RetryListener> listeners;",
+      "sha256": "6d2fd7aa100bc17bf7e0675d9f87ff19a9d35133d15916590a7c1d8eee913e46"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "                   @Nonnull Collection<RetryListener> listeners) {",
+      "end": "        this.listeners = listeners;",
+      "sha256": "ac8d92ee1889de59d90da2b9b52ef76a90abf05731b4e20828e14b3bac9c3856"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "            if (!rejectionPredicate.apply(attempt)) {",
+      "sha256": "def4f7933d051442b7118f5bc2cba7759c01bbc6ab44e510571f13f064bcc137"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s3_listeners.cfg",
+      "sha256": "6634aac24b849d6be7df2642c4665c670ddf26340f23bfa7f93f6860841c304c"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla",
+      "sha256": "16ca9770fd8f99ada6f40405e410339ac7a211d0b526b907d7b21a22c8f491ae"
+    },
+    {
+      "root": "work",
+      "path": "spec/base.tla",
+      "sha256": "ac3552e45e62c18bc5a38f52f337fe8cd96c92ff5fd1d61a46d5b651fc2e8c16"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-11.md",
+      "path": "spec/persistent-findings/evidence/MC-11/spec/finding-confirmation/MC-11.md",
+      "sha256": "650b7cba3da9c11711da2a710eed7c8b33cc1df2be9e3c92201e3d3271d9e66a"
+    },
+    {
+      "original": "confirmation/MC-11/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-11/confirmation/MC-11/investigation.md",
+      "sha256": "ade924f7fc8314533719f9054784f119926469cc8a3b026335b2c1b10392bd76"
+    },
+    {
+      "original": "repro/test_bugMC-11_listener_added_after_build.sh",
+      "path": "spec/persistent-findings/evidence/MC-11/repro/test_bugMC-11_listener_added_after_build.sh",
+      "sha256": "cc5ec745a04aa751b86a143b40d4c33c3a040ea14bcb61b19ee6a0de6bdbca60"
+    },
+    {
+      "original": "repro/MC-11.log",
+      "path": "spec/persistent-findings/evidence/MC-11/repro/MC-11.log",
+      "sha256": "920ceb758c6700bb321a1e047592205f76101b388f23242d8712c27ad3a54701"
+    },
+    {
+      "original": "spec/output/hunt_s3_listeners_bfs2.out",
+      "path": "spec/persistent-findings/evidence/MC-11/spec/output/hunt_s3_listeners_bfs2.out",
+      "sha256": "018af2cb02b1e2d6446ecd6995605934a796eb720eed7d2430751460405c2376"
+    },
+    {
+      "original": "spec/output/hunt_sharing_bfs4.out",
+      "path": "spec/persistent-findings/evidence/MC-11/spec/output/hunt_sharing_bfs4.out",
+      "sha256": "f8499914321e116b49940535217527b4ac2b8ba227dbb253698eef27ef5554e5"
+    },
+    {
+      "original": "confirmation/MC-11/jpf/run_jpf_straddle.sh",
+      "path": "spec/persistent-findings/evidence/MC-11/confirmation/MC-11/jpf/run_jpf_straddle.sh",
+      "sha256": "6794b4649d68b9670cf869c6df9f5739ebcecb86e11327cd3dd5fbeec5484567"
+    },
+    {
+      "original": "confirmation/MC-11/jpf/src/MC11Straddle.java",
+      "path": "spec/persistent-findings/evidence/MC-11/confirmation/MC-11/jpf/src/MC11Straddle.java",
+      "sha256": "70af2adff47d12fce892f8d39b4f5820b1bd3fc823e11183d3805ca671ff3444"
+    },
+    {
+      "original": "confirmation/MC-11/jpf/src/MC11StraddleListener.java",
+      "path": "spec/persistent-findings/evidence/MC-11/confirmation/MC-11/jpf/src/MC11StraddleListener.java",
+      "sha256": "74b3c1395137e4715fd22610506ef133cffa98ab999d5c32dd081187d6235cce"
+    },
+    {
+      "original": "confirmation/MC-11/jpf/jpf_straddle.log",
+      "path": "spec/persistent-findings/evidence/MC-11/confirmation/MC-11/jpf/jpf_straddle.log",
+      "sha256": "c2b57de5ee855295cdd5c37f17943e5ec5adc08719b1e504fefeb2dbc36df1ca"
+    }
+  ]
+}

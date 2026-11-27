@@ -1,0 +1,17 @@
+{
+  "work_dir": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec",
+  "spec_file": "MC.tla",
+  "config_file": "MC_hunt_s4_shutdown.cfg",
+  "options": [
+    "-t",
+    "30",
+    "-w",
+    "4",
+    "-m",
+    "2G",
+    "-M",
+    "4G"
+  ],
+  "created_at": 1795696728.1106603,
+  "owner": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec-repair.log"
+}

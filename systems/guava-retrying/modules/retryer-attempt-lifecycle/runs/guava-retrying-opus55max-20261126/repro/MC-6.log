@@ -1,0 +1,315 @@
+### MC-6 reproduction  (2026-11-26T16:49:49Z)
+### source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-6/worktree @ 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f (dirty files: 0)
+### guava: /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha256=1158e94c7de4da48...
+### java: openjdk version "21.0.13.1" 2026-11-17
+
+================ scenario A-cancel: java MC6WrapCancelRepro cancel 10000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.073s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.095s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.115s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.135s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.156s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.095s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=100 (callable bodies run=104) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 0 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  4.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=199 (callable bodies run=203) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 0 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  6.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=298 (callable bodies run=302) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 2 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  8.097s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=397 (callable bodies run=401) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 3 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t= 10.097s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=496 (callable bodies run=500) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 6 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t= 10.098s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t= 10.098s] RESULT cancel: BUG TRIGGERED — 496 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 10.0 s; worker never released
+================ scenario A-cancel exit code: 0
+
+================ scenario A-trial1: java MC6WrapCancelRepro cancel 3000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.052s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.073s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.094s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.094s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.094s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.114s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.135s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.155s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.094s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=100 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 0 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.095s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=149 (callable bodies run=153) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 12 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.095s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  3.096s] RESULT cancel: BUG TRIGGERED — 149 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 3.0 s; worker never released
+================ scenario A-trial1 exit code: 0
+
+================ scenario A-trial2: java MC6WrapCancelRepro cancel 3000 (timeout 60s) ================
+[t=  0.017s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.096s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.096s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.116s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.157s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=99 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 16 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.097s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=149 (callable bodies run=153) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 3 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.097s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  3.097s] RESULT cancel: BUG TRIGGERED — 149 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 3.0 s; worker never released
+================ scenario A-trial2 exit code: 0
+
+================ scenario A-trial3: java MC6WrapCancelRepro cancel 3000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.095s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.115s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.156s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=99 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 19 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=149 (callable bodies run=153) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 9 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.097s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  3.097s] RESULT cancel: BUG TRIGGERED — 149 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 3.0 s; worker never released
+================ scenario A-trial3 exit code: 0
+
+================ scenario A-trial4: java MC6WrapCancelRepro cancel 3000 (timeout 60s) ================
+[t=  0.017s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.116s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.156s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=99 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 13 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=149 (callable bodies run=153) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 3 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.097s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  3.097s] RESULT cancel: BUG TRIGGERED — 149 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 3.0 s; worker never released
+================ scenario A-trial4 exit code: 0
+
+================ scenario A-trial5: java MC6WrapCancelRepro cancel 3000 (timeout 60s) ================
+[t=  0.017s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.116s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.156s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.095s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=99 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 19 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.096s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=149 (callable bodies run=153) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 7 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  3.096s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  3.097s] RESULT cancel: BUG TRIGGERED — 149 attempts after cancel(true) (first one: exception java.lang.InterruptedException, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 3.0 s; worker never released
+================ scenario A-trial5 exit code: 0
+
+================ scenario B-shutdownnow: java MC6WrapCancelRepro shutdownnow 10000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfException(), timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop, wait=noWait (defaults); callable = 20 ms failing remote call
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.073s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: shutdownNow() called (returned 0 never-started tasks); isShutdown()=true
+[t=  0.116s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.157s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.096s] APP: awaitTermination(2000 ms) returned false; isTerminated()=false
+[t=  2.096s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=99 (callable bodies run=103) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 19 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  2.096s] APP: shutdownNow() called again (#2) -> another interrupt delivered to 'app-worker-1'
+[t=  2.096s]   onRetry: attempt #103 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  4.097s] APP: awaitTermination(2000 ms) returned false; isTerminated()=false
+[t=  4.097s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=198 (callable bodies run=202) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 18 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  4.097s] APP: shutdownNow() called again (#3) -> another interrupt delivered to 'app-worker-1'
+[t=  4.097s]   onRetry: attempt #202 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  6.097s] APP: awaitTermination(2000 ms) returned false; isTerminated()=false
+[t=  6.098s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=297 (callable bodies run=301) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 16 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  8.098s] APP: awaitTermination(2000 ms) returned false; isTerminated()=false
+[t=  8.098s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=396 (callable bodies run=400) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 20 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t= 10.098s] APP: awaitTermination(2000 ms) returned false; isTerminated()=false
+[t= 10.099s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=496 (callable bodies run=500) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 3 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t= 10.099s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t= 10.099s] RESULT shutdownnow: BUG TRIGGERED — after 3 shutdownNow() calls and 10.0 s of awaitTermination, isTerminated()=false; 496 attempts after the first shutdownNow(), 3 of them InterruptedException attempts that were retried
+================ scenario B-shutdownnow exit code: 0
+
+================ scenario C-control-cancel: java MC6WrapCancelRepro control-cancel 10000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfExceptionOfType(IOException.class) [CONTROL], timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.052s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.073s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.094s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.094s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.095s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  2.095s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=1 (callable bodies run=4) | worker 'app-worker-1' alive=true state=WAITING interruptStatus=false | last attempt 2001 ms ago: exception java.lang.InterruptedException | task released by worker=yes at t=0.094s
+[t=  2.096s] RESULT control-cancel: CONTROL OK (call exits after the cancellation) — attempts after cancel(true)=1 (exception java.lang.InterruptedException); worker released at t=0.094s; shutdown()+awaitTermination(2 s)=true
+================ scenario C-control-cancel exit code: 0
+
+================ scenario C-control-shutdownnow: java MC6WrapCancelRepro control-shutdownnow 10000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfExceptionOfType(IOException.class) [CONTROL], timeLimiter=fixedTimeLimit(1000 ms, cached pool), stop=neverStop, wait=noWait (defaults); callable = 20 ms failing remote call
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.095s] APP: shutdownNow() called (returned 0 never-started tasks); isShutdown()=true
+[t=  0.095s] APP: awaitTermination(2000 ms) returned true; isTerminated()=true
+[t=  0.096s] OBSERVE: task.isCancelled()=false app.isShutdown()=true | attempts since cancellation=1 (callable bodies run=4) | worker 'app-worker-1' alive=false state=TERMINATED interruptStatus=false | last attempt 1 ms ago: exception java.lang.InterruptedException | task released by worker=yes at t=0.095s
+[t=  0.096s] RESULT control-shutdownnow: CONTROL OK (pool terminates) — awaitTermination returned true; attempts after shutdownNow()=1 (exception java.lang.InterruptedException)
+================ scenario C-control-shutdownnow exit code: 0
+
+================ scenario D-late-return: java MC6WrapCancelRepro late-return (timeout 60s) ================
+[t=  0.016s] CONFIG: retryIfException(), fixedTimeLimit(5 s, cached pool), neverStop, noWait; callable = 300 ms remote call that succeeds
+[t=  0.031s]   callable body #1 starts on 'timelimiter-pool-1' (remote call takes 300 ms)
+[t=  0.133s] APP: task.cancel(true) returned true; isCancelled()=true; invoices delivered so far=0
+[t=  0.134s] APP: task.get() threw CancellationException -> the application considers the invoice NOT sent
+[t=  0.134s]   onRetry: attempt #1 (AFTER cancellation): exception java.lang.InterruptedException | thread 'app-worker-1' interrupt status=false
+[t=  0.135s]   callable body #2 starts on 'timelimiter-pool-1' (remote call takes 300 ms)
+[t=  0.435s]   callable body #2: invoice DELIVERED (side effect committed)
+[t=  0.436s]   onRetry: attempt #2 (AFTER cancellation): result 'receipt-2' | thread 'app-worker-1' interrupt status=false
+[t=  0.637s] RESULT late-return: RetryerCallable.call() RETURNED NORMALLY with value 'receipt-2'; Thread.currentThread().isInterrupted()=false
+[t=  0.637s] RESULT late-return: callable bodies started after cancel(true): 1; invoices delivered: 1 (first at t=0.435s, cancel(true) at t=0.133s)
+[t=  0.638s] RESULT late-return: BUG TRIGGERED — a new attempt ran after the cancellation, its side effect was committed, and call() returned normally with the interrupt status clear
+================ scenario D-late-return exit code: 0
+
+================ scenario E-cancel-notimelimit: java MC6WrapCancelRepro cancel-notimelimit 6000 (timeout 60s) ================
+[t=  0.016s] CONFIG: rejection=retryIfException(), timeLimiter=none (noTimeLimit default), stop=neverStop (default), wait=noWait (default), block=Thread.sleep (default); callable = 20 ms remote call that fails with IOException
+[t=  0.051s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.071s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.092s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException: sleep interrupted | thread 'app-worker-1' interrupt status=false
+[t=  0.092s] APP: task.cancel(true) returned true; isCancelled()=true isDone()=true (attempts before cancellation: 3)
+[t=  0.093s] APP: task.get() threw CancellationException -> the application considers the task finished
+[t=  0.112s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.133s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  0.153s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'app-worker-1' interrupt status=false
+[t=  2.093s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=100 (callable bodies run=104) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 7 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  4.093s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=199 (callable bodies run=203) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 15 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  6.094s] OBSERVE: task.isCancelled()=true app.isShutdown()=false | attempts since cancellation=298 (callable bodies run=302) | worker 'app-worker-1' alive=true state=TIMED_WAITING interruptStatus=false | last attempt 20 ms ago: exception java.io.IOException: service unavailable | task released by worker=NO
+[t=  6.095s] STACK of 'app-worker-1' (state TIMED_WAITING):
+        at java.base/java.lang.Thread.sleep0(Native Method)
+        at java.base/java.lang.Thread.sleep(Thread.java:509)
+        at MC6WrapCancelRepro$2.call(MC6WrapCancelRepro.java:122)
+        at MC6WrapCancelRepro$2.call(MC6WrapCancelRepro.java:118)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at com.github.rholder.retry.Retryer$RetryerCallable.call(Retryer.java:318)
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+[t=  6.095s] RESULT cancel-notimelimit: BUG TRIGGERED — 299 attempts after cancel(true) (first one: exception java.lang.InterruptedException: sleep interrupted, interrupt status at that point=false); RetryerCallable.call() has neither returned nor thrown after 6.0 s; worker never released
+================ scenario E-cancel-notimelimit exit code: 0
+
+================ scenario F-jvm-exit: java MC6WrapCancelRepro jvm-exit (timeout 12s) ================
+[t=  0.016s] CONFIG: Executors.newFixedThreadPool(1) (non-daemon worker); rejection=retryIfException(); fixedTimeLimit(1000 ms, daemon cached pool); neverStop; noWait
+[t=  0.053s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.115s]   onRetry: attempt #5 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.136s]   onRetry: attempt #6 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.156s]   onRetry: attempt #7 (AFTER cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  3.095s] APP: shutdownNow(); awaitTermination(3 s) returned false; worker 'pool-1-thread-1' daemon=false alive=true
+[t=  3.096s] APP: main() returns now; the JVM can exit only when every non-daemon thread has finished
+[t=  4.596s] MONITOR (main() has returned): worker 'pool-1-thread-1' (non-daemon) alive=true state=TIMED_WAITING | attempts since shutdownNow()=223, last 3 ms ago: exception java.io.IOException: service unavailable
+[t=  6.097s] MONITOR (main() has returned): worker 'pool-1-thread-1' (non-daemon) alive=true state=TIMED_WAITING | attempts since shutdownNow()=297, last 8 ms ago: exception java.io.IOException: service unavailable
+[t=  7.597s] MONITOR (main() has returned): worker 'pool-1-thread-1' (non-daemon) alive=true state=TIMED_WAITING | attempts since shutdownNow()=371, last 14 ms ago: exception java.io.IOException: service unavailable
+[t=  9.098s] MONITOR (main() has returned): worker 'pool-1-thread-1' (non-daemon) alive=true state=TIMED_WAITING | attempts since shutdownNow()=446, last 0 ms ago: exception java.io.IOException: service unavailable
+[t= 10.598s] MONITOR (main() has returned): worker 'pool-1-thread-1' (non-daemon) alive=true state=TIMED_WAITING | attempts since shutdownNow()=520, last 6 ms ago: exception java.io.IOException: service unavailable
+================ scenario F-jvm-exit exit code: 124
+
+================ scenario F-control-jvm-exit: java MC6WrapCancelRepro control-jvm-exit (timeout 12s) ================
+[t=  0.017s] CONFIG: Executors.newFixedThreadPool(1) (non-daemon worker); rejection=retryIfExceptionOfType(IOException.class) [CONTROL]; fixedTimeLimit(1000 ms, daemon cached pool); neverStop; noWait
+[t=  0.054s]   onRetry: attempt #1 (before cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.074s]   onRetry: attempt #2 (before cancellation): exception java.io.IOException: service unavailable | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.095s]   onRetry: attempt #4 (AFTER cancellation): exception java.lang.InterruptedException | thread 'pool-1-thread-1' interrupt status=false
+[t=  0.096s] APP: shutdownNow(); awaitTermination(3 s) returned true; worker 'pool-1-thread-1' daemon=false alive=false
+[t=  0.096s] APP: main() returns now; the JVM can exit only when every non-daemon thread has finished
+================ scenario F-control-jvm-exit exit code: 0
+
+################ SUMMARY ################
+A  cancel(true), CE config, 10 s window : exit 0 (0 = endless retry after cancellation)
+A' cancel(true) trials                  : 5/5 triggered
+B  shutdownNow + awaitTermination       : exit 0 (0 = pool never terminates)
+C  control (IOException predicate)      : cancel exit 0, shutdownNow exit 0 (0 = exits/terminates)
+D  late normal return after cancel      : exit 0 (0 = call() returned normally, side effect after cancel)
+E  cancel(true), no time limiter        : exit 0 (0 = endless retry after cancellation)
+F  JVM exit after shutdownNow           : exit 124 (124 = JVM never exited, killed by timeout)
+F  control JVM exit                     : exit 0 (0 = JVM exited by itself)
+MC-6 REPRODUCED (Level 0): cancelled/shut-down wrap() tasks keep retrying (or return normally) and never release their worker; the control exits.

@@ -1,0 +1,17 @@
+{
+  "work_dir": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec",
+  "spec_file": "MC.tla",
+  "config_file": "hunt/sharing-r9.cfg",
+  "options": [
+    "-t",
+    "30",
+    "-w",
+    "24",
+    "-m",
+    "24G",
+    "-M",
+    "48G"
+  ],
+  "created_at": 1795681137.6502814,
+  "owner": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec-validation.log"
+}

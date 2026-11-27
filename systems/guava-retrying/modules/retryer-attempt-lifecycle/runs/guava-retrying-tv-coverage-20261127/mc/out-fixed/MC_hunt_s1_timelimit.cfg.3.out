@@ -1,0 +1,32 @@
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running breadth-first search Model-Checking with fp 82 and seed -6214294707240775298 with 3 workers on 96 cores with 7282MB heap and 64MB offheap memory [pid: 2758151] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu/tv-coverage-20261120/guava-retrying/mc/fixed-spec/MC.tla
+Parsing file /home/ubuntu/tv-coverage-20261120/guava-retrying/mc/fixed-spec/base.tla
+Parsing file /tmp/tlc-4018043919509936462/TLC.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-4018043919509936462/Integers.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-4018043919509936462/Sequences.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-4018043919509936462/FiniteSets.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-4018043919509936462/Naturals.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module MC
+Linting of module base
+Linting of module MC
+Starting... (2026-11-27 07:59:41)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-27 07:59:42.
+Progress(31) at 2026-11-27 07:59:45: 72,858 states generated (72,858 s/min), 32,179 distinct states found (32,179 ds/min), 5,477 states left on queue.
+Progress(46) at 2026-11-27 08:00:45: 1,230,687 states generated (1,157,829 s/min), 422,397 distinct states found (390,218 ds/min), 36,490 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 3.1E-8
+  based on the actual fingerprints:  val = 9.2E-9
+1624948 states generated, 520608 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 54.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 6 and the 95th percentile is 2).
+Finished in 01min 20s at (2026-11-27 08:01:01)

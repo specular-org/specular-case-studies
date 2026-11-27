@@ -1,0 +1,15 @@
+{"tag":"config","callers":["c1"],"numInitListeners":1,"numExtraListeners":0,"limiter":"None","execKind":"Cached","poolSize":1,"queueCap":0,"retryOn":["Timeout","CallerIE","CallableExc","CallableIE","Rejected","BadResult"],"stopKind":"AfterAttempt","stopAfter":3,"sleepClasses":["Zero"],"modes":["Ret","RetBad","Exc","Err"],"wrapCallers":[],"wrapOnLimiterPool":[],"workers":[],"tasks":[],"outerWorkers":{}}
+{"tag":"trace","event":"CallStart","tid":"c1","start":223971,"attemptNo":1,"intr":false,"end":490235}
+{"tag":"trace","event":"CallerBodyStart","tid":"c1","start":490235,"end":490235,"attemptNo":1,"intr":false,"mode":"Exc"}
+{"tag":"trace","event":"CallerBodyThrows","tid":"c1","start":2685772,"end":2685772,"attemptNo":1,"intr":false,"attemptKind":"CallableExc","expired":false}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":2685772,"end":7322078,"attemptNo":1,"intr":false,"modCount":1,"size":1}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":7342067,"end":7342067,"attemptNo":1,"intr":false,"listener":1,"cursor":1}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":7350530,"attemptNo":1,"intr":false,"cursor":1,"size":1,"end":7386723}
+{"tag":"trace","event":"WaitStrategyComputes","tid":"c1","start":7398491,"end":7402206,"attemptNo":1,"intr":false,"sleep":"Zero"}
+{"tag":"trace","event":"BlockZero","tid":"c1","start":7415816,"end":7648430,"attemptNo":2,"intr":false}
+{"tag":"trace","event":"CallerBodyStart","tid":"c1","start":7699626,"end":7699626,"attemptNo":2,"intr":false,"mode":"Err"}
+{"tag":"trace","event":"CallerBodyThrows","tid":"c1","start":9748295,"end":9748295,"attemptNo":2,"intr":false,"attemptKind":"CallableErr","expired":false}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":9748295,"end":9895563,"attemptNo":2,"intr":false,"modCount":1,"size":1}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":9913059,"end":9913059,"attemptNo":2,"intr":false,"listener":1,"cursor":1}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":9925988,"attemptNo":2,"intr":false,"cursor":1,"size":1,"end":9951676}
+{"tag":"trace","event":"PredicateAccepts","tid":"c1","start":9925988,"end":9951676,"attemptNo":2,"intr":false,"outcome":"ExecExc"}

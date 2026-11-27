@@ -1,0 +1,424 @@
+{
+  "CR-D-11": {
+    "id": "CR-D-11",
+    "title": "fixedTimeLimit accepts a zero or negative duration; every attempt fails with IllegalArgumentException before the callable runs and is retried as its failure",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:fixedTimeLimit",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout/checkPositiveTimeout (Guava 22.0)"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "AttemptTimeLimiters.fixedTimeLimit (both overloads) and the FixedAttemptTimeLimit constructor never check duration > 0, unlike every other parameterized built-in factory. Guava's SimpleTimeLimiter.callWithTimeout rejects a non-positive time"
+  },
+  "CR-D-12": {
+    "id": "CR-D-12",
+    "title": "fixedTimeLimit appends the caller's stack to the callable's exception on every attempt, so a reused exception grows without bound (heap, CPU, logs, OOM)",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+      "src/main/java/com/github/rholder/retry/Retryer.java:160-174",
+      "src/main/java/com/github/rholder/retry/RetryException.java:57",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:162-163,251-260"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call (AttemptTimeLimiters.java:107) calls Guava's deprecated four-argument SimpleTimeLimiter.callWithTimeout(..., true); its failure path throwCause(e, true) (SimpleTimeLimiter.java:162-163, 256-259"
+  },
+  "CR-D-13": {
+    "id": "CR-D-13",
+    "title": "With fixedTimeLimit, a non-Exception/non-Error callable Throwable reaches retry predicates as ExecutionException; retryIfExceptionOfType stops matching",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionClassPredicate.apply",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionPredicate.apply",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:throwCause"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call delegates to Guava's deprecated SimpleTimeLimiter.callWithTimeout(callable, d, u, true); its throwCause rethrows the cause only if it is an Exception or Error and otherwise rethrows the outer F"
+  },
+  "CR-D-16": {
+    "id": "CR-D-16",
+    "title": "WaitStrategies.join sums component sleeps without overflow protection; a total >= 2^63 ms wraps negative and Retryer.call throws IllegalArgumentException",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:CompositeWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:join",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "src/main/java/com/github/rholder/retry/BlockStrategies.java:ThreadSleepStrategy.block"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "CompositeWaitStrategy.computeSleepTime (built by WaitStrategies.join) adds component sleeps with plain long addition and no saturation or sign check, unlike the other arithmetic built-ins; Retryer.call passes the wrapped negative value unva"
+  },
+  "CR-D-17": {
+    "id": "CR-D-17",
+    "title": "exceptionWait passes a negative user-function value to Thread.sleep; IllegalArgumentException escapes Retryer.call after one attempt",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:ExceptionWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:CompositeWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "src/main/java/com/github/rholder/retry/BlockStrategies.java:ThreadSleepStrategy.block"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "ExceptionWaitStrategy.computeSleepTime (WaitStrategies.java:386-394) returns function.apply(cause) without clamping it to >= 0, unlike the other built-ins that compute a per-attempt value (incrementing/exponential/Fibonacci clamp to 0). Com"
+  },
+  "CR-D-18": {
+    "id": "CR-D-18",
+    "title": "exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException (Long auto-unboxing) and abandon retrying",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:ExceptionWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "ExceptionWaitStrategy.computeSleepTime returns function.apply((T) cause), a Long, as a primitive long (WaitStrategies.java:390), so a null result from the user Function (allowed: Guava 22 Function.apply is @Nullable) is auto-unboxed and thr"
+  },
+  "CR-D-19": {
+    "id": "CR-D-19",
+    "title": "Retryer.call's int attempt counter wraps after 2^31-1 attempts: non-positive attempt numbers, RetryException count truncated to int, attempt-based waits jump",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:157",
+      "src/main/java/com/github/rholder/retry/Retryer.java:174",
+      "src/main/java/com/github/rholder/retry/Retryer.java:181",
+      "src/main/java/com/github/rholder/retry/RetryException.java:34",
+      "src/main/java/com/github/rholder/retry/RetryException.java:44-46",
+      "src/main/java/com/github/rholder/retry/Attempt.java:73-78",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:281-284"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "Retryer.call counts attempts in an int (for (int attemptNumber = 1; ; attemptNumber++), Retryer.java:157) that silently overflows. The wrapped value is widened into the long Attempt.getAttemptNumber() (documented 'starting from 1') of every"
+  },
+  "CR-D-20": {
+    "id": "CR-D-20",
+    "title": "incrementingWait overflows initial + increment*(n-1) for huge increments; overflow is clamped to 0, so Retryer sleeps 1000, 0, 998, 0, ... ms",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:IncrementingWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:282",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:incrementingWait",
+      "src/main/java/com/github/rholder/retry/Retryer.java:call"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "IncrementingWaitStrategy.computeSleepTime computes initialSleepTime + increment * (attemptNumber - 1) in unchecked long arithmetic and maps any negative (overflowed) result to 0 (WaitStrategies.java:282-283). Neither the incrementingWait fa"
+  },
+  "CR-D-21": {
+    "id": "CR-D-21",
+    "title": "fibonacciWait overflow wraps to a positive below-cap wait that the guard misses (uncapped: attempt >= 94; x1000: attempt >= 80)",
+    "status": "MASKED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:FibonacciWaitStrategy.computeSleepTime",
+      "src/main/java/com/github/rholder/retry/WaitStrategies.java:FibonacciWaitStrategy.fib"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "FibonacciWaitStrategy computes fib(attemptNumber) and multiplier * fib in unchecked long arithmetic and treats only a negative or above-cap product as overflow (WaitStrategies.java:326-352, guard at :330); a wrap that lands positive and bel"
+  },
+  "CR-D-22": {
+    "id": "CR-D-22",
+    "title": "stopAfterDelay(d, unit) truncates sub-millisecond limits with toMillis, so Retryer.call stops before the delay elapses (sub-ms limit: one attempt only)",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/StopStrategies.java:87",
+      "src/main/java/com/github/rholder/retry/StopStrategies.java:124",
+      "src/main/java/com/github/rholder/retry/Retryer.java:173"
+    ],
+    "actions": [],
+    "invariants": [],
+    "reusable": true,
+    "cause": "StopStrategies.stopAfterDelay(long, TimeUnit) converts the limit with timeUnit.toMillis(duration), which truncates toward zero, and StopAfterDelayStrategy.shouldStop returns getDelaySinceFirstAttempt() >= maxDelay; the effective stop condit"
+  },
+  "MC-1": {
+    "id": "MC-1",
+    "title": "fixedTimeLimit: a timed-out or caller-interrupted attempt keeps running alongside later attempts and after Retryer.call() returns or throws",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+      "guava-22.0:com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout"
+    ],
+    "actions": [
+      "MCSubmitNewWorker",
+      "MCGetTimeout",
+      "MCGetInterrupted",
+      "MCCancelDoInterrupt",
+      "MCCancelFinish",
+      "MCBodyStart",
+      "MCGetReturn",
+      "MCPredicateAccepts",
+      "MCSubmitQueued",
+      "MCSubmitRejected",
+      "MCStopStrategyStops"
+    ],
+    "invariants": [
+      "SequentialAttempts",
+      "NoActivityAfterOutcome"
+    ],
+    "reusable": true,
+    "cause": "FixedAttemptTimeLimit.call delegates to Guava 22 SimpleTimeLimiter.callWithTimeout(callable, d, u, true), which on timeout or caller interrupt calls future.cancel(true) and returns without waiting for the worker; Retryer.call then immediate"
+  },
+  "MC-10": {
+    "id": "MC-10",
+    "title": "Negative computed sleep makes Retryer.call() throw IllegalArgumentException, replacing the RetryException owed to an interrupted thread",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:176",
+      "src/main/java/com/github/rholder/retry/Retryer.java:178",
+      "src/main/java/com/github/rholder/retry/Retryer.java:179",
+      "src/main/java/com/github/rholder/retry/BlockStrategies.java:46"
+    ],
+    "actions": [
+      "MCWaitStrategyComputes",
+      "MCBlockNegative",
+      "MCInterrupt"
+    ],
+    "invariants": [
+      "DocumentedOutcomesOnly",
+      "InterruptedCallThrowsRetryException"
+    ],
+    "reusable": true,
+    "cause": "Retryer.call passes waitStrategy.computeSleepTime(attempt) to the block strategy without validating it and catches only InterruptedException (Retryer.java:176-182). The default ThreadSleepStrategy calls Thread.sleep(sleepTime) directly (Blo"
+  },
+  "MC-11": {
+    "id": "MC-11",
+    "title": "Listener added to a RetryerBuilder after build() is notified by already-built Retryers, including a call already in flight (known #48)",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+      "src/main/java/com/github/rholder/retry/Retryer.java:137",
+      "src/main/java/com/github/rholder/retry/Retryer.java:166"
+    ],
+    "actions": [
+      "MCAddListenerBegin",
+      "MCAddListenerEnd",
+      "MCListenersBegin",
+      "MCListenerNotify",
+      "MCCallerBodyStart",
+      "MCCallerBodyReturns"
+    ],
+    "invariants": [
+      "ListenersFixedAtBuild"
+    ],
+    "reusable": true,
+    "cause": "RetryerBuilder keeps one mutable ArrayList of listeners (RetryerBuilder.java:40) and build() hands that same object to every Retryer it builds (RetryerBuilder.java:196 -> Retryer.java:137, no copy); withRetryListener appends to it (RetryerB"
+  },
+  "MC-12": {
+    "id": "MC-12",
+    "title": "(Known #29) First per-attempt timeout ends Retryer.call with ExecutionException(UncheckedTimeoutException) unless the predicate matches Guava's exception",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "src/main/java/com/github/rholder/retry/Retryer.java:ExceptionAttempt",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionClassPredicate.apply",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout"
+    ],
+    "actions": [
+      "MCCallStart",
+      "MCSubmitNewWorker",
+      "MCGetTimeout",
+      "MCCancelCASWon",
+      "MCCancelReadRunner",
+      "MCCancelFinish",
+      "MCListenersBegin",
+      "MCListenerNotify",
+      "MCListenersEnd",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "TimeoutDoesNotEndCallWithExecutionException"
+    ],
+    "reusable": true,
+    "cause": "Retryer.call records any Throwable from attemptTimeLimiter.call, including the UncheckedTimeoutException that Guava's SimpleTimeLimiter throws after future.cancel(true), as an ordinary ExceptionAttempt (Retryer.java:162-163). The attempt th"
+  },
+  "MC-2": {
+    "id": "MC-2",
+    "title": "fixedTimeLimit(d, unit): a timed-out attempt that ignores interrupts pins a non-daemon pool thread forever; each retry pins another and the JVM cannot exit",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:57",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:90",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+      "src/main/java/com/github/rholder/retry/Retryer.java:160",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:83",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:165"
+    ],
+    "actions": [
+      "MCSubmitNewWorker",
+      "MCGetTimeout",
+      "MCBodyStart",
+      "MCCancelDoInterrupt",
+      "MCGetReturn",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "StuckBodiesPerCallAtMostOne",
+      "StuckBodiesEndWithCall"
+    ],
+    "reusable": true,
+    "cause": "The two-argument AttemptTimeLimiters.fixedTimeLimit creates new SimpleTimeLimiter(), i.e. a private Executors.newCachedThreadPool() (unbounded, non-daemon threads, no shutdown path, not reachable through the API). On timeout SimpleTimeLimit"
+  },
+  "MC-4": {
+    "id": "MC-4",
+    "title": "Retryer with fixedTimeLimit swallows a caller interrupt: Future.get clears it, then call() retries and returns or throws with the interrupt status clear",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:162",
+      "src/main/java/com/github/rholder/retry/Retryer.java:170",
+      "src/main/java/com/github/rholder/retry/Retryer.java:173",
+      "src/main/java/com/github/rholder/retry/Retryer.java:179",
+      "src/main/java/com/github/rholder/retry/Retryer.java:318",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+      "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:155"
+    ],
+    "actions": [
+      "MCInterrupt",
+      "MCCancelOuter",
+      "MCGetInterrupted",
+      "MCCancelCASWon",
+      "MCCancelFinish",
+      "MCSetCASWon",
+      "MCSetFinish",
+      "MCBlockZero",
+      "MCSubmitNewWorker",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "InterruptPreserved",
+      "NoRetryAfterObservedInterrupt",
+      "ExecutionExceptionMeansCallableThrew",
+      "CountedImpliesInvoked",
+      "CountedImpliesInvokedNoStartRace",
+      "NoDiscardedCompletion"
+    ],
+    "reusable": true,
+    "cause": "With AttemptTimeLimiters.fixedTimeLimit the calling thread waits in Guava SimpleTimeLimiter.callWithTimeout's future.get (amInterruptible=true, AttemptTimeLimiters.java:107). An interrupt makes JDK FutureTask.awaitDone clear the interrupt s"
+  },
+  "MC-5": {
+    "id": "MC-5",
+    "title": "Retryer.call retries an InterruptedException thrown by the callable (noTimeLimit) and returns with the interrupt status cleared",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:call",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:NoAttemptTimeLimit.call",
+      "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call"
+    ],
+    "actions": [
+      "MCCallerBodyStart",
+      "MCInterrupt",
+      "MCCallerBodyThrows",
+      "MCWaitStrategyComputes",
+      "MCBlockZero",
+      "MCCallerBodyReturns",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "InterruptPreserved",
+      "NoRetryAfterObservedInterrupt"
+    ],
+    "reusable": true,
+    "cause": "With noTimeLimit the callable runs on the caller thread (AttemptTimeLimiters.NoAttemptTimeLimit.call). When that thread is interrupted while the callable is in an interruptible blocking call, the JDK clears the interrupt status and the call"
+  },
+  "MC-6": {
+    "id": "MC-6",
+    "title": "Retryer.wrap() task cancelled via Future.cancel(true)/shutdownNow() keeps retrying (or returns normally) and never releases its executor worker",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:Retryer.call",
+      "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call"
+    ],
+    "actions": [
+      "MCCancelOuter",
+      "MCGetInterrupted",
+      "MCCancelCASWon",
+      "MCListenersBegin",
+      "MCWaitStrategyComputes",
+      "MCBlockZero",
+      "MCSubmitNewWorker",
+      "MCSubmitHandoff",
+      "MCBodyThrows",
+      "MCGetReturn",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "InterruptedCallEventuallyExits",
+      "NoRetryAfterObservedInterrupt",
+      "InterruptPreserved"
+    ],
+    "reusable": true,
+    "cause": "RetryerCallable.call() only runs Retryer.call() on the executor worker, so Future.cancel(true) and ExecutorService.shutdownNow() reach it solely as a thread interrupt. The interrupt is consumed during the attempt (Future.get inside Guava Si"
+  },
+  "MC-7": {
+    "id": "MC-7",
+    "title": "RetryerBuilder.withRetryListener during a running Retryer.call() makes call() throw ConcurrentModificationException after the attempt ran; outcome lost",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+      "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+      "src/main/java/com/github/rholder/retry/Retryer.java:137",
+      "src/main/java/com/github/rholder/retry/Retryer.java:166"
+    ],
+    "actions": [
+      "MCCallerBodyReturns",
+      "MCListenersBegin",
+      "MCAddListenerBegin",
+      "MCListenerCME",
+      "MCGetTimeout"
+    ],
+    "invariants": [
+      "DocumentedOutcomesOnly",
+      "NoLostAttemptOutcome"
+    ],
+    "reusable": true,
+    "cause": "RetryerBuilder.build() passes the builder's own mutable ArrayList of listeners to the Retryer, which stores it without copying and iterates it with a fail-fast iterator in call(), outside the attempt's try/catch. A later builder.withRetryLi"
+  },
+  "MC-9": {
+    "id": "MC-9",
+    "title": "Shut-down fixedTimeLimit executor: RejectedExecutionException from submit is recorded as the callable's failure though the callable never ran",
+    "status": "REPRODUCED",
+    "sites": [
+      "src/main/java/com/github/rholder/retry/Retryer.java:Retryer.call (lines 160-174)",
+      "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call (line 107)",
+      "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout (line 149, executor.submit)"
+    ],
+    "actions": [
+      "MCExecutorShutdown",
+      "MCCallStart",
+      "MCSubmitRejected",
+      "MCListenersBegin",
+      "MCListenerNotify",
+      "MCListenersEnd",
+      "MCPredicateAccepts"
+    ],
+    "invariants": [
+      "ExecutionExceptionMeansCallableThrewExcept29",
+      "CountedImpliesInvokedNoStartRace"
+    ],
+    "reusable": true,
+    "cause": "Retryer.call wraps every Throwable from attemptTimeLimiter.call in an ExceptionAttempt numbered as the current attempt (Retryer.java:162-163). With fixedTimeLimit(d, unit, executor), Guava 22.0 SimpleTimeLimiter.callWithTimeout calls execut"
+  }
+}

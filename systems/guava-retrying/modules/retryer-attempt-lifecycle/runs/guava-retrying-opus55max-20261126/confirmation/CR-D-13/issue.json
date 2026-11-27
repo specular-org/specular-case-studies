@@ -1,0 +1,68 @@
+{
+  "id": "CR-D-13",
+  "title": "With fixedTimeLimit, a non-Exception/non-Error callable Throwable reaches retry predicates as ExecutionException; retryIfExceptionOfType stops matching",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call delegates to Guava's deprecated SimpleTimeLimiter.callWithTimeout(callable, d, u, true); its throwCause rethrows the cause only if it is an Exception or Error and otherwise rethrows the outer FutureTask ExecutionException (SimpleTimeLimiter.java:261-268 in Guava 22.0). Retryer.call records that wrapper as the attempt's exception, and ExceptionClassPredicate/ExceptionPredicate classify Attempt.getExceptionCause() without unwrapping, so the predicates see java.util.concurrent.ExecutionException instead of the callable's throwable.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit (either factory) and retryIfExceptionOfType(T)/retryIfException(Predicate)/retryIfException() runs a callable that throws a Throwable subclass that is neither Exception nor Error (e.g. via commons-lang3 ExceptionUtils.rethrow, Lombok @SneakyThrows, Class.newInstance, or Kotlin/Groovy/Scala code). No timeout is needed.",
+  "consequence": "With retryIfExceptionOfType(T.class) or a Predicate<Throwable> matching T, Retryer.call stops after 1 invocation and throws ExecutionException(ExecutionException(t)) instead of retrying and throwing RetryException(cause=t) as it does without a time limit; with retryIfException() the non-Exception throwable is retried instead (3 invocations, RetryException(cause=ExecutionException(t))). Listeners and RetryException see ExecutionException as the attempt's cause.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionClassPredicate.apply",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionPredicate.apply",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:throwCause"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Guava provides the 4-argument SimpleTimeLimiter.callWithTimeout used by FixedAttemptTimeLimit (Guava 22.0 and earlier; reproduced with 22.0, 16.0.1, 14.0.1 and 10.0.1), whose throwCause rethrows the outer ExecutionException when the cause is neither an Exception nor an Error (SimpleTimeLimiter.java:261-268 in 22.0).",
+    "The user callable throws a Throwable that is neither an Exception nor an Error; the time limit does not expire.",
+    "guava-retrying applies no unwrapping between AttemptTimeLimiter.call and the rejection predicate (Retryer.call catch(Throwable) -> ExceptionAttempt -> getExceptionCause)."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class NoAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "        rejectionPredicate = Predicates.or(rejectionPredicate, new ExceptionPredicate<V>(exceptionPredicate));"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private static final class ExceptionClassPredicate<V> implements Predicate<Attempt<V>> {",
+      "end": "            return delegate.apply(attempt.getExceptionCause());"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            return e.getCause();"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "start": "    public RetryException(String message, int numberOfFailedAttempts, Attempt<?> lastFailedAttempt) {",
+      "end": "        super(message, checkNotNull(lastFailedAttempt, \"Last attempt was null\").hasException() ? lastFailedAttempt.getExceptionCause() : null);"
+    }
+  ],
+  "evidence": [
+    "confirmation/CR-D-13/investigation.md",
+    "repro/test_bugCR-D-13_weird_throwable_timelimit_misclassified.sh",
+    "repro/CR-D-13.log",
+    "repro/CR-D-13.run2.log",
+    "confirmation/CR-D-13/guava22-src/com/google/common/util/concurrent/SimpleTimeLimiter.java"
+  ]
+}

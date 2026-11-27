@@ -1,0 +1,5 @@
+run 1: violated NoDiscardedCompletion (trace 11 states, distinct 124)
+run 2: violated ExecutionExceptionMeansCallableThrew (trace 13 states, distinct 198)
+run 3: violated InterruptPreserved (trace 12 states, distinct 122)
+run 4: violated NoActivityAfterOutcome (trace 16 states, distinct 330)
+run 5: no error, distinct 6130

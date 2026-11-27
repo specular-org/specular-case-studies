@@ -1,0 +1,72 @@
+[0;32m================================[0m
+[0;32mTLC Model Checking Mode[0m
+[0;32m================================[0m
+Spec File:       MC.tla
+Config File:     MC.cfg
+Memory Limit:    16G
+Off-heap Memory: 32G
+Workers:         24
+Timeout:         30 minutes
+[0;34m--- Model Checking Settings ---[0m
+Depth Limit:     0
+Checkpoint:      10 minutes
+Log File:        /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/jobs/cfa1b8da75364675a27858c7f446eb9d/tlc.log
+[0;32m================================[0m
+[1;33mExecuting Command:[0m
+java -XX:+UseParallelGC -Dtlc2.tool.fp.FPSet.impl=tlc2.tool.fp.OffHeapDiskFPSet -XX:MaxDirectMemorySize=32G -Xmx16G -Xms16G -cp /home/ubuntu/guava-retrying-20261126/Specular/lib/CommunityModules-deps.jar:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar tlc2.TLC -config MC.cfg MC.tla -workers 24 -deadlock -checkpoint 10 -metadir /home/ubuntu/tmp/tlc-states-GOnswF 
+
+TLC resource budget (Specular run guava-retrying-opus55max-20261126):
+  memory source: auto (80% of effective available memory at first TLC start)
+  effective memory at start: 377.85 GiB total, 327.95 GiB available
+  other/system use at start: 49.9 GiB
+  memory limit: 262.36 GiB
+  active TLC reserved before request: 0 bytes (this agent: 0 bytes)
+  this request: 48 GiB (heap 16 GiB + off-heap 32 GiB)
+  remaining before request: 262.36 GiB
+  remaining after admission: 214.36 GiB
+  worker limit: unbounded (report only)
+  active TLC workers before request: 0 (this agent: 0)
+  this request workers: 24 (24)
+  result: admitted
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running breadth-first search Model-Checking with fp 31 and seed -1141448642167895141 with 24 workers on 96 cores with 15701MB heap and 32768MB offheap memory [pid: 648912] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/MC.tla
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/base.tla
+Parsing file /tmp/tlc-698175844185288391/TLC.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-698175844185288391/_TLCTrace.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-698175844185288391/Integers.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-698175844185288391/Sequences.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-698175844185288391/FiniteSets.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-698175844185288391/Naturals.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-698175844185288391/TLCExt.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module MC
+Linting of module base
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module MC
+Starting... (2026-11-26 08:03:53)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-26 08:03:54.
+Progress(33) at 2026-11-26 08:03:57: 1,051,192 states generated (1,051,192 s/min), 403,454 distinct states found (403,454 ds/min), 66,992 states left on queue.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 2.8E-6
+  based on the actual fingerprints:  val = 1.7E-6
+14835358 states generated, 5839963 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 61.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 8 and the 95th percentile is 3).
+Finished in 35s at (2026-11-26 08:04:28)
+
+[0;32m================================[0m
+[0;32m✓ Completed successfully[0m
+[0;32mNo errors found[0m
+[0;32m================================[0m

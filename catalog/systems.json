@@ -1,6 +1,6 @@
 {
-  "system_count": 80,
-  "run_count": 463,
+  "system_count": 81,
+  "run_count": 465,
   "systems": [
     {
       "system": "aeron",
@@ -364,6 +364,17 @@
         {
           "module": "core",
           "run_count": 1
+        }
+      ]
+    },
+    {
+      "system": "guava-retrying",
+      "run_count": 2,
+      "module_count": 1,
+      "modules": [
+        {
+          "module": "retryer-attempt-lifecycle",
+          "run_count": 2
         }
       ]
     },

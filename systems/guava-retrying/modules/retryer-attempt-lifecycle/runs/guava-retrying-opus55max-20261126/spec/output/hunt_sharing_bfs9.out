@@ -1,0 +1,61 @@
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running breadth-first search Model-Checking with fp 95 and seed -4511638110943540750 with 24 workers on 96 cores with 23552MB heap and 49152MB offheap memory [pid: 761058] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/MC.tla
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/base.tla
+Parsing file /tmp/tlc-14248836717427937174/TLC.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-14248836717427937174/_TLCTrace.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-14248836717427937174/Integers.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-14248836717427937174/Sequences.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-14248836717427937174/FiniteSets.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-14248836717427937174/Naturals.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-14248836717427937174/TLCExt.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module MC
+Linting of module base
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module MC
+Starting... (2026-11-26 08:18:58)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-26 08:19:00.
+Progress(19) at 2026-11-26 08:19:03: 113,380 states generated (113,380 s/min), 31,232 distinct states found (31,232 ds/min), 11,500 states left on queue.
+Progress(27) at 2026-11-26 08:20:03: 3,367,140 states generated (3,253,760 s/min), 965,572 distinct states found (934,340 ds/min), 279,112 states left on queue.
+Progress(30) at 2026-11-26 08:21:03: 6,614,933 states generated (3,247,793 s/min), 1,884,989 distinct states found (919,417 ds/min), 520,866 states left on queue.
+Progress(31) at 2026-11-26 08:22:03: 10,007,063 states generated (3,392,130 s/min), 2,831,568 distinct states found (946,579 ds/min), 760,009 states left on queue.
+Progress(32) at 2026-11-26 08:23:03: 13,417,476 states generated (3,410,413 s/min), 3,770,848 distinct states found (939,280 ds/min), 987,569 states left on queue.
+Progress(32) at 2026-11-26 08:24:03: 16,667,769 states generated (3,250,293 s/min), 4,654,961 distinct states found (884,113 ds/min), 1,200,581 states left on queue.
+Progress(33) at 2026-11-26 08:25:03: 20,226,810 states generated (3,559,041 s/min), 5,637,738 distinct states found (982,777 ds/min), 1,432,957 states left on queue.
+Progress(34) at 2026-11-26 08:26:03: 23,629,691 states generated (3,402,881 s/min), 6,539,094 distinct states found (901,356 ds/min), 1,634,097 states left on queue.
+Progress(34) at 2026-11-26 08:27:03: 27,488,902 states generated (3,859,211 s/min), 7,588,899 distinct states found (1,049,805 ds/min), 1,881,038 states left on queue.
+Progress(35) at 2026-11-26 08:28:03: 31,056,106 states generated (3,567,204 s/min), 8,519,406 distinct states found (930,507 ds/min), 2,080,609 states left on queue.
+Checkpointing of run /home/ubuntu/tmp/tlc-states-p5VRSD/26-11-26-08-18-58.066
+Checkpointing completed at (2026-11-26 08:29:03)
+Progress(35) at 2026-11-26 08:29:03: 34,821,379 states generated (3,765,273 s/min), 9,536,141 distinct states found (1,016,735 ds/min), 2,311,165 states left on queue.
+Progress(35) at 2026-11-26 08:30:03: 38,503,340 states generated (3,681,961 s/min), 10,526,590 distinct states found (990,449 ds/min), 2,551,031 states left on queue.
+Progress(36) at 2026-11-26 08:31:03: 41,846,950 states generated (3,343,610 s/min), 11,393,289 distinct states found (866,699 ds/min), 2,711,246 states left on queue.
+Progress(36) at 2026-11-26 08:32:03: 45,864,206 states generated (4,017,256 s/min), 12,465,566 distinct states found (1,072,277 ds/min), 2,952,150 states left on queue.
+Progress(36) at 2026-11-26 08:33:03: 49,875,558 states generated (4,011,352 s/min), 13,569,985 distinct states found (1,104,419 ds/min), 3,227,574 states left on queue.
+Progress(37) at 2026-11-26 08:34:03: 53,471,014 states generated (3,595,456 s/min), 14,459,921 distinct states found (889,936 ds/min), 3,379,203 states left on queue.
+Progress(37) at 2026-11-26 08:35:03: 57,521,890 states generated (4,050,876 s/min), 15,555,700 distinct states found (1,095,779 ds/min), 3,620,830 states left on queue.
+Progress(37) at 2026-11-26 08:36:03: 61,785,516 states generated (4,263,626 s/min), 16,697,060 distinct states found (1,141,360 ds/min), 3,860,453 states left on queue.
+Progress(37) at 2026-11-26 08:37:03: 65,866,072 states generated (4,080,556 s/min), 17,797,843 distinct states found (1,100,783 ds/min), 4,122,477 states left on queue.
+Progress(38) at 2026-11-26 08:38:03: 69,544,872 states generated (3,678,800 s/min), 18,709,360 distinct states found (911,517 ds/min), 4,274,456 states left on queue.
+Checkpointing of run /home/ubuntu/tmp/tlc-states-p5VRSD/26-11-26-08-18-58.066
+Checkpointing completed at (2026-11-26 08:39:04)
+Progress(38) at 2026-11-26 08:39:04: 73,841,059 states generated (4,296,187 s/min), 19,862,306 distinct states found (1,152,946 ds/min), 4,507,633 states left on queue.
+Progress(38) at 2026-11-26 08:40:04: 78,470,813 states generated (4,629,754 s/min), 21,075,243 distinct states found (1,212,937 ds/min), 4,745,334 states left on queue.
+Progress(38) at 2026-11-26 08:41:04: 82,221,827 states generated (3,751,014 s/min), 22,099,137 distinct states found (1,023,894 ds/min), 4,975,669 states left on queue.
+Progress(38) at 2026-11-26 08:42:04: 86,370,090 states generated (4,148,263 s/min), 23,195,793 distinct states found (1,096,656 ds/min), 5,222,279 states left on queue.
+Progress(39) at 2026-11-26 08:43:04: 89,873,139 states generated (3,503,049 s/min), 24,083,131 distinct states found (887,338 ds/min), 5,371,025 states left on queue.
+Progress(39) at 2026-11-26 08:44:04: 94,011,995 states generated (4,138,856 s/min), 25,185,061 distinct states found (1,101,930 ds/min), 5,566,590 states left on queue.
+Progress(39) at 2026-11-26 08:45:04: 98,764,644 states generated (4,752,649 s/min), 26,410,197 distinct states found (1,225,136 ds/min), 5,805,996 states left on queue.
+Progress(39) at 2026-11-26 08:46:04: 102,893,561 states generated (4,128,917 s/min), 27,528,438 distinct states found (1,118,241 ds/min), 6,034,618 states left on queue.
+Progress(39) at 2026-11-26 08:47:04: 106,478,315 states generated (3,584,754 s/min), 28,498,941 distinct states found (970,503 ds/min), 6,245,169 states left on queue.
+Progress(39) at 2026-11-26 08:48:04: 110,420,819 states generated (3,942,504 s/min), 29,551,969 distinct states found (1,053,028 ds/min), 6,478,165 states left on queue.

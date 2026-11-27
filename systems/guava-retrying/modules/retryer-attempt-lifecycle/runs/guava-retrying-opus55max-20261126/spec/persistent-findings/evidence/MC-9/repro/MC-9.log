@@ -1,0 +1,91 @@
+== environment
+source       : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-9/worktree
+source HEAD  : 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+source dirty : 0 modified file(s) under src/ (0 = unmodified library)
+Retryer.java sha256            : 62e792c48a5fc9d5
+AttemptTimeLimiters.java sha256: b98b9da0ee59c5ec
+guava jar    : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (sha1 3564ef3803de51fb0530a8377ec6100b33b0d073)
+jsr305 jar   : /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar (sha1 516c03b21d50a644d538de0f0369c620989cd8f0)
+java         : openjdk version "21.0.13.1" 2026-11-17
+== compiling unmodified guava-retrying main sources (--release 8)
+== compiling driver
+== running
+[     0.0 ms] === S1: exact MC counterexample repair-r1/repair1_s4_shutdown_bfs2 (originally hunt_s4_shutdown_bfs2) (retryIfExceptionOfType(IOException), fixedTimeLimit(1s, executor))
+[    18.4 ms] [CE state 2 MCExecutorShutdown] executor.shutdown() -> isShutdown=true
+[    32.5 ms] [CE state 3 MCCallStart] retryer.call(callable)
+[    33.4 ms] [CE states 4-7 MCSubmitRejected + MCListener*] listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0 | executor taskCount=0 queue.size=0 largestPoolSize=0
+[    33.5 ms] [CE state 8 MCPredicateAccepts -> outcome ExecExc] call() threw java.util.concurrent.ExecutionException: java.util.concurrent.RejectedExecutionException: Task java.util.concurrent.FutureTask@4f3f5b24[Not completed, task = MC9Repro$1@27d6c5e0] rejected from java.util.concurrent.ThreadPoolExecutor@4617c264[Terminated, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0]
+[    33.7 ms]     thrown exception created at: java.util.concurrent.ExecutionException: java.util.concurrent.RejectedExecutionException: Task java.util.concurrent.FutureTask@4f3f5b24[Not completed, ...
+[    33.9 ms]         at com.github.rholder.retry.Retryer$ExceptionAttempt.<init>(Retryer.java:254)
+[    34.1 ms]         at com.github.rholder.retry.Retryer.call(Retryer.java:163)
+[    34.2 ms]     its cause (the 'callable exception'): java.util.concurrent.RejectedExecutionException: Task java.util.concurrent.FutureTask@4f3f5b24[Not completed, task = MC9Repro$1@27d6c5e0] rejected from java.ut...
+[    34.5 ms]         at java.base/java.util.concurrent.ThreadPoolExecutor$AbortPolicy.rejectedExecution(ThreadPoolExecutor.java:2081)
+[    34.7 ms]         at java.base/java.util.concurrent.ThreadPoolExecutor.reject(ThreadPoolExecutor.java:841)
+[    34.9 ms]         at java.base/java.util.concurrent.ThreadPoolExecutor.execute(ThreadPoolExecutor.java:1376)
+[    35.0 ms]         at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+[    35.1 ms]         at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:149)
+[    35.1 ms]         at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+[    35.2 ms]         at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+[    35.3 ms]     callable invocations=0  listener notifications=1
+[    35.4 ms] [repaired CE state 4: made=1, curInvoked=FALSE, curQueued=FALSE] executor after call(): taskCount=0 queue.size=0 largestPoolSize=0 completedTaskCount=0 isTerminated=true -> task ever queued or started: false
+[    35.4 ms] --- S1 controls: same Retryer configuration, executor NOT shut down
+[    37.1 ms] control C1 (callable throws IllegalStateException): call() threw ExecutionException(cause=IllegalStateException); callable invocations=1  <- documented case
+[    37.9 ms] control C2 (callable returns): call() returned "callable-ran"; callable invocations=1
+[    38.0 ms] --- S1 matrix: executor kind x shutdown()/shutdownNow(), same Retryer configuration
+[    38.3 ms]     newCachedThreadPool      shutdown()  -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    38.8 ms]     newCachedThreadPool      shutdownNow() -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    39.2 ms]     newFixedThreadPool(2)    shutdown()  -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    39.3 ms]     newFixedThreadPool(2)    shutdownNow() -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    40.5 ms]     newSingleThreadExecutor  shutdown()  -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    40.8 ms]     newSingleThreadExecutor  shutdownNow() -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    41.4 ms]     ForkJoinPool(2)          shutdown()  -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    41.7 ms]     ForkJoinPool(2)          shutdownNow() -> ExecutionException(cause=RejectedExecutionException)    callable invocations=0 attempts reported to listener=1
+[    41.8 ms]     matrix: 8/8 configurations misattribute the rejected submit as the callable's exception
+[    41.9 ms] === S2: MC counterexample repair-r1/repair1_ctl_s4_shutdown_cir (originally hunt_s4_shutdown_bfs1) consequence: rejected submits counted as failed attempts (retryIfException(), stopAfterAttempt(3))
+[    42.5 ms]     listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0 | executor taskCount=0 queue.size=0 largestPoolSize=0
+[    42.6 ms]     listener.onRetry: attempt#2 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0 | executor taskCount=0 queue.size=0 largestPoolSize=0
+[    42.8 ms]     listener.onRetry: attempt#3 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0 | executor taskCount=0 queue.size=0 largestPoolSize=0
+[    42.8 ms] call() threw RetryException: "Retrying failed to complete successfully after 3 attempts."
+[    42.9 ms]     getNumberOfFailedAttempts()=3  getLastFailedAttempt().getAttemptNumber()=3  getLastFailedAttempt().getExceptionCause()=java.util.concurrent.RejectedExecutionException
+[    43.0 ms]     callable invocations=0  listener notifications=3  executor taskCount=0 (task ever queued or started: false)
+[    43.0 ms] === S3: retryIfRuntimeException() with builder defaults neverStop + noWait, executor shut down: run call() for 3 s
+[  1054.2 ms]     t=1s: caller alive=true state=TIMED_WAITING | attempts reported to listener=246,238 | callable invocations=0 | caller CPU 986 ms of 1000 ms wall
+[  2054.9 ms]     t=2s: caller alive=true state=TIMED_WAITING | attempts reported to listener=518,523 | callable invocations=0 | caller CPU 1983 ms of 2001 ms wall
+[  3055.4 ms]     t=3s: caller alive=true state=RUNNABLE | attempts reported to listener=795,095 | callable invocations=0 | caller CPU 2982 ms of 3001 ms wall
+[  3055.7 ms]     first notifications: listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  3055.7 ms]     first notifications: listener.onRetry: attempt#2 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  3055.8 ms]     first notifications: listener.onRetry: attempt#3 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  3056.1 ms]     after Thread.interrupt(): caller alive=false, call() outcome=com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 795254 attempts. (interrupt flag set=true), total attempts=795,254, callable invocations=0
+[  3056.2 ms] === S3: retryIfException() with builder defaults neverStop + noWait, executor shut down: run call() for 1 s
+[  4056.9 ms]     t=1s: caller alive=true state=TIMED_WAITING | attempts reported to listener=275,605 | callable invocations=0 | caller CPU 997 ms of 1000 ms wall
+[  4057.1 ms]     first notifications: listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  4057.2 ms]     first notifications: listener.onRetry: attempt#2 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  4057.2 ms]     first notifications: listener.onRetry: attempt#3 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  4057.4 ms]     after Thread.interrupt(): caller alive=false, call() outcome=com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 275739 attempts. (interrupt flag set=true), total attempts=275,739, callable invocations=0
+[  4057.5 ms] === S3b: README 'Exponential Backoff' configuration verbatim (retryIfExceptionOfType(IOException), retryIfRuntimeException(), exponentialWait(100, 5, MINUTES), neverStop()) + withAttemptTimeLimiter(fixedTimeLimit(1s, executor)); executor shut down; run call() for 4 s
+[  5058.7 ms]     t=1s: caller alive=true state=TIMED_WAITING | attempts reported to listener=3 | callable invocations=0 | caller CPU 0 ms of 1000 ms wall
+[  6059.1 ms]     t=2s: caller alive=true state=TIMED_WAITING | attempts reported to listener=4 | callable invocations=0 | caller CPU 0 ms of 2000 ms wall
+[  7059.5 ms]     t=3s: caller alive=true state=TIMED_WAITING | attempts reported to listener=4 | callable invocations=0 | caller CPU 0 ms of 3001 ms wall
+[  8059.9 ms]     t=4s: caller alive=true state=TIMED_WAITING | attempts reported to listener=5 | callable invocations=0 | caller CPU 0 ms of 4001 ms wall
+[  8060.2 ms]     first notifications: listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  8060.2 ms]     first notifications: listener.onRetry: attempt#2 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  8060.2 ms]     first notifications: listener.onRetry: attempt#3 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=0
+[  8060.5 ms]     after Thread.interrupt(): caller alive=false, call() outcome=com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 5 attempts. (interrupt flag set=true), total attempts=5, callable invocations=0
+[  8060.6 ms] === S4: executor shut down while call() waits between attempts (retryIfExceptionOfType(IOException), fixedWait(500ms), stopAfterAttempt(5))
+[  8062.1 ms]     [app thread] executor.shutdown() after attempt#1 was reported (callable invocations=1)
+[  8562.3 ms]     listener.onRetry: attempt#1 hasException=true getExceptionCause()=java.io.IOException | callable invocations so far=1
+[  8562.5 ms]     listener.onRetry: attempt#2 hasException=true getExceptionCause()=java.util.concurrent.RejectedExecutionException | callable invocations so far=1
+[  8562.6 ms]     call() threw ExecutionException(cause=java.util.concurrent.RejectedExecutionException); callable invocations=1; attempts reported=2
+[  8562.7 ms] === S4 control: executor NOT shut down while call() waits between attempts (retryIfExceptionOfType(IOException), fixedWait(500ms), stopAfterAttempt(5))
+[  9063.7 ms]     call() returned "ok-on-invocation-2"; callable invocations=2
+
+[  9064.0 ms] === SUMMARY
+[  9064.0 ms] BUG TRIGGERED: S1 (repair1_s4_shutdown_bfs2): call() threw ExecutionException(RejectedExecutionException) while the callable was invoked 0 times and its task never reached the executor (taskCount=0); the listener was told attempt#1 threw (Retryer.call Javadoc: ExecutionException only 'if the given callable throws an exception')
+[  9064.1 ms] BUG TRIGGERED: S1 matrix: 8/8 executor kinds/shutdown modes give ExecutionException(RejectedExecutionException) with 0 invocations
+[  9064.2 ms] BUG TRIGGERED: S2 (repair1_ctl_s4_shutdown_cir): RetryException reports 3 failed attempts (last cause RejectedExecutionException) although the callable was invoked 0 times and no task ever reached the executor
+[  9064.3 ms] BUG TRIGGERED: S3 (RuntimeException): call() had not returned after 3 s (3x the 1 s per-attempt limit); 795,252 attempts reported to listeners, 0 callable invocations
+[  9064.3 ms] BUG TRIGGERED: S3 (Exception): call() had not returned after 1 s (1x the 1 s per-attempt limit); 275,738 attempts reported to listeners, 0 callable invocations
+[  9064.3 ms] BUG TRIGGERED: S3b (README exponential backoff): call() had not returned after 4 s (4x the 1 s per-attempt limit); 5 attempts reported to listeners, 0 callable invocations
+[  9064.4 ms] BUG TRIGGERED: S4: shutdown during the retry wait -> attempt#2 never ran, yet call() threw ExecutionException(RejectedExecutionException) as the callable's failure
+[  9064.4 ms] RESULT: BUG REPRODUCED (MC-9; 7 scenario checks triggered)
+exit=0

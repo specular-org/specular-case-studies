@@ -1,0 +1,10 @@
+java.version=21.0.13.1
+H2.7a noLimit retryIfException neverStop noWait [cancel] cancelReturned=true isCancelled=true callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7b fixed5s retryIfException neverStop noWait [cancel] cancelReturned=true isCancelled=true callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7c noLimit retryIfException neverStop fixedWait(10ms) [cancel] cancelReturned=true isCancelled=true callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7d noLimit retryIfExceptionOfType(IOException) neverStop noWait (control: IE not matched) [cancel] cancelReturned=true isCancelled=true callableInvocations atInterrupt=4 +2s=4 | retry task: threw java.util.concurrent.ExecutionException: java.lang.InterruptedException: sleep interrupted | executor terminated within 1s after shutdown=true
+H2.7a noLimit retryIfException neverStop noWait [shutdownNow] cancelReturned=false isCancelled=false callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7b fixed5s retryIfException neverStop noWait [shutdownNow] cancelReturned=false isCancelled=false callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7c noLimit retryIfException neverStop fixedWait(10ms) [shutdownNow] cancelReturned=false isCancelled=false callableInvocations atInterrupt=4 +2s=11 | retry task: still running | executor terminated within 1s after shutdown=false
+H2.7d noLimit retryIfExceptionOfType(IOException) neverStop noWait (control: IE not matched) [shutdownNow] cancelReturned=false isCancelled=false callableInvocations atInterrupt=4 +2s=4 | retry task: threw java.util.concurrent.ExecutionException: java.lang.InterruptedException: sleep interrupted | executor terminated within 1s after shutdown=true
+exit=0

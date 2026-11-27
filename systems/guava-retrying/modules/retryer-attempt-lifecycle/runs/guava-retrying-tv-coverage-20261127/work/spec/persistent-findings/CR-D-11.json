@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "id": "CR-D-11",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "fixedTimeLimit accepts a zero or negative duration; every attempt fails with IllegalArgumentException before the callable runs and is retried as its failure",
+  "cause": "AttemptTimeLimiters.fixedTimeLimit (both overloads) and the FixedAttemptTimeLimit constructor never check duration > 0, unlike every other parameterized built-in factory. Guava's SimpleTimeLimiter.callWithTimeout rejects a non-positive timeout with IllegalArgumentException(\"timeout must be positive\") before submitting the task, and Retryer.call's catch (Throwable) records that limiter error as an ExceptionAttempt, i.e. as the callable's own failure, which the rejection predicate, stop and wait strategies then act on.",
+  "trigger": "Build a Retryer with withAttemptTimeLimiter(AttemptTimeLimiters.fixedTimeLimit(d, unit[, executor])) where d <= 0 (e.g. a config value of 0 meant as 'no timeout', an unset numeric property, or a remaining-deadline budget that reached 0) and invoke it via call() or wrap().",
+  "consequence": "The callable is never invoked and no task reaches the executor, yet the default predicate makes call() throw ExecutionException(IllegalArgumentException) as if the callable threw it; retryIfException()/retryIfRuntimeException() with stopAfterAttempt(N) end in RetryException('after N attempts', getNumberOfFailedAttempts()=N) with listeners notified of N failed attempts; with the builder defaults neverStop()/noWait() (or the README retry-forever configs) call() never returns, spinning about 250,000 attempts per second at ~98% of a core until the application interrupts the thread.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:fixedTimeLimit",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout/checkPositiveTimeout (Guava 22.0)"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Guava's SimpleTimeLimiter.callWithTimeout(callable, d, unit, true) checks d > 0 before executor.submit (SimpleTimeLimiter.java:147, 317-319 in 22.0); verified behaviorally on Guava 10.0.1, 14.0.1, 16.0.1 and 22.0. Guava 23+ removed the APIs this library calls, so no supported Guava version accepts a non-positive timeout.",
+    "No caller-side validation exists: RetryerBuilder.withAttemptTimeLimiter, RetryerBuilder.build and the Retryer constructor only null-check the time limiter.",
+    "Non-positive durations reach the public factory through ordinary configuration (0 used as 'no timeout', unset numeric properties, computed remaining budgets); the factory Javadoc documents no valid range.",
+    "Retryer.call catches Throwable around attemptTimeLimiter.call and records it as the attempt's exception; the built-in exception predicates retryIfException and retryIfRuntimeException match IllegalArgumentException.",
+    "Level-0 reproduction (public API only) on JDK 21.0.13 with the unmodified 2.0.0 source compiled --release 8; the outcome is deterministic and independent of timing."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "sha256": "b98b9da0ee59c5ec12a81220b37d59a217eefe11168f54915c509299a1ad75bf"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "371fc5e5be192e39952ab85a991f364e4992fb1425948fa53219fd27387562d3"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            this.e = new ExecutionException(cause);",
+      "sha256": "1440a7b54b755a14f19a42fe558542015055503115f0328cbe6dc4ff7e7527c9"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "be8b629fbd06f55946249accc973fdccefb6a2529c3798db27dec244211db09e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> withAttemptTimeLimiter(@Nonnull AttemptTimeLimiter<V> attemptTimeLimiter) {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "06f60356f38e2ee3eea3364921d856131f355e8d363e5ce5bb187fca7dd86efc"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private static final class ExceptionClassPredicate<V> implements Predicate<Attempt<V>> {",
+      "end": "            return exceptionClass.isAssignableFrom(attempt.getExceptionCause().getClass());",
+      "sha256": "c9b479668d26e6684f440896dd585a62d62b42e77bbb69d0a1529a8f0166767b"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "sha256": "e230771fd4bf0b6cc104995f9bb990c0b83aa95248f1499ee36369999806acf1"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-11.md",
+      "path": "spec/persistent-findings/evidence/CR-D-11/spec/finding-confirmation/CR-D-11.md",
+      "sha256": "dd07bbae6d45983b793cd3976393d7ae1eb71dd9eda86c94627e488fa46dc364"
+    },
+    {
+      "original": "confirmation/CR-D-11/confirmation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-11/confirmation/CR-D-11/confirmation.md",
+      "sha256": "76803588d5eedea1af6e38990f9993a6db9da7751f5392d2e098977145d47aa1"
+    },
+    {
+      "original": "confirmation/CR-D-11/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-11/confirmation/CR-D-11/investigation.md",
+      "sha256": "bd5c3ff98de51ea1433ec94e3e9e4ef6b03f31e5986abdecd06a1fc8f7d8ad63"
+    },
+    {
+      "original": "repro/test_bugCR-D-11_nonpositive_time_limit.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-11/repro/test_bugCR-D-11_nonpositive_time_limit.sh",
+      "sha256": "8b95741dfa1b802f89386bbc621d59ceaf390d4084f0bf79987d6dd22f808ae9"
+    },
+    {
+      "original": "repro/CR-D-11.log",
+      "path": "spec/persistent-findings/evidence/CR-D-11/repro/CR-D-11.log",
+      "sha256": "061bb0278b026a97d781d032d47996a60280c578abee5600a0a2503ae0a217c2"
+    },
+    {
+      "original": "repro/CR-D-11.run2.log",
+      "path": "spec/persistent-findings/evidence/CR-D-11/repro/CR-D-11.run2.log",
+      "sha256": "4354cbf39fbbd7978ca9abce3b01ebcb04dd5af52aeafa9ca6a8b381d4a14c48"
+    },
+    {
+      "original": "repro/CR-D-11.fixcheck.log",
+      "path": "spec/persistent-findings/evidence/CR-D-11/repro/CR-D-11.fixcheck.log",
+      "sha256": "18b7eea4e2398973d6fac49ebd8fde8b4feaa0c75e87b3239c043bc01df33b11"
+    }
+  ]
+}

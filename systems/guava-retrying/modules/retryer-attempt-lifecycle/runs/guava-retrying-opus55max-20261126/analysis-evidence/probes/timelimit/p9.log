@@ -1,0 +1,2 @@
+Executors.newSingleThreadExecutor(): returned 2 | attempt1:startedInterrupted=false attempt2:startedInterrupted=false
+naive custom executor (poll()/parkNanos loop, never clears interrupt status): returned 3 | attempt1:startedInterrupted=false attempt2:startedInterrupted=true attempt3:startedInterrupted=false

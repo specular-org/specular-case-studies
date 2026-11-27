@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "specular_tlc": {
+      "command": "/home/ubuntu/guava-retrying-20261126/Specular/tools/tlc_tools/.venv/bin/python",
+      "args": [
+        "/home/ubuntu/guava-retrying-20261126/Specular/tools/tlc_tools/mcp_server.py"
+      ],
+      "env": {
+        "SPECULAR_TLC_MEMORY_LIMIT": "auto",
+        "SPECULAR_TLC_SCOPE": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126",
+        "TMPDIR": "/home/ubuntu/tmp",
+        "SPECULAR_RUN_DIR": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126",
+        "PATH": "/home/ubuntu/.local/bin:/home/ubuntu/.vscode-server/bin/dcd3ad6e368fbe19d03f37054a40dbaf40d676f4/bin/remote-cli:/home/ubuntu/.npm-global/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.local/bin:/home/ubuntu/.nvm/versions/node/v20.19.6/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
+        "SPECULAR_WORK_DIR": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output",
+        "SPECULAR_STOP_GATE_WORK_DIR": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-5",
+        "SPECULAR_ROOT": "/home/ubuntu/guava-retrying-20261126/Specular",
+        "SPECULAR_TLC_TOOL_OWNER": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-5/turn01_A.log",
+        "SPECULAR_TLC_TOOL_PARENT_LOCK": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/owners/3963c0a892fa4cb683e415b6979ff1a9.lock"
+      }
+    }
+  }
+}

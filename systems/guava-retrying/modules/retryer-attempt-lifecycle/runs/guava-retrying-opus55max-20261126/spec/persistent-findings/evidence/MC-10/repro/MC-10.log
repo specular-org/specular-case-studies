@@ -1,0 +1,182 @@
+== source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/MC-10/worktree (177b6c9b9f3e7957f404f0bdb8e23374cb1de43f; 0 local modifications)
+== compiling unmodified library sources with javac 21.0.13.1 --release 8
+
+================================================================ run on /usr/lib/jvm/java-21-openjdk-amd64
+java.version=21.0.13.1  java.home=/usr/lib/jvm/java-21-openjdk-amd64
+
+[S1a] bfs1 / DocumentedOutcomesOnly: attempt 1 throws IOException, retryable, stopAfterAttempt(3),
+      wait = join(fixedWait(Long.MAX_VALUE ms), fixedWait(1 ms)), default ThreadSleepStrategy, 1 listener
+      wait strategy value for the failed attempt: computeSleepTime = -9223372036854775808
+      still blocked in the wait after 3 s (documented behaviour): false
+      call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+      documented outcome?   : false
+      interrupt status @exit: false
+      callable invocations  : 1; listener saw attempts [1]; elapsed 1 ms
+      thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Thread.java:500)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+  => S1a: BUG TRIGGERED - IllegalArgumentException escaped Retryer.call() after attempt 1 (not result/ExecutionException/RetryException)
+
+[S1b] bfs1 / DocumentedOutcomesOnly, realistic producer: attempt 1 -> 503 with a Retry-After instant
+      that is already past on the client clock; wait = exceptionWait(503, e -> retryAt - now); attempt 2 would succeed
+      wait strategy value for the failed attempt: computeSleepTime ~= -2000
+      call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+      documented outcome?   : false
+      interrupt status @exit: false
+      callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+      thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Thread.java:500)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+  => S1b: BUG TRIGGERED - retrying aborted with IllegalArgumentException; attempt 2 (which would return "ok") never ran
+
+[S1b-ctl] same, but the function clamps at 0 (Math.max(0, retryAt - now))
+      call() ended with      : RETURNED  value=ok
+      documented outcome?   : true
+      interrupt status @exit: false
+      callable invocations  : 2; listener saw attempts [1, 2]; elapsed 0 ms
+  => S1b-ctl: control OK - call() retried and returned "ok" from attempt 2
+
+[S2] bfs3 / InterruptedCallThrowsRetryException: attempt 1 throws IOException; another thread interrupts
+     the caller while the RetryListener loop runs (CE step 7); wait = overflowing join (CE step 9: Negative)
+     interrupt observed inside the listener loop: true
+     call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+     documented outcome?   : false
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+     thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Thread.java:500)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+     documented (Retryer.call Javadoc): RetryException(numberOfFailedAttempts=1, cause=IOException), interrupt status set
+  => S2: BUG TRIGGERED - interrupted call ended with IllegalArgumentException instead of RetryException; attempt count and last failure lost
+
+[S2-ctl] identical, but a non-negative wait (join(fixedWait(10 ms), fixedWait(1 ms)))
+     interrupt observed inside the listener loop: true
+     call() ended with      : RetryException  [com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.]
+     documented outcome?   : true
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+     RetryException        : numberOfFailedAttempts=1, cause=java.io.IOException: transient failure on attempt 1
+  => S2-ctl: control OK - RetryException(1 attempt, cause IOException) with interrupt status set - the documented outcome
+
+[S3] interrupt already pending when call() starts (callable ignores it and fails); wait = overflowing join
+     call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+     documented outcome?   : false
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts []; elapsed 0 ms
+     thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+  => S3: BUG TRIGGERED - interrupted call ended with IllegalArgumentException instead of RetryException
+
+[S3-ctl] identical, but wait = fixedWait(1 ms)
+     call() ended with      : RetryException  [com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.]
+     documented outcome?   : true
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts []; elapsed 0 ms
+     RetryException        : numberOfFailedAttempts=1, cause=java.io.IOException: transient failure on attempt 1
+  => S3-ctl: control OK - RetryException(1 attempt, cause IOException) with interrupt status set
+
+[S4] same as S1b through Retryer.wrap() -> RetryerCallable submitted to an ExecutorService
+     Future.get() -> ExecutionException, cause=java.lang.IllegalArgumentException: timeout value is negative; callable invocations=1
+  => S4: BUG TRIGGERED - RetryerCallable.call() (Retryer.java:317-319) propagated the IAE into the Future instead of retrying
+
+RESULT: MC-10 REPRODUCED on java 21.0.13.1 - negative computed sleep -> Thread.sleep IAE escapes Retryer.call(); on an interrupted thread it replaces the RetryException
+== exit code on /usr/lib/jvm/java-21-openjdk-amd64: 0
+
+================================================================ run on /usr/lib/jvm/java-11-openjdk-amd64
+java.version=11.0.33.1  java.home=/usr/lib/jvm/java-11-openjdk-amd64
+
+[S1a] bfs1 / DocumentedOutcomesOnly: attempt 1 throws IOException, retryable, stopAfterAttempt(3),
+      wait = join(fixedWait(Long.MAX_VALUE ms), fixedWait(1 ms)), default ThreadSleepStrategy, 1 listener
+      wait strategy value for the failed attempt: computeSleepTime = -9223372036854775808
+      still blocked in the wait after 3 s (documented behaviour): false
+      call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+      documented outcome?   : false
+      interrupt status @exit: false
+      callable invocations  : 1; listener saw attempts [1]; elapsed 1 ms
+      thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Native Method)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+  => S1a: BUG TRIGGERED - IllegalArgumentException escaped Retryer.call() after attempt 1 (not result/ExecutionException/RetryException)
+
+[S1b] bfs1 / DocumentedOutcomesOnly, realistic producer: attempt 1 -> 503 with a Retry-After instant
+      that is already past on the client clock; wait = exceptionWait(503, e -> retryAt - now); attempt 2 would succeed
+      wait strategy value for the failed attempt: computeSleepTime ~= -2001
+      call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+      documented outcome?   : false
+      interrupt status @exit: false
+      callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+      thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Native Method)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+  => S1b: BUG TRIGGERED - retrying aborted with IllegalArgumentException; attempt 2 (which would return "ok") never ran
+
+[S1b-ctl] same, but the function clamps at 0 (Math.max(0, retryAt - now))
+      call() ended with      : RETURNED  value=ok
+      documented outcome?   : true
+      interrupt status @exit: false
+      callable invocations  : 2; listener saw attempts [1, 2]; elapsed 0 ms
+  => S1b-ctl: control OK - call() retried and returned "ok" from attempt 2
+
+[S2] bfs3 / InterruptedCallThrowsRetryException: attempt 1 throws IOException; another thread interrupts
+     the caller while the RetryListener loop runs (CE step 7); wait = overflowing join (CE step 9: Negative)
+     interrupt observed inside the listener loop: true
+     call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+     documented outcome?   : false
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+     thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+      origin of the escaping exception (top frames):
+        at java.base/java.lang.Thread.sleep(Native Method)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at MC10Repro$5.run(MC10Repro.java:165)
+     documented (Retryer.call Javadoc): RetryException(numberOfFailedAttempts=1, cause=IOException), interrupt status set
+  => S2: BUG TRIGGERED - interrupted call ended with IllegalArgumentException instead of RetryException; attempt count and last failure lost
+
+[S2-ctl] identical, but a non-negative wait (join(fixedWait(10 ms), fixedWait(1 ms)))
+     interrupt observed inside the listener loop: true
+     call() ended with      : RetryException  [com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.]
+     documented outcome?   : true
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts [1]; elapsed 0 ms
+     RetryException        : numberOfFailedAttempts=1, cause=java.io.IOException: transient failure on attempt 1
+  => S2-ctl: control OK - RetryException(1 attempt, cause IOException) with interrupt status set - the documented outcome
+
+[S3] interrupt already pending when call() starts (callable ignores it and fails); wait = overflowing join
+     call() ended with      : UNDOCUMENTED IllegalArgumentException  [java.lang.IllegalArgumentException: timeout value is negative]
+     documented outcome?   : false
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts []; elapsed 0 ms
+     thrown.getCause()     : null  (attempt count / last failure reachable from the thrown exception: false)
+  => S3: BUG TRIGGERED - interrupted call ended with IllegalArgumentException instead of RetryException
+
+[S3-ctl] identical, but wait = fixedWait(1 ms)
+     call() ended with      : RetryException  [com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.]
+     documented outcome?   : true
+     interrupt status @exit: true
+     callable invocations  : 1; listener saw attempts []; elapsed 0 ms
+     RetryException        : numberOfFailedAttempts=1, cause=java.io.IOException: transient failure on attempt 1
+  => S3-ctl: control OK - RetryException(1 attempt, cause IOException) with interrupt status set
+
+[S4] same as S1b through Retryer.wrap() -> RetryerCallable submitted to an ExecutorService
+     Future.get() -> ExecutionException, cause=java.lang.IllegalArgumentException: timeout value is negative; callable invocations=1
+  => S4: BUG TRIGGERED - RetryerCallable.call() (Retryer.java:317-319) propagated the IAE into the Future instead of retrying
+
+RESULT: MC-10 REPRODUCED on java 11.0.33.1 - negative computed sleep -> Thread.sleep IAE escapes Retryer.call(); on an interrupted thread it replaces the RetryException
+== exit code on /usr/lib/jvm/java-11-openjdk-amd64: 0
+
+OVERALL: MC-10 REPRODUCED on every JDK run

@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "id": "MC-10",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Negative computed sleep makes Retryer.call() throw IllegalArgumentException, replacing the RetryException owed to an interrupted thread",
+  "cause": "Retryer.call passes waitStrategy.computeSleepTime(attempt) to the block strategy without validating it and catches only InterruptedException (Retryer.java:176-182). The default ThreadSleepStrategy calls Thread.sleep(sleepTime) directly (BlockStrategies.java:46). Thread.sleep rejects a negative value with IllegalArgumentException before it checks the interrupt status.",
+  "trigger": "A retryable attempt fails, the stop strategy does not stop, and the wait strategy returns a negative value. Examples: WaitStrategies.join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, MILLISECONDS)), whose unchecked long sum is Long.MIN_VALUE, or exceptionWait(cls, e -> retryAt - now) with a Retry-After instant that has already passed. Optionally the caller thread is also interrupted before the block step, e.g. by another thread during the RetryListener loop (CE bfs3 step 7) or with an interrupt pending before call().",
+  "consequence": "Retryer.call() ends with IllegalArgumentException('timeout value is negative'), and so do RetryerCallable.call() and the Future it backs. This is not a documented outcome. Retrying stops after attempt 1 even when the next attempt would succeed. An interrupted caller gets the IAE, with its interrupt status still set, instead of RetryException, so the attempt count and the last failure are lost (the IAE has no cause).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:176",
+    "src/main/java/com/github/rholder/retry/Retryer.java:178",
+    "src/main/java/com/github/rholder/retry/Retryer.java:179",
+    "src/main/java/com/github/rholder/retry/BlockStrategies.java:46"
+  ],
+  "actions": [
+    "MCWaitStrategyComputes",
+    "MCBlockNegative",
+    "MCInterrupt"
+  ],
+  "invariants": [
+    "DocumentedOutcomesOnly",
+    "InterruptedCallThrowsRetryException"
+  ],
+  "premises": [
+    "Retryer.call neither validates nor clamps sleepTime, and catches only InterruptedException around blockStrategy.block (Retryer.java:176-182).",
+    "RetryerBuilder.build defaults the block strategy to ThreadSleepStrategy, which calls Thread.sleep(sleepTime) without a clamp (BlockStrategies.java:46).",
+    "JDK Thread.sleep(long) throws IllegalArgumentException for a negative value before it checks the interrupt status. Observed on JDK 11.0.33.1 and 21.0.13.1 in the first confirmation run (repro/MC-10.log) and again in the repair-round-1 re-run against the unchanged 177b6c9 source (repro/MC-10.r1.log).",
+    "Built-in strategies with valid parameters can produce a negative sleep: the unchecked long sum in WaitStrategies.join (WaitStrategies.java:365-371) and the unclamped function value in exceptionWait (WaitStrategies.java:386-394). Those producers are tracked separately as CR-D-16 and CR-D-17 and serve here only as triggers.",
+    "The Retryer.call Javadoc lists only three outcomes: a returned result, ExecutionException, and RetryException (with the interrupt status set when the thread was interrupted)."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "                    throw new RetryException(attemptNumber, attempt);",
+      "sha256": "61a1c3cecd2b01f37d84b07f5087791244e3b761dde30835befee5d4b103185f"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "be8b629fbd06f55946249accc973fdccefb6a2529c3798db27dec244211db09e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "sha256": "e230771fd4bf0b6cc104995f9bb990c0b83aa95248f1499ee36369999806acf1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategy.java",
+      "sha256": "f3bf92a2df3b291822b0508dbb641d872f06e697330e756598c39917b18ec726"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java",
+      "sha256": "ac90de11d2ff4f2bf784675f61822378b7fd094f04dade4cd6ebba2874a18585"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "sha256": "4367454537d9c66ac95fde4f1e0bbf529514e8b2d79b61238cd0f81f2e6304bd"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    public static <T extends Throwable> WaitStrategy exceptionWait(@Nonnull Class<T> exceptionClass,",
+      "end": "        return new CompositeWaitStrategy(waitStrategyList);",
+      "sha256": "0aad0bfc46289ff44ba9bd5249e6cbfcb87d2543c5533e79052fb8f5f7c5be66"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class FixedWaitStrategy implements WaitStrategy {",
+      "end": "            Preconditions.checkArgument(sleepTime >= 0L, \"sleepTime must be >= 0 but is %d\", sleepTime);",
+      "sha256": "6d55d84fbefee8c2bb2a4a0faca43f996df25611d2f77239e593e7dda3b24451"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "end": "            return 0L;",
+      "sha256": "82b7c0a68bb00e6dfea12d000a89340fb3052e6cf3e6275f6325d54104125104"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s5_decision.cfg",
+      "sha256": "188e82a9b53d55b107f92311221ff970e2565045be0a9332ec4a92cb35c21561"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla",
+      "sha256": "16ca9770fd8f99ada6f40405e410339ac7a211d0b526b907d7b21a22c8f491ae"
+    },
+    {
+      "root": "work",
+      "path": "spec/MCHunt.tla",
+      "sha256": "a5dfe894d870e42c33a5ac2ff74f6b90a5761e9383b5e50af15144f2780cbe34"
+    },
+    {
+      "root": "work",
+      "path": "spec/base.tla",
+      "sha256": "ac3552e45e62c18bc5a38f52f337fe8cd96c92ff5fd1d61a46d5b651fc2e8c16"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-10.md",
+      "path": "spec/persistent-findings/evidence/MC-10/spec/finding-confirmation/MC-10.md",
+      "sha256": "52eb60f68473e822229dad85769f7ae7ecb4f682b4fd4db6a4c27b6468f6c27f"
+    },
+    {
+      "original": "confirmation/MC-10/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-10/confirmation/MC-10/investigation.md",
+      "sha256": "985d0b3f4d0e4e0d55583649079d46047a12d1fe37d8e0197e7ff4bb732eccdf"
+    },
+    {
+      "original": "repro/test_bugMC-10_negative_sleep_iae.sh",
+      "path": "spec/persistent-findings/evidence/MC-10/repro/test_bugMC-10_negative_sleep_iae.sh",
+      "sha256": "87355c33af5ef8375d585ffa76e4be83620aba71538b28c737af547290a3a6cd"
+    },
+    {
+      "original": "repro/MC-10.log",
+      "path": "spec/persistent-findings/evidence/MC-10/repro/MC-10.log",
+      "sha256": "a1812f23e0eaf998b61865e57d7d243743afdec8c4a0cab3a9812f2ce396cb1f"
+    },
+    {
+      "original": "repro/MC-10.r1.log",
+      "path": "spec/persistent-findings/evidence/MC-10/repro/MC-10.r1.log",
+      "sha256": "d8772af3aae22f7d4936336e696b7c8f428ce8b08c702b97e13ee8e8302a888e"
+    },
+    {
+      "original": "spec/output/hunt_s5_decision_bfs1.out",
+      "path": "spec/persistent-findings/evidence/MC-10/spec/output/hunt_s5_decision_bfs1.out",
+      "sha256": "7e4b8c2c95c82434afd8b0ee5e6ef4a45100105485d2f26234059ac2230c0160"
+    },
+    {
+      "original": "spec/output/hunt_s5_decision_bfs3.out",
+      "path": "spec/persistent-findings/evidence/MC-10/spec/output/hunt_s5_decision_bfs3.out",
+      "sha256": "9b4aeab68d3d9efb6e373638ef88d8d6295a6401d127c857b83e37813f3013da"
+    }
+  ]
+}

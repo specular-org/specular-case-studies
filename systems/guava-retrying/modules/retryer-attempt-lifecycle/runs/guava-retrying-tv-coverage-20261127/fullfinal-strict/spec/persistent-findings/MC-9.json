@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "id": "MC-9",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Shut-down fixedTimeLimit executor: RejectedExecutionException from submit is recorded as the callable's failure though the callable never ran",
+  "cause": "Retryer.call wraps every Throwable from attemptTimeLimiter.call in an ExceptionAttempt numbered as the current attempt (Retryer.java:162-163). With fixedTimeLimit(d, unit, executor), Guava 22.0 SimpleTimeLimiter.callWithTimeout calls executor.submit (SimpleTimeLimiter.java:149) outside its try block, so a shut-down executor's RejectedExecutionException reaches that catch. Retryer.call records it as an exception the callable threw, although the callable was never submitted or run.",
+  "trigger": "The ExecutorService passed to AttemptTimeLimiters.fixedTimeLimit(d, unit, executor) is shut down (shutdown() or shutdownNow(), on a cached, fixed, single-thread or ForkJoin pool) before Retryer.call, or while call() is waiting between attempts. Then the next attempt's submit is rejected.",
+  "consequence": "With a predicate that does not match RejectedExecutionException (e.g. retryIfExceptionOfType(IOException)), call() throws ExecutionException(RejectedExecutionException), which its Javadoc reserves for 'the given callable throws an exception'. The callable was invoked 0 times, yet listeners are notified of attempt #1 with hasException()=true. With retryIfException()/retryIfRuntimeException(), each rejection is retried as a callable failure. stopAfterAttempt(3) gives a RetryException reporting 3 failed attempts and 0 invocations. The defaults neverStop+noWait busy-loop at about 100% CPU (about 130k-280k fabricated attempts per second across four runs). The README exponential-backoff configuration (neverStop) never returns. In every case the callable is never invoked.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:Retryer.call (lines 160-174)",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call (line 107)",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout (line 149, executor.submit)"
+  ],
+  "actions": [
+    "MCExecutorShutdown",
+    "MCCallStart",
+    "MCSubmitRejected",
+    "MCListenersBegin",
+    "MCListenerNotify",
+    "MCListenersEnd",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "ExecutionExceptionMeansCallableThrewExcept29",
+    "CountedImpliesInvokedNoStartRace"
+  ],
+  "premises": [
+    "The time limiter comes from the public 3-argument AttemptTimeLimiters.fixedTimeLimit(duration, unit, executorService) with a caller-supplied executor that is shut down before or during Retryer.call. Users cannot shut down the internal cached pool of the 2-argument overload.",
+    "Guava 22.0 (jar sha1 3564ef3803de51fb0530a8377ec6100b33b0d073) SimpleTimeLimiter.callWithTimeout(callable, d, unit, true) calls executor.submit at line 149 before its try block, so the executor's RejectedExecutionException propagates unwrapped to Retryer.call.",
+    "No library or caller-side guard distinguishes limiter/executor failures from callable failures. The documented contract of Retryer.call, Attempt and RetryException describes attempts and ExecutionException causes as the callable's own outcome.",
+    "Distinct from upstream #29 (timeouts not retried): #29 concerns UncheckedTimeoutException from future.get after the callable was submitted. Its proposed fix (TimeoutException vs ExecutionException from the limiter) would not cover a raw RejectedExecutionException from submit.",
+    "Reproduced at escalation level 0 on JDK 21 (--release 8) against unmodified source 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f. Results were deterministic in four runs: two in round 0 and two in repair round 1 on 2026-11-26, each with 7/7 scenario checks triggered.",
+    "Repair round 1 regenerated the counterexamples on the repaired spec (spec/output/repair-r1/repair1_s4_shutdown_bfs2.out, spec/output/repair-r1/repair1_ctl_s4_shutdown_cir.out). The action sequence and violated invariants are unchanged; only curQueued after MCSubmitRejected changed from TRUE to FALSE. FALSE matches the implementation: a shut-down ThreadPoolExecutor rejects without enqueueing, and the repro observes taskCount=0, queue.size=0 and largestPoolSize=0 during onRetry."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "fb7054c09a3b82725a0c4396ebade5a5ab978bd26ff149fffd462139ae3898cd"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            return e.getCause();",
+      "sha256": "5811aa14bcb31c8fcd6351b208d7389960750eec1121ab0f3f21c895611684df"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "        public X call() throws ExecutionException, RetryException {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "e3e7bd9d01d5731c2170d6e624bb746fbec1272aabc471b5d40d3b6ecf2d20cb"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit, @Nonnull ExecutorService executorService) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "cf840b599ade05465fd186b0baaed9cb806b22a624a156f443c2f1bbbcc72d2a"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiter.java",
+      "start": "public interface AttemptTimeLimiter<V> {",
+      "end": "    V call(Callable<V> callable) throws Exception;",
+      "sha256": "a0cd65f0697bc255863039430fad51c7367756ed11d48d17c7e7aa5eea4ceb9b"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "            return exceptionClass.isAssignableFrom(attempt.getExceptionCause().getClass());",
+      "sha256": "2a65edc9a50a9815fcdce1ae008423489bfcb3068bff1a8da33ce0a0fb55a183"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Attempt.java",
+      "sha256": "cb38adea77667705c9e998649c4300ba07ab3a01ca4bac0ebf1e50b501ccc39c"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "sha256": "4367454537d9c66ac95fde4f1e0bbf529514e8b2d79b61238cd0f81f2e6304bd"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s4_shutdown.cfg",
+      "sha256": "4145450daf1606bceec275a55f7678844ed84eea94a8274e6b84101aaaeb896e"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-9.md",
+      "path": "spec/persistent-findings/evidence/MC-9/spec/finding-confirmation/MC-9.md",
+      "sha256": "bb8fa248f15c84103f51f74d13b11930d8c0ea2131fd6efe5d3116f11b763a37"
+    },
+    {
+      "original": "confirmation/MC-9/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-9/confirmation/MC-9/investigation.md",
+      "sha256": "db566519439441019d8d577d49d4c5ac6a27dddd43e17000e4ea9fad9c57f167"
+    },
+    {
+      "original": "repro/test_bugMC-9_rejected_submit_misattributed.sh",
+      "path": "spec/persistent-findings/evidence/MC-9/repro/test_bugMC-9_rejected_submit_misattributed.sh",
+      "sha256": "7a3c6fb29acf237284119fb0f925e61b45296da67c40c9ac898f7822e81d131e"
+    },
+    {
+      "original": "repro/MC-9.log",
+      "path": "spec/persistent-findings/evidence/MC-9/repro/MC-9.log",
+      "sha256": "4b64b057b3589669013e8ee5e986fc04a138bea78c6c397218d0fc08c88ac84f"
+    },
+    {
+      "original": "repro/MC-9.run2.log",
+      "path": "spec/persistent-findings/evidence/MC-9/repro/MC-9.run2.log",
+      "sha256": "f970ea76b7210570f1051811e175134f069daa69403f3a235c0ead5ff36dd11d"
+    },
+    {
+      "original": "repro/MC-9.r0.log",
+      "path": "spec/persistent-findings/evidence/MC-9/repro/MC-9.r0.log",
+      "sha256": "6aebd27b58504fac5144a6e3988b97e5614d26e733dfd3c1e7f044ada0dc9597"
+    },
+    {
+      "original": "repro/MC-9.r0.run2.log",
+      "path": "spec/persistent-findings/evidence/MC-9/repro/MC-9.r0.run2.log",
+      "sha256": "c0d65301ed5badc104c9eefa9d1e9aac4ea062301b39f56288ebe974e71c16e4"
+    },
+    {
+      "original": "spec/output/repair-r1/repair1_s4_shutdown_bfs2.out",
+      "path": "spec/persistent-findings/evidence/MC-9/spec/output/repair-r1/repair1_s4_shutdown_bfs2.out",
+      "sha256": "0c57861f79939369ae91e9d1a7ddfe6cac315aba16ad78bc02de91aa7caa449e"
+    },
+    {
+      "original": "spec/output/repair-r1/repair1_ctl_s4_shutdown_cir.out",
+      "path": "spec/persistent-findings/evidence/MC-9/spec/output/repair-r1/repair1_ctl_s4_shutdown_cir.out",
+      "sha256": "c5348d1e7109c517711c92eb66e5be1f5a637e258d1615857d2c7c5e6f0b9b82"
+    },
+    {
+      "original": "spec/output/hunt_s4_shutdown_bfs2.out",
+      "path": "spec/persistent-findings/evidence/MC-9/spec/output/hunt_s4_shutdown_bfs2.out",
+      "sha256": "21035e8a80e28327524eca2d3fd35337d74f3597e5c814520ec43b366cc9ea35"
+    },
+    {
+      "original": "spec/output/hunt_s4_shutdown_bfs1.out",
+      "path": "spec/persistent-findings/evidence/MC-9/spec/output/hunt_s4_shutdown_bfs1.out",
+      "sha256": "4a8fb6941b5d4595a325496f98728cc9c29ea75a677521a41ac7da19a3decd37"
+    }
+  ]
+}

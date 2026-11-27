@@ -1,0 +1,332 @@
+{
+  "defects": [
+    {
+      "id": "D-1",
+      "location": [
+        "AttemptTimeLimiters.java:105-108",
+        "Retryer.java:157-184",
+        "Guava SimpleTimeLimiter.java:155-157,164-166"
+      ],
+      "trigger": "`fixedTimeLimit(d, unit[, executor])`; the callable ignores interrupts or blocks in a non-interruptible call (e.g. a `java.net.Socket` read without SO_TIMEOUT); the attempt times out (or the caller is interrupted) and the retryer goes on to another attempt or ends the call.",
+      "wrong_behavior": "The cancelled attempt keeps running on its worker while later attempts of the same `call()` run and after `call()` has returned or thrown. Its side effects land after the outcome was reported, its eventual result or exception (even an `Error`) is dropped silently, and the one `Callable` instance is executed by several threads at once with no happens-before between them. Attempts are documented as a sequence (Retryer.java:31-35); `AttemptTimeLimiter.java:22` only admits that the attempt is 'possibly' interrupted.",
+      "evidence": "SimpleTimeLimiter cancels and throws without waiting for the worker (SimpleTimeLimiter.java:155-157,164-166); a late `FutureTask.set`/`setException` loses its CAS (JDK 21 FutureTask.java:281-305). Probe timelimit/P1Overlap: 4 attempts running concurrently, 3-4 of them finished after `call()` ended (JDK 11 and 21). Probe interrupt/IntProbe4: caller-interrupt trigger, `call()` returned at 322 ms while attempt 1 ran until 1526 ms (2 concurrent attempts).",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 1",
+      "known": null
+    },
+    {
+      "id": "D-2",
+      "location": [
+        "Guava SimpleTimeLimiter.java:154,164-166",
+        "AttemptTimeLimiters.java:107",
+        "JDK 21 FutureTask.java:164-167,197-206,446-495"
+      ],
+      "trigger": "`fixedTimeLimit`; the callable completes in the window between `Future.get(timeout)` deciding that the deadline passed (state NEW or COMPLETING) and the subsequent `future.cancel(true)`.",
+      "wrong_behavior": "`cancel(true)` returns false but its result is ignored and `UncheckedTimeoutException` is thrown anyway: an attempt whose Future completed normally is reported as a timeout and its result is discarded. Under `retryIfException()`/`retryIfRuntimeException()` the work is executed again (a duplicated non-idempotent side effect); with a narrower predicate `call()` fails although the callable succeeded.",
+      "evidence": "Probe timelimit/P2Race (user-supplied recording executor, 1 ms limit, completion within +-300 us of the deadline): 83 of 20,000 trials on JDK 21 and 60 of 20,000 on JDK 11 had the first Future in state NORMAL and the callable executed a second time. Window is about 2-3 us (removeWaiter, TimeoutException construction, cancel CAS).",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 1",
+      "known": null
+    },
+    {
+      "id": "D-3",
+      "location": [
+        "AttemptTimeLimiters.java:57-60,85,89-91",
+        "Guava SimpleTimeLimiter.java:81-84",
+        "JDK Executors.java:216,696",
+        "AttemptTimeLimiter.java:27-34"
+      ],
+      "trigger": "Two-argument `fixedTimeLimit(d, unit)`; the callable blocks uninterruptibly or ignores interrupts; timeouts are retried (`neverStop` or a long `stopAfterDelay`).",
+      "wrong_behavior": "Every timed-out attempt pins one non-daemon thread of the limiter's private cached pool for as long as the callable runs (forever for a blocked read), and the pool creates a new thread for each following attempt: thread count grows with the number of timed-out attempts, the threads outlive `call()` and the retryer's use, and the JVM never exits. The pool is private and there is no shutdown path.",
+      "evidence": "Probe timelimit/P3ThreadGrowth: 20 attempts gave 20 live pool threads blocked in `read` at +0, +2 and +4 s after `call()` threw; `main()` returned but the JVM did not exit (killed at 20 s). Related known issue (not the same defect): #92 (open) reports only the ~60 s exit delay caused by idle non-daemon pool threads after a normal run; the per-attempt leak and the never-exiting JVM are not reported.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 1",
+      "known": null
+    },
+    {
+      "id": "D-4",
+      "location": [
+        "AttemptTimeLimiters.java:69-72,93-95,105-108",
+        "Guava SimpleTimeLimiter.java:149,164-166",
+        "Retryer.java:157-174"
+      ],
+      "trigger": "`fixedTimeLimit(d, unit, boundedExecutor)` (e.g. `newFixedThreadPool(N)`, or a ThreadPoolExecutor with a bounded queue and AbortPolicy) whose workers are held by this call's own timed-out attempts (D-1), by other threads sharing the Retryer, or by `wrap()` tasks submitted to the same pool.",
+      "wrong_behavior": "Later attempts time out while still queued (cancel leaves the dead task in the queue) or are rejected; the callable never runs, yet each counts as a failed attempt (attempt number, listener notification, stop budget, `RetryException`) and is reported as `UncheckedTimeoutException` or `RejectedExecutionException`. With `wrap()` tasks on the limiter's own pool and `neverStop` the calls livelock.",
+      "evidence": "Probe timelimit/P4Executors: FixedThreadPool(1) gave 5 attempts with 1 invocation; ArrayBlockingQueue(1) gave attempts 3-5 rejected with the cancelled attempt-2 task still queued. Probe sharing/SharedLimiterStarvation: a third caller sharing the Retryer got `RetryException` after 3 attempts with 0 invocations. Probe sharing/WrapSameExecutor: 58 attempts, 0 executions in 3 s.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 1",
+      "known": null
+    },
+    {
+      "id": "D-5",
+      "location": [
+        "Retryer.java:159-164,170-174",
+        "AttemptTimeLimiters.java:107",
+        "Guava SimpleTimeLimiter.java:152-158"
+      ],
+      "trigger": "`fixedTimeLimit`; the calling thread is interrupted while waiting for an attempt, or already has a pending interrupt when an attempt is submitted (at entry, or arriving after the inter-attempt sleep returned).",
+      "wrong_behavior": "`Future.get` clears the interrupt status, Guava cancels the attempt and rethrows `InterruptedException`, and `Retryer` records it as an ordinary failed attempt. With a predicate that matches it (e.g. `retryIfException()`) the loop keeps retrying and can return normally; if the stop strategy fires, `RetryException` is thrown with the status clear; with a non-matching predicate `call()` throws `ExecutionException(InterruptedException)` with the status clear, often without the callable ever having run. A started attempt's finished work can also be discarded and repeated. Contradicts Retryer.java:151-153 and 59-61.",
+      "evidence": "Probe interrupt/IntProbe H2.1a-f: returned normally / RetryException / ExecutionException, interrupt status false in every case. Probe interrupt/IntProbe2 H2.2 (pre-interrupted caller, 300 trials, JDK 21): 290 returned normally with status false, 10 re-executed the callable; with `retryIfRuntimeException()` 298 threw ExecutionException(InterruptedException) with 0 invocations. Same pattern on JDK 11.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 2",
+      "known": null
+    },
+    {
+      "id": "D-6",
+      "location": [
+        "Retryer.java:159-164,170-174",
+        "AttemptTimeLimiters.java:77-79"
+      ],
+      "trigger": "No time limiter; the calling thread is interrupted while the callable is in an interruptible blocking call (sleep, wait, lockInterruptibly, ...), so the callable throws `InterruptedException` and the status is cleared.",
+      "wrong_behavior": "The same outcomes as D-5: retrying continues and `call()` may return normally, or `RetryException` / `ExecutionException(InterruptedException)` is thrown with the interrupt status clear, against Retryer.java:151-153.",
+      "evidence": "Probe interrupt/IntProbe H2.3a-d (returned ok / RetryException / ExecutionException, status false) and interrupt/IntProbe2 H2.2n2 (pre-interrupted, interruptible callable: returned ok, status false, 2 invocations); JDK 11 and 21.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 2",
+      "known": null
+    },
+    {
+      "id": "D-7",
+      "location": [
+        "Retryer.java:195-197,301-320",
+        "Retryer.java:159-164,170-183"
+      ],
+      "trigger": "`executor.submit(retryer.wrap(callable))` with a predicate that matches `InterruptedException` (e.g. `retryIfException()`) and a stop strategy that does not fire (default `neverStop`); then `Future.cancel(true)`, `ExecutorService.shutdownNow()`, or the cancellation done by `invokeAny` / timed `invokeAll` arrives while an attempt is running.",
+      "wrong_behavior": "The cancellation interrupt is consumed as an attempt failure (D-5/D-6), so the cancelled task keeps retrying and repeating the callable's side effects indefinitely; the worker thread is never released and `awaitTermination` never succeeds.",
+      "evidence": "Probe interrupt/IntProbe3: callable invocations 4 at cancel/shutdownNow, 11 two seconds later, executor not terminated (no limiter, fixedTimeLimit, fixedWait); control with `retryIfExceptionOfType(IOException)` terminates. Probe sharing/WrapCancelZombie2: attempts 2 then 12 within 2 s, with and without `fixedTimeLimit`. JDK 11 and 21.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 2",
+      "known": null
+    },
+    {
+      "id": "D-8",
+      "location": [
+        "RetryerBuilder.java:40,61-65,196",
+        "Retryer.java:52,137,166-168"
+      ],
+      "trigger": "After `build()`, the builder receives another listener (e.g. it is reused to build a second, differently configured Retryer, the #48 pattern) while a Retryer it built is inside its listener loop on another thread.",
+      "wrong_behavior": "The running `call()` throws `ConcurrentModificationException`, which is not a documented outcome, after the attempt already executed: the attempt's result or exception is lost, the rejection predicate and stop strategy never run, a retryable failure is not retried, and the caller cannot tell that the side effect happened. Contradicts 'A retryer is thread-safe' (Retryer.java:39-40) and the maintainer's answer in #35. An unsynchronized `ArrayList.add` also permits stale or null reads under the JMM (not observed).",
+      "evidence": "The loop at Retryer.java:166-168 sits outside the attempt try/catch (159-164) and iterates the builder's own ArrayList (fail-fast `ArrayList.Itr`, JDK 21 ArrayList.java:1043,1093). Probe sharing/SharedListenerCME (latch-ordered schedule): CME at Retryer.java:166, callable side effects 1, predicate and stop calls 0 (JDK 11 and 21). Probe sharing/RacyListenerStressLogging: 9,369 of 9,406 uncoordinated builder modifications made the running call throw CME.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 3",
+      "known": "Same root cause as #48 (open, unfixed), which reports only the single-threaded aliasing; this concurrent consequence (CME, lost attempt outcome) is not reported."
+    },
+    {
+      "id": "D-9",
+      "location": [
+        "RetryerBuilder.java:40,63,196",
+        "Retryer.java:137,166-168"
+      ],
+      "trigger": "`withRetryListener` is called on the builder after `build()`.",
+      "wrong_behavior": "An already-built Retryer, including one with a call in flight, notifies a listener that was not configured when it was built (and that was meant for a different Retryer).",
+      "evidence": "Probe sharing/ListenerSetDrift: a listener added during the inter-attempt sleep was notified twice by the already-running call of the first Retryer.",
+      "category": "concurrency",
+      "verification": "MC",
+      "scenario": "Scenario 3",
+      "known": "#48 (open, unfixed)"
+    },
+    {
+      "id": "D-10",
+      "location": [
+        "Guava SimpleTimeLimiter.java:149",
+        "Retryer.java:162-163,170-174",
+        "Retryer.java:148-150"
+      ],
+      "trigger": "`fixedTimeLimit(d, unit, executor)` whose executor has been shut down (e.g. during application shutdown while calls are still retrying) or rejects the task (bounded queue with AbortPolicy).",
+      "wrong_behavior": "`RejectedExecutionException` from `submit` is recorded as if the callable had thrown it. Under `retryIfException()`/`retryIfRuntimeException()` the retryer spins through attempts that never run the callable (an endless busy loop with `neverStop` and `noWait`); otherwise `call()` throws `ExecutionException(RejectedExecutionException)`, documented as 'the given callable throws an exception', although the callable never ran.",
+      "evidence": "Probe timelimit/P4Executors: shut-down executor with `retryIfRuntimeException()` and `noWait` made 37,453 attempts in 200 ms with 0 invocations; with `retryIfExceptionOfType(IOException)` it threw ExecutionException(RejectedExecutionException) with 0 invocations. Probe strategies/OutcomeProbe case 7.",
+      "category": "low-level",
+      "verification": "MC",
+      "scenario": "Scenario 4",
+      "known": null
+    },
+    {
+      "id": "D-11",
+      "location": [
+        "AttemptTimeLimiters.java:57-60,69-72,97-103",
+        "Guava SimpleTimeLimiter.java:147,317-319"
+      ],
+      "trigger": "`fixedTimeLimit(0 or negative, unit[, executor])`.",
+      "wrong_behavior": "The limiter is accepted at build time, then every attempt fails with `IllegalArgumentException(\"timeout must be positive\")` before the callable runs; the failure is retried as a callable failure (a busy loop under `neverStop`) or surfaced as `ExecutionException`.",
+      "evidence": "Probe timelimit/P5Duration: about 25,000 attempts in 100 ms with 0 invocations for durations 0 and -1. Probe strategies/OutcomeProbe cases 5-6. Other factories validate eagerly (WaitStrategies.java:237, StopStrategies.java:103).",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-12",
+      "location": [
+        "AttemptTimeLimiters.java:107",
+        "Guava SimpleTimeLimiter.java:162-163,251-260"
+      ],
+      "trigger": "`fixedTimeLimit`; the callable throws a reused (static or cached) exception instance whose stack trace is writable; attempts repeat.",
+      "wrong_behavior": "The deprecated four-argument `callWithTimeout` unwraps with `combineStackTraces=true`, which mutates the user's exception: its stack trace is concatenated with the caller's stack on every attempt and grows without bound (memory, log volume).",
+      "evidence": "Probe timelimit/P6StackGrowth: stack length 1, 7, 67, 667, 6,667, 66,667 after 1, 10, 100, 1,000, 10,000 attempts; unchanged (1) without a time limit.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-13",
+      "location": [
+        "Guava SimpleTimeLimiter.java:267-268",
+        "AttemptTimeLimiters.java:77-79",
+        "RetryerBuilder.java:208-213"
+      ],
+      "trigger": "Under `fixedTimeLimit`, the callable throws a `Throwable` that is neither an `Exception` nor an `Error` (sneaky throw).",
+      "wrong_behavior": "The attempt's cause becomes `ExecutionException(t)` instead of `t`, so `retryIfExceptionOfType(T.class)` stops matching: the call ends after 1 attempt with `ExecutionException(ExecutionException(t))`, while the same configuration without a time limit retries.",
+      "evidence": "Probe timelimit/P7Weird (no limit: 3 attempts then RetryException(cause=Weird); fixedTimeLimit: 1 attempt then ExecutionException(ExecutionException(Weird)), JDK 11 and 21). Probe strategies/OutcomeProbe cases 3-4.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-14",
+      "location": [
+        "Guava SimpleTimeLimiter.java:164-166",
+        "Retryer.java:162-163,170-172",
+        "RetryerBuilder.java:113"
+      ],
+      "trigger": "`fixedTimeLimit` and no predicate that matches Guava's `UncheckedTimeoutException` (no `retryIf*` at all, `retryIfExceptionOfType(TimeoutException.class)`, `retryIfExceptionOfType(IOException.class)`, `retryIfResult(...)`).",
+      "wrong_behavior": "The first timeout ends retrying: `call()` throws `ExecutionException(UncheckedTimeoutException)` although the callable threw nothing, and the stop and wait strategies are never consulted; the documented per-attempt limit (RetryerBuilder.java:113) aborts the whole call.",
+      "evidence": "Probe timelimit/P8Issue29 (TimeoutException predicate and the #29 configuration: 1 invocation then ExecutionException(UncheckedTimeoutException); `retryIfRuntimeException()`: 3 attempts). Probe strategies/OutcomeProbe case 8. Classification unchanged since 1.0.6.",
+      "category": "protocol",
+      "verification": "CR",
+      "scenario": null,
+      "known": "#29 (open; maintainer acknowledged it as a bug; still present in 2.0.0)"
+    },
+    {
+      "id": "D-15",
+      "location": [
+        "Retryer.java:162-164,253-257",
+        "Guava SimpleTimeLimiter.java:264-265"
+      ],
+      "trigger": "The callable throws an `Error` (OutOfMemoryError, StackOverflowError, AssertionError, ...), with or without a time limit.",
+      "wrong_behavior": "The Error is caught as an ordinary attempt outcome: delivered to listeners, wrapped in a checked `ExecutionException` (documented only for exceptions), and retried when a predicate accepts `Throwable`.",
+      "evidence": "Probe strategies/OutcomeProbe cases 1-2 (AssertionError: ExecutionException after 1 attempt under `retryIfException()`; RetryException after 3 attempts under `retryIfExceptionOfType(Throwable.class)`). Probe issue-repro/IssueRepro case i67.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": "#67 (open, unanswered)"
+    },
+    {
+      "id": "D-16",
+      "location": [
+        "WaitStrategies.java:225-230,365-371",
+        "BlockStrategies.java:46",
+        "Retryer.java:176-182"
+      ],
+      "trigger": "`join(...)` whose component sleeps sum to 2^63 ms or more, e.g. `join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS))`, a component whose `TimeUnit.toMillis` saturates such as `fixedWait(Long.MAX_VALUE, DAYS)`, or `join(exceptionWait(X.class, e -> Long.MAX_VALUE), randomWait(1, SECONDS))`.",
+      "wrong_behavior": "The sum wraps negative; `Thread.sleep(negative)` throws `IllegalArgumentException(\"timeout value is negative\")`, which escapes `call()` because only `InterruptedException` is caught: an undocumented outcome that also loses the last failure and the attempt count. On an interrupted thread the IAE preempts the documented `RetryException` with interrupt status set.",
+      "evidence": "Probe strategies/EscapeProbe cases (a), (d), (e); probe interrupt/IntProbe2 H2.6a/b. `Thread.sleep` checks the sign before the interrupt (JDK 21 Thread.java:498-501; jvm.cpp JVM_Sleep in JDK 8, 11 and 21).",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-17",
+      "location": [
+        "WaitStrategies.java:211-216,386-394"
+      ],
+      "trigger": "`exceptionWait(E.class, fn)` where `fn` returns a negative value, e.g. `retryAtMillis - now` once the server-supplied retry time has passed.",
+      "wrong_behavior": "The negative value is returned unclamped (the other built-ins clamp to >= 0 at WaitStrategies.java:283, 308 and 330-334), `Thread.sleep` throws `IllegalArgumentException`, and it escapes `call()` after the attempt; inside `join` it also lowers the total.",
+      "evidence": "Probe strategies/EscapeProbe case (b): IAE escaped after 1 invocation.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-18",
+      "location": [
+        "WaitStrategies.java:390"
+      ],
+      "trigger": "`exceptionWait(E.class, fn)` where `fn` returns `null` (permitted by Guava 22's `@Nullable` `Function.apply`).",
+      "wrong_behavior": "Auto-unboxing the `Long` throws `NullPointerException`, which escapes `call()` after the attempt as an undocumented outcome.",
+      "evidence": "Probe strategies/EscapeProbe case (c).",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-19",
+      "location": [
+        "Retryer.java:157,161,163,174,181",
+        "RetryException.java:34,44-46",
+        "Attempt.java:73-78"
+      ],
+      "trigger": "More than 2^31-1 attempts within one `call()` under `neverStop` or `stopAfterDelay` with zero waits; the builder defaults (`neverStop`, `noWait`, `Thread.sleep(0)`) poll at about 6.1e5 attempts/s on this machine, so roughly 59 minutes.",
+      "wrong_behavior": "The `int` attempt counter wraps to `Integer.MIN_VALUE`: listeners and strategies see attempt numbers <= 0 (documented as 'starting from 1'), `RetryException.getNumberOfFailedAttempts()` reports the count modulo 2^32 (4,439,235,284 attempts reported as 144,267,988), and exponential, Fibonacci and incrementing waits collapse to 0.",
+      "evidence": "Probe strategies/WrapProbe (150 s run with a block strategy that skips 0 ms sleeps), strategies/RateProbe (attempt rates), archaeology-repro/AttemptOverflow. `Attempt.getAttemptNumber()` is long but the loop counter and RetryException count are int.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-20",
+      "location": [
+        "WaitStrategies.java:108-116,273-284"
+      ],
+      "trigger": "`incrementingWait(initial, unit, increment, unit)` with an increment within `initial` of `Long.MAX_VALUE`, e.g. `incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS)` or a saturating `incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS)`.",
+      "wrong_behavior": "`initialSleepTime + increment * (n - 1)` overflows: the requested sleeps are 1000, 0, 998, 0, 996, 0 instead of incrementing, alternating with immediate retries.",
+      "evidence": "Probe strategies/IncProbe. Only `initialSleepTime >= 0` is validated (WaitStrategies.java:275). Extreme parameters only.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-21",
+      "location": [
+        "WaitStrategies.java:326-335,337-352"
+      ],
+      "trigger": "`fibonacciWait()` (cap `Long.MAX_VALUE`) evaluated at attempt 94 or later, or `fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS)` at attempt 80 or later; reachable only with a block strategy that does not really sleep or when the strategy is evaluated directly.",
+      "wrong_behavior": "`fib(n)` or `multiplier * fib(n)` wraps to a positive value that the guard (`result > maximumWait` or `result < 0L`) does not catch, so the sleep drops below the cap (n=93 gives Long.MAX_VALUE, n=94 gives 1,293,530,146,158,671,551) instead of growing up to the maximum.",
+      "evidence": "Probe strategies/FibScan; realistic capped settings (e.g. 100 ms multiplier, 2 min cap) show no decrease for n up to 1e8.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-22",
+      "location": [
+        "StopStrategies.java:85-88,122-125"
+      ],
+      "trigger": "`stopAfterDelay(d, unit)` with a sub-millisecond component, e.g. `stopAfterDelay(500, MICROSECONDS)`.",
+      "wrong_behavior": "The limit is truncated to 0 ms, so retrying stops after the first failed attempt although the delay has not 'exceeded' 500 us; in general the limit is shortened by up to 0.999 ms.",
+      "evidence": "Probe strategies/StrategyMath. The interfaces document millisecond resolution for waits and delays (WaitStrategy.java:27, Attempt.java:81-83) but `stopAfterDelay(long, TimeUnit)` accepts any unit.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": null
+    },
+    {
+      "id": "D-23",
+      "location": [
+        "RetryException.java:32,35",
+        "Retryer.java:199-200,247-248"
+      ],
+      "trigger": "Any Java serialization of a `RetryException` thrown by `call()` (RMI, remote task frameworks, session replication, `ObjectOutputStream.writeObject`).",
+      "wrong_behavior": "Serialization fails with `NotSerializableException: com.github.rholder.retry.Retryer$ExceptionAttempt` (or `ResultAttempt`): the `Serializable` exception keeps a non-transient `Attempt` field whose implementations are not serializable.",
+      "evidence": "Probe main/SerProbe: `NotSerializableException: com.github.rholder.retry.Retryer$ExceptionAttempt`.",
+      "category": "low-level",
+      "verification": "CR",
+      "scenario": null,
+      "known": "Not reported upstream; reported against the fork rhuffman/re-retrying#40 (open)."
+    }
+  ]
+}

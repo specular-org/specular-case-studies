@@ -1,0 +1,41 @@
+{
+  "id": "CR-D-20",
+  "title": "incrementingWait overflows initial + increment*(n-1) for huge increments; overflow is clamped to 0, so Retryer sleeps 1000, 0, 998, 0, ... ms",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "IncrementingWaitStrategy.computeSleepTime computes initialSleepTime + increment * (attemptNumber - 1) in unchecked long arithmetic and maps any negative (overflowed) result to 0 (WaitStrategies.java:282-283). Neither the incrementingWait factory nor the constructor bounds increment (only initialSleepTime >= 0 is checked), and TimeUnit.toMillis saturates large increments to Long.MAX_VALUE.",
+  "trigger": "Public API only: RetryerBuilder.withWaitStrategy(WaitStrategies.incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS)) or incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS), a stop strategy that allows at least 3 attempts (e.g. stopAfterAttempt(6)), and a callable whose attempts keep being rejected.",
+  "consequence": "Retryer.call (Retryer.java:176-178) receives sleeps 1000, 0, 998, 0, 996 ms and Thread.sleep(0) re-invokes the user callable immediately after every even-numbered attempt, instead of the documented non-decreasing ('incrementing') waits (exact value exceeds Long.MAX_VALUE, i.e. effectively unbounded). For later attempts the sequence degenerates further (attempt 1002 returns Long.MAX_VALUE for initial 1000, then 0 again).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:IncrementingWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:282",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:incrementingWait",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "incrementingWait/IncrementingWaitStrategy accept any increment unvalidated (only initialSleepTime >= 0 is checked) and TimeUnit.toMillis saturates oversized increments to Long.MAX_VALUE.",
+    "Retryer.call passes computeSleepTime's value straight to BlockStrategy.block with no downstream correction; the default ThreadSleepStrategy calls Thread.sleep(sleepTime), so 0 means an immediate retry.",
+    "The trigger needs an extreme increment (at least about Long.MAX_VALUE/(n-1) ms to overflow within n attempts), e.g. a Long.MAX_VALUE sentinel or a saturating TimeUnit conversion; moderate increments cannot overflow before the int attempt counter reaches ~2^31.",
+    "The factory Javadoc promises 'incrementing amounts of time after each additional failed attempt'; the sibling Fibonacci/Exponential strategies saturate on overflow instead of collapsing to 0."
+  ],
+  "dependencies": [
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    public static WaitStrategy incrementingWait(long initialSleepTime,", "end": "                incrementTimeUnit.toMillis(increment));"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    private static final class IncrementingWaitStrategy implements WaitStrategy {", "end": "    private static final class ExponentialWaitStrategy implements WaitStrategy {"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {", "end": "                    blockStrategy.block(sleepTime);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java", "start": "    private static class ThreadSleepStrategy implements BlockStrategy {", "end": "            Thread.sleep(sleepTime);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public RetryerBuilder<V> withWaitStrategy(@Nonnull WaitStrategy waitStrategy) throws IllegalStateException {", "end": "        this.waitStrategy = waitStrategy;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public Retryer<V> build() {", "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java"}
+  ],
+  "evidence": [
+    "confirmation/CR-D-20/investigation.md",
+    "repro/test_bugCR-D-20_incrementing_wait_overflow.sh",
+    "repro/CR-D-20.log",
+    "repro/CR-D-20.run2.log",
+    "repro/CR-D-20.fixcheck.log",
+    "confirmation/CR-D-20/fixcheck.patch",
+    "confirmation/CR-D-20/fixcheck-unit-tests.log"
+  ]
+}

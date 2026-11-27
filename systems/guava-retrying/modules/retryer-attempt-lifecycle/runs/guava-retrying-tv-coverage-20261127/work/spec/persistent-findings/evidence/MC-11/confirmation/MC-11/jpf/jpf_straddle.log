@@ -1,0 +1,39 @@
+library source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-11/jpf/../worktree @ 177b6c9 (dirty: 0 files)
+JavaPathfinder core system v8.0 (rev 38e1b3b9d4befcdec478cc08af38ed26bc26a902) - (C) 2005-2014 United States Government. All rights reserved.
+
+
+====================================================== system under test
+MC11Straddle.main()
+
+====================================================== search started: 11/26/26, 10:18 AM
+
+[MC11] STRADDLE PATH FOUND (search depth 19): the iterator Retryer.java:166 is using was created
+[MC11] after ArrayList.add(L2) bumped modCount but before it stored size -> no CME, and L2 is notified:
+[MC11]   main      RetryerBuilder.build(): Retryer receives the builder's own listener list (size 1)
+[MC11]   caller-c1 Retryer.java:166 new ArrayList$Itr: expectedModCount=1 (list.modCount=1 list.size=1) -- before the add
+[MC11]   main      builder.withRetryListener(L2) entered (after build())
+[MC11]   main      ArrayList.add(L2): modCount := 2   (element not yet published, size=1)
+[MC11]   caller-c1 L1.onRetry(attempt #1)   [list.modCount=2 list.size=1]
+[MC11]   caller-c1 Retryer.java:166 new ArrayList$Itr: expectedModCount=2 (list.modCount=2 list.size=1) -- INSIDE the add (modCount bumped, size not yet stored)
+[MC11]   main      ArrayList.add(L2): size := 2   (L2 now visible)
+[MC11]   caller-c1 L1.onRetry(attempt #2)   [list.modCount=2 list.size=2]
+[MC11]   caller-c1 L2.onRetry(attempt #2)   [list.modCount=2 list.size=2]
+
+[MC11] distinct end states (state matching on; merged paths are not re-counted): 13 | CME: 5 | L2 notified via straddling iterator: 0 | L2 notified, iterator created after the add: 1 | L2 not notified: 7
+[MC11] straddle path reported: true
+
+====================================================== results
+no errors detected
+
+====================================================== statistics
+elapsed time:       00:00:00
+states:             new=410,visited=319,backtracked=729,end=13
+search:             maxDepth=28,constraints=0
+choice generators:  thread=409 (signal=0,lock=2,sharedRef=198,threadApi=83,reschedule=126), data=0
+heap:               new=1713,released=917,maxLive=752,gcCycles=729
+instructions:       33196
+max memory:         2052MB
+loaded code:        classes=137,methods=2726
+
+====================================================== search finished: 11/26/26, 10:18 AM
+EXIT=0

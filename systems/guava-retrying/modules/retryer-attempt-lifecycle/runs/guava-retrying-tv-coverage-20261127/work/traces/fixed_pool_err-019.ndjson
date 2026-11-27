@@ -1,0 +1,17 @@
+{"tag":"config","callers":["c1"],"numInitListeners":1,"numExtraListeners":0,"limiter":"Fixed","execKind":"Fixed","poolSize":2,"queueCap":0,"retryOn":["Timeout","Rejected","BadResult"],"stopKind":"AfterAttempt","stopAfter":3,"sleepClasses":["Zero"],"modes":["Ret","RetBad","Exc","Err"],"wrapCallers":[],"wrapOnLimiterPool":[],"workers":["w1"],"tasks":["t1"],"outerWorkers":{},"workload":"fixed_pool_err","path":121,"endReason":"end","prefix":false}
+{"tag":"trace","event":"CallStart","tid":"c1","start":1,"end":1,"attemptNo":1,"intr":false,"ts":"835280049628438"}
+{"tag":"trace","event":"SubmitNewWorker","tid":"c1","start":2,"end":2,"attemptNo":1,"intr":false,"task":"t1","worker":"w1","ts":"835280049842404"}
+{"tag":"trace","event":"WorkerRunTaskStart","tid":"w1","start":3,"end":3,"intr":false,"task":"t1","state":"NEW","ts":"835280050389383"}
+{"tag":"trace","event":"WorkerRunnerCAS","tid":"w1","start":5,"end":5,"intr":false,"task":"t1","ts":"835280050490362"}
+{"tag":"trace","event":"BodyStart","tid":"w1","start":6,"end":6,"intr":false,"task":"t1","mode":"Ret","ts":"835280050573225"}
+{"tag":"trace","event":"BodyReturns","tid":"w1","start":11,"end":11,"intr":false,"task":"t1","result":"Result","ts":"835280051040626"}
+{"tag":"trace","event":"SetCASWon","tid":"w1","start":12,"end":12,"intr":false,"task":"t1","state":"COMPLETING","ts":"835280051135636"}
+{"tag":"trace","event":"SetFinish","tid":"w1","start":14,"end":14,"intr":false,"task":"t1","state":"NORMAL","ts":"835280051397032"}
+{"tag":"trace","event":"GetReturn","tid":"c1","start":15,"end":15,"attemptNo":1,"intr":false,"task":"t1","state":"NORMAL","attemptKind":"Result","expired":false,"ts":"835280051456520"}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":16,"end":16,"attemptNo":1,"intr":false,"modCount":1,"size":1,"ts":"835280051612050"}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":17,"end":17,"attemptNo":1,"intr":false,"listener":1,"cursor":1,"ts":"835280051780008"}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":18,"end":18,"attemptNo":1,"intr":false,"cursor":1,"size":1,"ts":"835280052088785"}
+{"tag":"trace","event":"PredicateAccepts","tid":"c1","start":19,"end":19,"attemptNo":1,"intr":false,"outcome":"Returned","ts":"835280052562946"}
+{"tag":"trace","event":"WorkerUnlock","tid":"w1","start":20,"end":20,"intr":false,"ts":"835280052637937"}
+{"tag":"trace","event":"ExecutorShutdown","tid":"main","start":21,"end":21,"runState":"SHUTDOWN","idleIntr":["w1"],"ts":"835280053035094"}
+{"tag":"trace","event":"WorkerExit","tid":"w1","start":22,"end":22,"ts":"835280053530486"}

@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "id": "CR-D-13",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "With fixedTimeLimit, a non-Exception/non-Error callable Throwable reaches retry predicates as ExecutionException; retryIfExceptionOfType stops matching",
+  "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call delegates to Guava's deprecated SimpleTimeLimiter.callWithTimeout(callable, d, u, true); its throwCause rethrows the cause only if it is an Exception or Error and otherwise rethrows the outer FutureTask ExecutionException (SimpleTimeLimiter.java:261-268 in Guava 22.0). Retryer.call records that wrapper as the attempt's exception, and ExceptionClassPredicate/ExceptionPredicate classify Attempt.getExceptionCause() without unwrapping, so the predicates see java.util.concurrent.ExecutionException instead of the callable's throwable.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit (either factory) and retryIfExceptionOfType(T)/retryIfException(Predicate)/retryIfException() runs a callable that throws a Throwable subclass that is neither Exception nor Error (e.g. via commons-lang3 ExceptionUtils.rethrow, Lombok @SneakyThrows, Class.newInstance, or Kotlin/Groovy/Scala code). No timeout is needed.",
+  "consequence": "With retryIfExceptionOfType(T.class) or a Predicate<Throwable> matching T, Retryer.call stops after 1 invocation and throws ExecutionException(ExecutionException(t)) instead of retrying and throwing RetryException(cause=t) as it does without a time limit; with retryIfException() the non-Exception throwable is retried instead (3 invocations, RetryException(cause=ExecutionException(t))). Listeners and RetryException see ExecutionException as the attempt's cause.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionClassPredicate.apply",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionPredicate.apply",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:throwCause"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Guava provides the 4-argument SimpleTimeLimiter.callWithTimeout used by FixedAttemptTimeLimit (Guava 22.0 and earlier; reproduced with 22.0, 16.0.1, 14.0.1 and 10.0.1), whose throwCause rethrows the outer ExecutionException when the cause is neither an Exception nor an Error (SimpleTimeLimiter.java:261-268 in 22.0).",
+    "The user callable throws a Throwable that is neither an Exception nor an Error; the time limit does not expire.",
+    "guava-retrying applies no unwrapping between AttemptTimeLimiter.call and the rejection predicate (Retryer.call catch(Throwable) -> ExceptionAttempt -> getExceptionCause)."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class NoAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "7acad984fe5670e5b6612f7b0959ac932b825901f19ebcf5a0c07a4846fe2daa"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "        rejectionPredicate = Predicates.or(rejectionPredicate, new ExceptionPredicate<V>(exceptionPredicate));",
+      "sha256": "6a21e67d73190be4236cc43715423030de2c20fee6a729f25656804431eead8d"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private static final class ExceptionClassPredicate<V> implements Predicate<Attempt<V>> {",
+      "end": "            return delegate.apply(attempt.getExceptionCause());",
+      "sha256": "3dcfee11e3c23df9c6e44f50577e8f39101ec6a5c96d463403815584bc624565"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "371fc5e5be192e39952ab85a991f364e4992fb1425948fa53219fd27387562d3"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            return e.getCause();",
+      "sha256": "5811aa14bcb31c8fcd6351b208d7389960750eec1121ab0f3f21c895611684df"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "start": "    public RetryException(String message, int numberOfFailedAttempts, Attempt<?> lastFailedAttempt) {",
+      "end": "        super(message, checkNotNull(lastFailedAttempt, \"Last attempt was null\").hasException() ? lastFailedAttempt.getExceptionCause() : null);",
+      "sha256": "5c5e7afc70e387fab5661551d0647dad814e4b747972660a47e7b2543e297c70"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-13.md",
+      "path": "spec/persistent-findings/evidence/CR-D-13/spec/finding-confirmation/CR-D-13.md",
+      "sha256": "25e524fb062b0faf17e1848c52698d78622a1a7891068241198743af7c879e48"
+    },
+    {
+      "original": "confirmation/CR-D-13/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-13/confirmation/CR-D-13/investigation.md",
+      "sha256": "3a48b3bb884fb6b309e252a616a815f2bb80f3e79ad3e1543ef10f7d11688234"
+    },
+    {
+      "original": "repro/test_bugCR-D-13_weird_throwable_timelimit_misclassified.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-13/repro/test_bugCR-D-13_weird_throwable_timelimit_misclassified.sh",
+      "sha256": "4c4836688cce9bbb5c17dd3ce0e07caca3cfe08161a22534ec8d55890afd37bd"
+    },
+    {
+      "original": "repro/CR-D-13.log",
+      "path": "spec/persistent-findings/evidence/CR-D-13/repro/CR-D-13.log",
+      "sha256": "ac2a8c7180f25f354295d33a5b7edd11707262077992b4b3fb909af8da8754ae"
+    },
+    {
+      "original": "repro/CR-D-13.run2.log",
+      "path": "spec/persistent-findings/evidence/CR-D-13/repro/CR-D-13.run2.log",
+      "sha256": "ce36ee6a474c126f239ce3cccfba9b673dbc09c706b0ee1838765a50be9204ee"
+    },
+    {
+      "original": "confirmation/CR-D-13/guava22-src/com/google/common/util/concurrent/SimpleTimeLimiter.java",
+      "path": "spec/persistent-findings/evidence/CR-D-13/confirmation/CR-D-13/guava22-src/com/google/common/util/concurrent/SimpleTimeLimiter.java",
+      "sha256": "33bd0a927a6924c61c9c5337d939f3018776244022d06473a823a95cdc1138ef"
+    }
+  ]
+}

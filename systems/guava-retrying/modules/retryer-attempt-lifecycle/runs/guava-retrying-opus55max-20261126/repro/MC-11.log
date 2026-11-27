@@ -1,0 +1,127 @@
+=== MC-11 reproduction: listener added after build() is notified by an already-built Retryer ===
+java     : openjdk version "21.0.13.1" 2026-11-17
+source   : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-11/worktree
+git HEAD : 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+src dirty: <clean -- library sources unmodified>
+guava    : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (3564ef3803de)
+cited code (unmodified):
+  RetryerBuilder.java:40:    private List<RetryListener> listeners = new ArrayList<RetryListener>();
+  RetryerBuilder.java:63:        listeners.add(listener);
+  RetryerBuilder.java:196:        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);
+  Retryer.java:137:        this.listeners = listeners;
+  Retryer.java:166:            for (RetryListener listener : listeners) {
+Note: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/MC-11/worktree/src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+################ RUN 1: unmodified library ################
+MC11Repro running against the original library build
+
+--- Scenario 1 (Level 0, one thread): builder used as a template for two Retryers (issue #48 sequence)
+    [01] main      retryerA = template.withRetryListener(metricsA).build()          -> retryerA: retry on "busy", listeners [metricsA]
+    [02] main      retryerB = template.retryIfResult("slow").withRetryListener(metricsB).build()  (retryerB is never called)
+    [03] main      metricsA.onRetry(attempt #1, result="busy")
+    [04] main      metricsB.onRetry(attempt #1, result="busy")
+    [05] main      metricsA.onRetry(attempt #2, result="slow")
+    [06] main      metricsB.onRetry(attempt #2, result="slow")
+    [07] main      retryerA.call(...) returned "slow" after 2 attempt(s)
+    control: retryIfResult("slow") added after retryerA was built did NOT affect retryerA (it accepted "slow") -> predicates are fixed at build()
+    expected (listener set fixed at build()): metricsA=[1, 2]  metricsB=[]   (retryerB never ran)
+    observed                                : metricsA=[1, 2]  metricsB=[1, 2]   <-- retryerB's listener counted retryerA's attempts
+    => ANOMALY: a listener added to the builder after build() was notified by the already-built Retryer
+
+--- Scenario 2 (Level 1, two threads): MC counterexample hunt_s3_listeners_bfs2.out -- add completes while attempt 1 runs
+    [01] main      retryer = builder.withRetryListener(L1).build()                 [State 1: listeners at build = [L1]]
+    [02] caller-c1 retryer.call(callable) entered                              [State 2: MCCallStart(c1)]
+    [03] caller-c1 attempt 1: callable body running                            [State 3: MCCallerBodyStart(c1,"Ret")]
+    [04] main      builder.withRetryListener(L2) begins                        [State 4: MCAddListenerBegin(2)]
+    [05] main      builder.withRetryListener(L2) returned                      [State 5: MCAddListenerEnd]
+    [06] caller-c1 attempt 1: callable returns "Ret"                            [State 6: MCCallerBodyReturns(c1)]
+    [07] caller-c1 L1.onRetry(attempt #1, result="Ret")
+    [08] caller-c1 L2.onRetry(attempt #1, result="Ret")
+    [09] caller-c1 retryer.call(callable) returned "Ret"
+    expected (listener set fixed at build()): in-flight call notifies [L1] only            outcome="Ret"
+    observed                                : L1=[1]  L2=[1]  outcome="Ret"   <-- notified=<<1,2>> as in State 9 (no ConcurrentModificationException)
+    => ANOMALY: a listener added to the builder after build() was notified by the already-built Retryer
+
+--- Scenario 3 (Level 1, two threads): listener set of one in-flight call() changes between attempts
+    [01] main      retryer = builder(retry on "retry", stopAfterAttempt(3)).withRetryListener(L1).build()
+    [02] caller-c1 L1.onRetry(attempt #1, result="retry")
+    [03] caller-c1 attempt 2: callable body running, builder gets a new listener meanwhile
+    [04] main      builder.withRetryListener(L2) returned (retryer's call() is in attempt 2)
+    [05] caller-c1 L1.onRetry(attempt #2, result="retry")
+    [06] caller-c1 L2.onRetry(attempt #2, result="retry")
+    [07] caller-c1 L1.onRetry(attempt #3, result="ok")
+    [08] caller-c1 L2.onRetry(attempt #3, result="ok")
+    [09] caller-c1 retryer.call(callable) returned "ok"
+    expected (listener set fixed at build()): L1=[1, 2, 3]  L2=[]
+    observed                                : L1=[1, 2, 3]  L2=[2, 3]   <-- same call() notified [L1] for attempt 1 but [L1, L2] for later attempts
+    => ANOMALY: a listener added to the builder after build() was notified by the already-built Retryer
+
+SUMMARY build=original anomalies=3/3
+
+################ RUN 2: fix control (copy of sources, #48's proposed one-line fix) ################
+--- a/com/github/rholder/retry/RetryerBuilder.java	2026-11-26 16:55:28.645954951 +0000
++++ b/com/github/rholder/retry/RetryerBuilder.java	2026-11-26 16:57:05.403649713 +0000
+@@ -193,7 +193,7 @@
+         WaitStrategy theWaitStrategy = waitStrategy == null ? WaitStrategies.noWait() : waitStrategy;
+         BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;
+ 
+-        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);
++        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, com.google.common.collect.ImmutableList.copyOf(listeners));
+     }
+ 
+     private static final class ExceptionClassPredicate<V> implements Predicate<Attempt<V>> {
+Note: /tmp/mc11-repro.w9VVjc/src-fixed/com/github/rholder/retry/AttemptTimeLimiters.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+MC11Repro running against the fixed library build
+
+--- Scenario 1 (Level 0, one thread): builder used as a template for two Retryers (issue #48 sequence)
+    [01] main      retryerA = template.withRetryListener(metricsA).build()          -> retryerA: retry on "busy", listeners [metricsA]
+    [02] main      retryerB = template.retryIfResult("slow").withRetryListener(metricsB).build()  (retryerB is never called)
+    [03] main      metricsA.onRetry(attempt #1, result="busy")
+    [04] main      metricsA.onRetry(attempt #2, result="slow")
+    [05] main      retryerA.call(...) returned "slow" after 2 attempt(s)
+    control: retryIfResult("slow") added after retryerA was built did NOT affect retryerA (it accepted "slow") -> predicates are fixed at build()
+    expected (listener set fixed at build()): metricsA=[1, 2]  metricsB=[]   (retryerB never ran)
+    observed                                : metricsA=[1, 2]  metricsB=[]
+    => no anomaly: the built Retryer kept the listener set it was built with
+
+--- Scenario 2 (Level 1, two threads): MC counterexample hunt_s3_listeners_bfs2.out -- add completes while attempt 1 runs
+    [01] main      retryer = builder.withRetryListener(L1).build()                 [State 1: listeners at build = [L1]]
+    [02] caller-c1 retryer.call(callable) entered                              [State 2: MCCallStart(c1)]
+    [03] caller-c1 attempt 1: callable body running                            [State 3: MCCallerBodyStart(c1,"Ret")]
+    [04] main      builder.withRetryListener(L2) begins                        [State 4: MCAddListenerBegin(2)]
+    [05] main      builder.withRetryListener(L2) returned                      [State 5: MCAddListenerEnd]
+    [06] caller-c1 attempt 1: callable returns "Ret"                            [State 6: MCCallerBodyReturns(c1)]
+    [07] caller-c1 L1.onRetry(attempt #1, result="Ret")
+    [08] caller-c1 retryer.call(callable) returned "Ret"
+    expected (listener set fixed at build()): in-flight call notifies [L1] only            outcome="Ret"
+    observed                                : L1=[1]  L2=[]  outcome="Ret"
+    => no anomaly: the built Retryer kept the listener set it was built with
+
+--- Scenario 3 (Level 1, two threads): listener set of one in-flight call() changes between attempts
+    [01] main      retryer = builder(retry on "retry", stopAfterAttempt(3)).withRetryListener(L1).build()
+    [02] caller-c1 L1.onRetry(attempt #1, result="retry")
+    [03] caller-c1 attempt 2: callable body running, builder gets a new listener meanwhile
+    [04] main      builder.withRetryListener(L2) returned (retryer's call() is in attempt 2)
+    [05] caller-c1 L1.onRetry(attempt #2, result="retry")
+    [06] caller-c1 L1.onRetry(attempt #3, result="ok")
+    [07] caller-c1 retryer.call(callable) returned "ok"
+    expected (listener set fixed at build()): L1=[1, 2, 3]  L2=[]
+    observed                                : L1=[1, 2, 3]  L2=[]
+    => no anomaly: the built Retryer kept the listener set it was built with
+
+SUMMARY build=fixed anomalies=0/3
+Note: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/MC-11/worktree/src/test/java/com/github/rholder/retry/StopStrategiesTest.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/MC-11/worktree/src/test/java/com/github/rholder/retry/StopStrategiesTest.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+================ RESULT ================
+unmodified library : SUMMARY build=original anomalies=3/3
+fix control        : SUMMARY build=fixed anomalies=0/3
+upstream tests (unmodified library): OK (36 tests)
+upstream tests (fixed copy)        : OK (36 tests)
+MC-11 REPRODUCED: an already-built Retryer (including a call already in flight) notified a listener
+that was added to its RetryerBuilder after build(); copying the list at build() removes it.
+EXIT=0

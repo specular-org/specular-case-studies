@@ -1,0 +1,266 @@
+== provenance
+worktree HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f (v2.0.0-1-g177b6c9); dirty files: 0
+guava jar:  /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+jsr305 jar: /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar sha1=516c03b21d50a644d538de0f0369c620989cd8f0
+AttemptTimeLimiters.java:107 => return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);
+openjdk version "21.0.13.1" 2026-11-17
+== build guava-retrying (unmodified worktree sources, --release 8)
+== build reproduction program
+== [growth] README-quickstart retryer (retryIfExceptionOfType(IOException), retryIfRuntimeException, stopAfterAttempt(3)); listener + caller log every failure
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth none sentinel
+[growth] limiter=noTimeLimit (control) exception=sentinel (IOException) initial stackTrace.length=1
+  after   1 call()s /   3 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=          749 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=        2,247 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=        7,490 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=       22,470 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=       74,900 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=      224,700 chars
+  first frames of the reused exception's stack trace:
+    [0] ReproCRD12.<clinit>(ReproCRD12.java:30)
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth fixed sentinel
+[growth] limiter=fixedTimeLimit(5s, executor) exception=sentinel (IOException) initial stackTrace.length=1
+  after   1 call()s /   3 failed attempts: stackTrace.length=    22 (SimpleTimeLimiter.callWithTimeout frames:   3)  listener log entry=     1614 chars  caller's RetryException.printStackTrace=     1775 chars  log total=        5,132 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=    64 (SimpleTimeLimiter.callWithTimeout frames:   9)  listener log entry=     4584 chars  caller's RetryException.printStackTrace=     4745 chars  log total=       33,216 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=   211 (SimpleTimeLimiter.callWithTimeout frames:  30)  listener log entry=    14979 chars  caller's RetryException.printStackTrace=    15140 chars  log total=      318,620 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=   631 (SimpleTimeLimiter.callWithTimeout frames:  90)  listener log entry=    44679 chars  caller's RetryException.printStackTrace=    44840 chars  log total=    2,737,860 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=  2101 (SimpleTimeLimiter.callWithTimeout frames: 300)  listener log entry=   148629 chars  caller's RetryException.printStackTrace=   148790 chars  log total=   29,916,200 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=  6301 (SimpleTimeLimiter.callWithTimeout frames: 900)  listener log entry=   445629 chars  caller's RetryException.printStackTrace=   445790 chars  log total=  267,948,600 chars
+  first frames of the reused exception's stack trace:
+    [0] ReproCRD12.<clinit>(ReproCRD12.java:30)
+    [1] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [2] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [3] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [4] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [5] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [6] ReproCRD12.growth(ReproCRD12.java:142)
+    [7] ReproCRD12.main(ReproCRD12.java:325)
+    [8] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [9] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [10] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [11] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [12] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [13] ReproCRD12.growth(ReproCRD12.java:142)
+    [14] ReproCRD12.main(ReproCRD12.java:325)
+    [15] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [16] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    ... 6284 more frames
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth fixed2 sentinel
+[growth] limiter=fixedTimeLimit(5s) exception=sentinel (IOException) initial stackTrace.length=1
+  after   1 call()s /   3 failed attempts: stackTrace.length=    22 (SimpleTimeLimiter.callWithTimeout frames:   3)  listener log entry=     1614 chars  caller's RetryException.printStackTrace=     1775 chars  log total=        5,132 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=    64 (SimpleTimeLimiter.callWithTimeout frames:   9)  listener log entry=     4584 chars  caller's RetryException.printStackTrace=     4745 chars  log total=       33,216 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=   211 (SimpleTimeLimiter.callWithTimeout frames:  30)  listener log entry=    14979 chars  caller's RetryException.printStackTrace=    15140 chars  log total=      318,620 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=   631 (SimpleTimeLimiter.callWithTimeout frames:  90)  listener log entry=    44679 chars  caller's RetryException.printStackTrace=    44840 chars  log total=    2,737,860 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=  2101 (SimpleTimeLimiter.callWithTimeout frames: 300)  listener log entry=   148629 chars  caller's RetryException.printStackTrace=   148790 chars  log total=   29,916,200 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=  6301 (SimpleTimeLimiter.callWithTimeout frames: 900)  listener log entry=   445629 chars  caller's RetryException.printStackTrace=   445790 chars  log total=  267,948,600 chars
+  first frames of the reused exception's stack trace:
+    [0] ReproCRD12.<clinit>(ReproCRD12.java:30)
+    [1] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [2] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [3] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [4] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [5] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [6] ReproCRD12.growth(ReproCRD12.java:142)
+    [7] ReproCRD12.main(ReproCRD12.java:325)
+    [8] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [9] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [10] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [11] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [12] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [13] ReproCRD12.growth(ReproCRD12.java:142)
+    [14] ReproCRD12.main(ReproCRD12.java:325)
+    [15] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [16] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    ... 6284 more frames
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth none cheap
+[growth] limiter=noTimeLimit (control) exception=cheap (CheapIOException) initial stackTrace.length=0
+  after   1 call()s /   3 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=          609 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=        1,827 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=        6,090 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=       18,270 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=       60,900 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=       94 chars  caller's RetryException.printStackTrace=      327 chars  log total=      182,700 chars
+  first frames of the reused exception's stack trace:
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth fixed cheap
+[growth] limiter=fixedTimeLimit(5s, executor) exception=cheap (CheapIOException) initial stackTrace.length=0
+  after   1 call()s /   3 failed attempts: stackTrace.length=    21 (SimpleTimeLimiter.callWithTimeout frames:   3)  listener log entry=     1579 chars  caller's RetryException.printStackTrace=     1740 chars  log total=        4,992 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=    63 (SimpleTimeLimiter.callWithTimeout frames:   9)  listener log entry=     4549 chars  caller's RetryException.printStackTrace=     4710 chars  log total=       32,796 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=   210 (SimpleTimeLimiter.callWithTimeout frames:  30)  listener log entry=    14944 chars  caller's RetryException.printStackTrace=    15105 chars  log total=      317,220 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=   630 (SimpleTimeLimiter.callWithTimeout frames:  90)  listener log entry=    44644 chars  caller's RetryException.printStackTrace=    44805 chars  log total=    2,733,660 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=  2100 (SimpleTimeLimiter.callWithTimeout frames: 300)  listener log entry=   148594 chars  caller's RetryException.printStackTrace=   148755 chars  log total=   29,902,200 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=  6300 (SimpleTimeLimiter.callWithTimeout frames: 900)  listener log entry=   445594 chars  caller's RetryException.printStackTrace=   445755 chars  log total=  267,906,600 chars
+  first frames of the reused exception's stack trace:
+    [0] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [1] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [2] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [3] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [4] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [5] ReproCRD12.growth(ReproCRD12.java:142)
+    [6] ReproCRD12.main(ReproCRD12.java:325)
+    [7] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [8] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [9] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [10] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [11] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [12] ReproCRD12.growth(ReproCRD12.java:142)
+    [13] ReproCRD12.main(ReproCRD12.java:325)
+    [14] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [15] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [16] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    ... 6283 more frames
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth fixed frozen
+[growth] limiter=fixedTimeLimit(5s, executor) exception=frozen (FrozenRuntimeException) initial stackTrace.length=0
+  after   1 call()s /   3 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=          641 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=        1,923 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=        6,410 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=       19,230 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=       64,100 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=     0 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      102 chars  caller's RetryException.printStackTrace=      335 chars  log total=      192,300 chars
+  first frames of the reused exception's stack trace:
+
+== [cf] a memoised failed CompletableFuture: join() rethrows the same CompletionException object
+$ timeout 120 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 cf none
+[cf] limiter=noTimeLimit (control)  CompletableFuture.join() rethrows the same object on every call: true  initial stackTrace.length=6
+  after   1 call()s /   3 failed attempts: CompletionException stackTrace.length=    6 (SimpleTimeLimiter.callWithTimeout frames:   0)
+  after  10 call()s /  30 failed attempts: CompletionException stackTrace.length=    6 (SimpleTimeLimiter.callWithTimeout frames:   0)
+  after 100 call()s / 300 failed attempts: CompletionException stackTrace.length=    6 (SimpleTimeLimiter.callWithTimeout frames:   0)
+
+$ timeout 120 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 cf fixed
+[cf] limiter=fixedTimeLimit(5s, executor)  CompletableFuture.join() rethrows the same object on every call: true  initial stackTrace.length=6
+  after   1 call()s /   3 failed attempts: CompletionException stackTrace.length=   27 (SimpleTimeLimiter.callWithTimeout frames:   3)
+  after  10 call()s /  30 failed attempts: CompletionException stackTrace.length=  216 (SimpleTimeLimiter.callWithTimeout frames:  30)
+  after 100 call()s / 300 failed attempts: CompletionException stackTrace.length= 2106 (SimpleTimeLimiter.callWithTimeout frames: 300)
+
+== [paths] other Retryer.call outcomes
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 paths none
+[paths] limiter=noTimeLimit (control) (b) predicate accepts the exception -> ExecutionException: stackTrace.length 2 -> 2 after 100 call()s x 1 attempt
+[paths] limiter=noTimeLimit (control) (d) Retryer.wrap() run on an executor: stackTrace.length 2 -> 2 after 100 call()s x 3 attempts
+[paths] limiter=noTimeLimit (control) (e) default neverStop, one call() that succeeds on attempt 2000 (result=ok): stackTrace.length 2 -> 2
+
+$ timeout 300 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 paths fixed
+[paths] limiter=fixedTimeLimit(5s, executor) (b) predicate accepts the exception -> ExecutionException: stackTrace.length 2 -> 702 after 100 call()s x 1 attempt
+[paths] limiter=fixedTimeLimit(5s, executor) (d) Retryer.wrap() run on an executor: stackTrace.length 2 -> 3002 after 100 call()s x 3 attempts
+[paths] limiter=fixedTimeLimit(5s, executor) (e) default neverStop, one call() that succeeds on attempt 2000 (result=ok): stackTrace.length 2 -> 13995
+
+== [attribution] who rewrites the callable's exception
+$ timeout 120 /usr/lib/jvm/java-21-openjdk-amd64/bin/java  -cp <build> ReproCRD12 attribution
+[attribution] limiter=noTimeLimit (control)  1 call() x 3 failed attempts: setStackTrace() called 0 time(s) on the callable's exception, by {}; stackTrace.length 2 -> 2
+[attribution] limiter=fixedTimeLimit(5s, executor)  1 call() x 3 failed attempts: setStackTrace() called 3 time(s) on the callable's exception, by {com.google.common.util.concurrent.SimpleTimeLimiter.throwCause(SimpleTimeLimiter.java:259)=3}; stackTrace.length 2 -> 23
+
+== [oom] bounded heap (-Xmx32m), caller at a modest application depth of 100 frames, README retryer called repeatedly
+$ timeout 600 /usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xmx32m -cp <build> ReproCRD12 oom none shared 100 6000
+[oom] noTimeLimit (control) / reused static sentinel, callerDepth=100, maxHeap=32MB, maxCalls=6000
+    250 call()s /    750 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.04 ms per call() since previous line
+    500 call()s /   1500 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.03 ms per call() since previous line
+    750 call()s /   2250 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+   1000 call()s /   3000 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+   1250 call()s /   3750 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+   1500 call()s /   4500 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.03 ms per call() since previous line
+   3000 call()s /   9000 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+   4500 call()s /  13500 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+   6000 call()s /  18000 failed attempts: heap used after GC=   1.6 MB  NOT_READY.stackTrace.length=        1     0.02 ms per call() since previous line
+  RESULT[noTimeLimit (control) / reused static sentinel]: all 6000 call()s ended with RetryException(IOException) as configured (0.2 s; 18000 failed attempts completed before)
+  AFTER[noTimeLimit (control) / reused static sentinel]: a later call() succeeded (result=ok); after GC heap used=   1.7 MB of 32 MB, NOT_READY.stackTrace.length=1
+
+$ timeout 600 /usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xmx32m -cp <build> ReproCRD12 oom fixed fresh 100 6000
+[oom] fixedTimeLimit(5s, executor) / fresh object per attempt, callerDepth=100, maxHeap=32MB, maxCalls=6000
+    250 call()s /    750 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.30 ms per call() since previous line
+    500 call()s /   1500 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.24 ms per call() since previous line
+    750 call()s /   2250 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.19 ms per call() since previous line
+   1000 call()s /   3000 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.24 ms per call() since previous line
+   1250 call()s /   3750 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.26 ms per call() since previous line
+   1500 call()s /   4500 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.20 ms per call() since previous line
+   3000 call()s /   9000 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.23 ms per call() since previous line
+   4500 call()s /  13500 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.21 ms per call() since previous line
+   6000 call()s /  18000 failed attempts: heap used after GC=   1.7 MB  NOT_READY.stackTrace.length=        1     0.22 ms per call() since previous line
+  RESULT[fixedTimeLimit(5s, executor) / fresh object per attempt]: all 6000 call()s ended with RetryException(IOException) as configured (1.4 s; 18000 failed attempts completed before)
+  AFTER[fixedTimeLimit(5s, executor) / fresh object per attempt]: a later call() succeeded (result=ok); after GC heap used=   1.7 MB of 32 MB, NOT_READY.stackTrace.length=1
+
+$ timeout 900 /usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xmx32m -cp <build> ReproCRD12 oom fixed shared 100 6000
+[oom] fixedTimeLimit(5s, executor) / reused static sentinel, callerDepth=100, maxHeap=32MB, maxCalls=6000
+    250 call()s /    750 failed attempts: heap used after GC=   5.7 MB  NOT_READY.stackTrace.length=   81,751     0.58 ms per call() since previous line
+    500 call()s /   1500 failed attempts: heap used after GC=  10.1 MB  NOT_READY.stackTrace.length=  163,501     4.59 ms per call() since previous line
+    750 call()s /   2250 failed attempts: heap used after GC=  13.8 MB  NOT_READY.stackTrace.length=  245,251    13.49 ms per call() since previous line
+   1000 call()s /   3000 failed attempts: heap used after GC=  18.6 MB  NOT_READY.stackTrace.length=  327,001    31.55 ms per call() since previous line
+   1250 call()s /   3750 failed attempts: heap used after GC=  22.3 MB  NOT_READY.stackTrace.length=  408,751    60.81 ms per call() since previous line
+   1500 call()s /   4500 failed attempts: heap used after GC=  26.0 MB  NOT_READY.stackTrace.length=  490,501   125.27 ms per call() since previous line
+  RESULT[fixedTimeLimit(5s, executor) / reused static sentinel]: call() #1604 ended with ExecutionException caused by java.lang.OutOfMemoryError: Java heap space  <-- not the configured outcome (83.9 s; 4809 failed attempts completed before)
+  AFTER[fixedTimeLimit(5s, executor) / reused static sentinel]: a later call() succeeded (result=ok); after GC heap used=  27.6 MB of 32 MB, NOT_READY.stackTrace.length=524,182
+
+== JDK 11 cross-check
+$ timeout 300 /usr/lib/jvm/java-11-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth none sentinel
+[growth] limiter=noTimeLimit (control) exception=sentinel (IOException) initial stackTrace.length=1
+  after   1 call()s /   3 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=          749 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=        2,247 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=        7,490 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=       22,470 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=       74,900 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=     1 (SimpleTimeLimiter.callWithTimeout frames:   0)  listener log entry=      129 chars  caller's RetryException.printStackTrace=      362 chars  log total=      224,700 chars
+  first frames of the reused exception's stack trace:
+    [0] ReproCRD12.<clinit>(ReproCRD12.java:30)
+
+$ timeout 300 /usr/lib/jvm/java-11-openjdk-amd64/bin/java  -cp <build> ReproCRD12 growth fixed sentinel
+[growth] limiter=fixedTimeLimit(5s, executor) exception=sentinel (IOException) initial stackTrace.length=1
+  after   1 call()s /   3 failed attempts: stackTrace.length=    22 (SimpleTimeLimiter.callWithTimeout frames:   3)  listener log entry=     1614 chars  caller's RetryException.printStackTrace=     1775 chars  log total=        5,132 chars
+  after   3 call()s /   9 failed attempts: stackTrace.length=    64 (SimpleTimeLimiter.callWithTimeout frames:   9)  listener log entry=     4584 chars  caller's RetryException.printStackTrace=     4745 chars  log total=       33,216 chars
+  after  10 call()s /  30 failed attempts: stackTrace.length=   211 (SimpleTimeLimiter.callWithTimeout frames:  30)  listener log entry=    14979 chars  caller's RetryException.printStackTrace=    15140 chars  log total=      318,620 chars
+  after  30 call()s /  90 failed attempts: stackTrace.length=   631 (SimpleTimeLimiter.callWithTimeout frames:  90)  listener log entry=    44679 chars  caller's RetryException.printStackTrace=    44840 chars  log total=    2,737,860 chars
+  after 100 call()s / 300 failed attempts: stackTrace.length=  2101 (SimpleTimeLimiter.callWithTimeout frames: 300)  listener log entry=   148629 chars  caller's RetryException.printStackTrace=   148790 chars  log total=   29,916,200 chars
+  after 300 call()s / 900 failed attempts: stackTrace.length=  6301 (SimpleTimeLimiter.callWithTimeout frames: 900)  listener log entry=   445629 chars  caller's RetryException.printStackTrace=   445790 chars  log total=  267,948,600 chars
+  first frames of the reused exception's stack trace:
+    [0] ReproCRD12.<clinit>(ReproCRD12.java:30)
+    [1] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [2] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [3] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [4] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [5] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [6] ReproCRD12.growth(ReproCRD12.java:142)
+    [7] ReproCRD12.main(ReproCRD12.java:325)
+    [8] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [9] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    [10] com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+    [11] com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+    [12] com.github.rholder.retry.Retryer.call(Retryer.java:160)
+    [13] ReproCRD12.growth(ReproCRD12.java:142)
+    [14] ReproCRD12.main(ReproCRD12.java:325)
+    [15] java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+    [16] java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+    ... 6284 more frames
+
+$ timeout 120 /usr/lib/jvm/java-11-openjdk-amd64/bin/java  -cp <build> ReproCRD12 attribution
+[attribution] limiter=noTimeLimit (control)  1 call() x 3 failed attempts: setStackTrace() called 0 time(s) on the callable's exception, by {}; stackTrace.length 2 -> 2
+[attribution] limiter=fixedTimeLimit(5s, executor)  1 call() x 3 failed attempts: setStackTrace() called 3 time(s) on the callable's exception, by {com.google.common.util.concurrent.SimpleTimeLimiter.throwCause(SimpleTimeLimiter.java:259)=3}; stackTrace.length 2 -> 23
+
+== evaluation
+  ok   [g_none] control noTimeLimit: sentinel trace unchanged after 900 failed attempts
+  ok   [g_none] control noTimeLimit: listener log entry stays small
+  ok   [g_fixed] fixedTimeLimit(d,u,executor): one appended caller stack per failed attempt
+  ok   [g_fixed] fixedTimeLimit(d,u,executor): listener log entry for one attempt exceeds 100,000 chars
+  ok   [g_fixed2] fixedTimeLimit(d,u): same growth
+  ok   [g_none_ch] control noTimeLimit: cheap (fillInStackTrace no-op) exception unchanged
+  ok   [g_fixed_ch] fixedTimeLimit: cheap (fillInStackTrace no-op) exception grows too
+  ok   [g_fixed_fz] mitigation: writableStackTrace=false exception stays empty under fixedTimeLimit
+  ok   [cf_fixed] cf: JDK CompletableFuture.join() rethrows the same object
+  ok   [cf_none] cf control: noTimeLimit leaves the CompletionException trace unchanged
+  ok   [cf_fixed] cf: CompletionException trace grows under fixedTimeLimit
+  ok   [p_none] paths control: (b) unchanged under noTimeLimit
+  ok   [p_none] paths control: (d) unchanged under noTimeLimit
+  ok   [p_none] paths control: (e) unchanged under noTimeLimit
+  ok   [p_fixed] paths: (b) ExecutionException path grows
+  ok   [p_fixed] paths: (d) Retryer.wrap() path grows
+  ok   [p_fixed] paths: (e) neverStop grows within a single call()
+  ok   [attr] attribution: SimpleTimeLimiter.throwCause rewrites the exception once per attempt
+  ok   [attr] attribution control: noTimeLimit never rewrites it
+  ok   [oom_none] oom control: noTimeLimit + reused exception completes all calls
+  ok   [oom_fresh] oom control: fixedTimeLimit + fresh exceptions completes all calls
+  ok   [oom_bug] oom: fixedTimeLimit + reused exception ends in OutOfMemoryError
+  ok   [oom_bug] oom: memory stays retained after a later successful call()
+  ok   [j11_none] JDK 11 control unchanged
+  ok   [j11_fixed] JDK 11 fixedTimeLimit grows
+  ok   [j11_attr] JDK 11 attribution
+RESULT: BUG TRIGGERED (PASS)
+script exit status: 0

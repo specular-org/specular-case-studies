@@ -1,0 +1,92 @@
+[0;32m================================[0m
+[0;32mTLC Simulation Mode[0m
+[0;32m================================[0m
+Spec File:       MC.tla
+Config File:     hunt/sharing-r9.cfg
+Memory Limit:    16G
+Off-heap Memory: 16G
+Workers:         24
+Timeout:         30 minutes
+[0;34m--- Simulation Settings ---[0m
+Trace Count:     999999999
+Trace File:      (not saved)
+Sim Depth:       200
+Log File:        /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/jobs/1c844b4a771243f78fba82d5a0b35401/tlc.log
+[0;32m================================[0m
+[1;33mExecuting Command:[0m
+java -XX:+UseParallelGC -Dtlc2.tool.fp.FPSet.impl=tlc2.tool.fp.OffHeapDiskFPSet -XX:MaxDirectMemorySize=16G -Xmx16G -Xms16G -cp /home/ubuntu/guava-retrying-20261126/Specular/lib/CommunityModules-deps.jar:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar tlc2.TLC -config hunt/sharing-r9.cfg MC.tla -workers 24 -deadlock -simulate num=999999999 -depth 200 -metadir /home/ubuntu/tmp/tlc-states-qBxL18 
+
+TLC resource budget (Specular run guava-retrying-opus55max-20261126):
+  memory source: auto (80% of effective available memory at first TLC start)
+  effective memory at start: 377.85 GiB total, 327.95 GiB available
+  other/system use at start: 49.9 GiB
+  memory limit: 262.36 GiB
+  active TLC reserved before request: 0 bytes (this agent: 0 bytes)
+  this request: 32 GiB (heap 16 GiB + off-heap 16 GiB)
+  remaining before request: 262.36 GiB
+  remaining after admission: 230.36 GiB
+  worker limit: unbounded (report only)
+  active TLC workers before request: 0 (this agent: 0)
+  this request workers: 24 (24)
+  result: admitted
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running Random Simulation with seed 845100251049758242 with 24 workers on 96 cores with 15701MB heap and 16384MB offheap memory [pid: 963866] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit).
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/MC.tla
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/base.tla
+Parsing file /tmp/tlc-14795525308402394618/TLC.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-14795525308402394618/_TLCTrace.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-14795525308402394618/Integers.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-14795525308402394618/Sequences.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-14795525308402394618/FiniteSets.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-14795525308402394618/Naturals.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-14795525308402394618/TLCExt.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module MC
+Linting of module base
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module MC
+Starting... (2026-11-26 08:49:18)
+Computed 1 initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-26 08:49:18.
+Progress: 26850519 states checked, 415184 traces generated (trace length: mean=25, var(x)=1684, sd=41)
+Progress: 53557234 states checked, 828000 traces generated (trace length: mean=25, var(x)=1685, sd=41)
+Progress: 80033420 states checked, 1237190 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 107287106 states checked, 1658472 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 136626940 states checked, 2112075 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 164451977 states checked, 2542206 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 191817096 states checked, 2965266 traces generated (trace length: mean=25, var(x)=237, sd=15)
+Progress: 219356303 states checked, 3391095 traces generated (trace length: mean=25, var(x)=419, sd=20)
+Progress: 245875391 states checked, 3801150 traces generated (trace length: mean=25, var(x)=555, sd=24)
+Progress: 272274337 states checked, 4209367 traces generated (trace length: mean=25, var(x)=665, sd=26)
+Progress: 300228353 states checked, 4641486 traces generated (trace length: mean=25, var(x)=760, sd=28)
+Progress: 327110532 states checked, 5056950 traces generated (trace length: mean=25, var(x)=836, sd=29)
+Progress: 354278711 states checked, 5476945 traces generated (trace length: mean=25, var(x)=117, sd=11)
+Progress: 382794256 states checked, 5917737 traces generated (trace length: mean=25, var(x)=234, sd=15)
+Progress: 411204933 states checked, 6356856 traces generated (trace length: mean=25, var(x)=334, sd=18)
+Progress: 438914955 states checked, 6785269 traces generated (trace length: mean=25, var(x)=419, sd=20)
+Progress: 466525896 states checked, 7212076 traces generated (trace length: mean=25, var(x)=494, sd=22)
+Progress: 497360012 states checked, 7688663 traces generated (trace length: mean=25, var(x)=10, sd=3)
+Progress: 525085008 states checked, 8117288 traces generated (trace length: mean=25, var(x)=98, sd=10)
+Progress: 551711871 states checked, 8528862 traces generated (trace length: mean=25, var(x)=175, sd=13)
+Progress: 576636360 states checked, 8914154 traces generated (trace length: mean=25, var(x)=240, sd=15)
+Progress: 605471692 states checked, 9360002 traces generated (trace length: mean=25, var(x)=309, sd=18)
+Progress: 633486872 states checked, 9793099 traces generated (trace length: mean=25, var(x)=370, sd=19)
+Progress: 659768668 states checked, 10199384 traces generated (trace length: mean=25, var(x)=1, sd=1)
+Progress: 688776659 states checked, 10647917 traces generated (trace length: mean=25, var(x)=72, sd=8)
+Progress: 722632208 states checked, 11171214 traces generated (trace length: mean=25, var(x)=148, sd=12)
+Progress: 756056627 states checked, 11687809 traces generated (trace length: mean=25, var(x)=216, sd=15)
+Progress: 789161151 states checked, 12199953 traces generated (trace length: mean=25, var(x)=277, sd=17)
+Progress: 823550887 states checked, 12731503 traces generated (trace length: mean=25, var(x)=336, sd=18)
+/home/ubuntu/guava-retrying-20261126/Specular/scripts/tlc/run_model_check.sh: line 323: warning: run_pending_traps: bad value in trap_list[17]: 0x58d64f929460
+
+[0;32m================================[0m
+[1;33m⚠ Timed out[0m
+[0;32m================================[0m

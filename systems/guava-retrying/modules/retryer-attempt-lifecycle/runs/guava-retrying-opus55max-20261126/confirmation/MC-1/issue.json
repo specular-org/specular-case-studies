@@ -1,0 +1,108 @@
+{
+  "id": "MC-1",
+  "title": "fixedTimeLimit: a timed-out or caller-interrupted attempt keeps running alongside later attempts and after Retryer.call() returns or throws",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "FixedAttemptTimeLimit.call delegates to Guava 22 SimpleTimeLimiter.callWithTimeout(callable, d, u, true), which on timeout or caller interrupt calls future.cancel(true) and returns without waiting for the worker; Retryer.call then immediately submits the same Callable for the next attempt, or returns/throws, and never tracks or joins the cancelled attempt.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit runs a callable that does not stop on Thread.interrupt() (e.g. a blocking java.net.Socket read on a platform thread) past the limit, or the caller thread is interrupted while an attempt runs.",
+  "consequence": "Two or more bodies of the same Callable instance execute concurrently within one call(); call() returns a later attempt's value or throws RetryException/ExecutionException while earlier attempts still run; their late results/exceptions are silently discarded and their side effects land after call() ended (repro: application cache ends at VALUE-1 although call() returned VALUE-2; the service sees two concurrent requests from one call()). With a single-thread or saturated bounded limiter executor (S4) the abandoned body keeps the only thread: the next attempt times out in the queue or is rejected (RejectedExecutionException), call() throws RetryException while the body still runs, and other call()s sharing the executor fail without their callable ever running.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+    "guava-22.0:com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout"
+  ],
+  "actions": [
+    "MCSubmitNewWorker",
+    "MCGetTimeout",
+    "MCGetInterrupted",
+    "MCCancelDoInterrupt",
+    "MCCancelFinish",
+    "MCBodyStart",
+    "MCGetReturn",
+    "MCPredicateAccepts",
+    "MCSubmitQueued",
+    "MCSubmitRejected",
+    "MCStopStrategyStops"
+  ],
+  "invariants": [
+    "SequentialAttempts",
+    "NoActivityAfterOutcome"
+  ],
+  "premises": [
+    "The build resolves Guava 22.0, whose SimpleTimeLimiter.callWithTimeout(callable, d, u, true) answers TimeoutException/InterruptedException with future.cancel(true) and returns without waiting for the worker (SimpleTimeLimiter.java:149-167 in guava-22.0-sources.jar sha1 55edc69e4fc937f4e58e577bb144b824c0ec7c55).",
+    "The user callable may ignore interrupts; a blocking java.net.Socket read on a platform thread is not aborted by Thread.interrupt() (verified on OpenJDK 11.0.33 and 21.0.13).",
+    "Overlap needs a free executor thread for the next attempt: true for the default fixedTimeLimit(d, u) (unbounded cached pool) and for an unbounded user executor; activity after call() ends does not depend on the executor (reproduced with a single-thread executor and with a shared 1-thread/queue-1 ThreadPoolExecutor, where SimpleTimeLimiter.java:149 submit is outside the try and its RejectedExecutionException becomes a failed attempt at Retryer.java:162-163).",
+    "A Retryer may be shared by several threads (class Javadoc; maintainer answer in #35); the shared-executor S4 case relies on this.",
+    "Level 0 reproduction through the public API only; no source modification, failpoint or injected state."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": " * A retryer, which executes a call, and retries it until it succeeds, or",
+      "end": " * also configurable."
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiter.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "     * Configures the retryer to limit the duration of any particular attempt by the given duration.",
+      "end": "    public RetryerBuilder<V> withAttemptTimeLimiter(@Nonnull AttemptTimeLimiter<V> attemptTimeLimiter) {"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_overlap.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_timelimit.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_interrupt_narrow.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s4_executor.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla"
+    },
+    {
+      "root": "work",
+      "path": "spec/base.tla"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-1/investigation.md",
+    "repro/test_bugMC-1_timed_out_attempt_overlap.sh",
+    "confirmation/MC-1/repro-output.jdk21.log",
+    "confirmation/MC-1/repro-output.jdk11.log",
+    "spec/output/hunt_s1_overlap_bfs1.out",
+    "spec/output/hunt_s1_overlap_bfs2.out",
+    "spec/output/hunt_s2_interrupt_narrow_bfs3.out",
+    "spec/output/repair-r1/repair1_s1_timelimit_bfs1.out",
+    "spec/output/repair-r1/repair1_s1_timelimit_bfs2.out",
+    "spec/output/repair-r1/repair1_s4_executor_bfs1.out"
+  ]
+}

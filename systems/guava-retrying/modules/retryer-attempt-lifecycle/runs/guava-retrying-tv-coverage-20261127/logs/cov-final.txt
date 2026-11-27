@@ -1,0 +1,54 @@
+traces passing: 1100; real coverage 51/53 = 96.2%
+  Y CallStart              occ= 1178 files=1098 
+  Y CallerBodyStart        occ=  990 files= 573 
+  Y CallerBodyReturns      occ=  491 files= 424 
+  Y CallerBodyThrows       occ=  499 files= 338 
+  Y SubmitRejected         occ=   67 files=  45 
+  Y SubmitHandoff          occ=  297 files= 215 
+  Y SubmitNewWorker        occ=  643 files= 520 
+  Y SubmitQueued           occ=  214 files= 142 
+  Y GetReturn              occ=  562 files= 382 
+  Y GetInterrupted         occ=  194 files= 194 
+  Y GetTimeout             occ=  398 files= 263 
+  Y CancelCASWon           occ=  467 files= 347 
+  Y CancelCASLost          occ=  125 files= 119 
+  Y CancelReadRunner       occ=  467 files= 347 
+  Y CancelDoInterrupt      occ=  287 files= 232 
+  Y CancelFinish           occ=  467 files= 347 
+  Y ListenersBegin         occ= 2211 files=1098 
+  Y ListenerNotify         occ= 2463 files=1094 
+  Y ListenerCME            occ=    5 files=   5 
+  Y ListenersEnd           occ= 2206 files=1093 
+  Y PredicateAccepts       occ=  752 files= 725 
+  Y StopStrategyStops      occ=  342 files= 315 
+  Y WaitStrategyComputes   occ= 1112 files= 782 
+  Y BlockNegative          occ=   66 files=  66 
+  - BlockInterrupted       occ=   12 files=  12 only inside the JPF Thread.sleep model (patch 0003)
+  Y BlockZero              occ=  941 files= 642 
+  Y BlockSleepStart        occ=   93 files=  86 
+  Y SleepReturns           occ=   92 files=  85 
+  - SleepInterrupted       occ=    1 files=   1 only inside the JPF Thread.sleep model (patch 0003)
+  Y WorkerUnlock           occ= 1032 files= 490 
+  Y WorkerPollBlock        occ=  725 files= 315 
+  Y WorkerPollCancel       occ=  402 files= 281 
+  Y WorkerTake             occ=  179 files= 114 
+  Y WorkerRunTaskSkip      occ=  103 files=  97 
+  Y WorkerRunTaskStart     occ= 1016 files= 507 
+  Y WorkerRunnerCAS        occ= 1016 files= 507 
+  Y BodyStart              occ=  934 files= 490 
+  Y BodySkip               occ=   82 files=  80 
+  Y BodyReturns            occ=  414 files= 324 
+  Y BodyThrows             occ=  431 files= 274 
+  Y SetCASWon              occ=  687 files= 420 
+  Y SetCASLost             occ=  158 files= 132 
+  Y SetFinish              occ=  687 files= 420 
+  Y RunFinallySpin         occ=   51 files=  49 
+  Y RunFinallyExit         occ=  189 files= 163 
+  Y SpinExit               occ=   51 files=  49 
+  Y WorkerExit             occ=  530 files= 448 
+  Y OuterWorkerRelease     occ=    2 files=   2 
+  Y Interrupt              occ=  197 files= 197 
+  Y CancelOuter            occ=   70 files=  70 
+  Y AddListenerBegin       occ=  114 files= 114 
+  Y AddListenerEnd         occ=  114 files= 114 
+  Y ExecutorShutdown       occ=  502 files= 502 

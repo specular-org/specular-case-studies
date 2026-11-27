@@ -1,0 +1,8 @@
+== args: none cancel
+mode=noTimeLimit cancel(true)=true attempts before=2 attempts 2s later=12 executor terminated=false
+== args: none shutdownNow
+mode=noTimeLimit shutdownNow() pending=0 attempts before=2 attempts 2s later=12 executor terminated=false
+== args: limiter cancel
+mode=fixedTimeLimit cancel(true)=true attempts before=2 attempts 2s later=12 executor terminated=false
+== args: limiter shutdownNow
+mode=fixedTimeLimit shutdownNow() pending=0 attempts before=2 attempts 2s later=12 executor terminated=false

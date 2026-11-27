@@ -1,0 +1,515 @@
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running breadth-first search Model-Checking with fp 49 and seed 8259543355867258621 with 8 workers on 96 cores with 7851MB heap and 16384MB offheap memory [pid: 661159] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit, OffHeapDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/MC.tla
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/base.tla
+Parsing file /tmp/tlc-9791108654271641141/TLC.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-9791108654271641141/_TLCTrace.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-9791108654271641141/Integers.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-9791108654271641141/Sequences.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-9791108654271641141/FiniteSets.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-9791108654271641141/Naturals.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-9791108654271641141/TLCExt.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module MC
+Linting of module base
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module MC
+Starting... (2026-11-26 08:05:41)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-26 08:05:42.
+Error: Invariant NoDiscardedCompletion is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> NoWorker @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 0)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 0)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Idle")
+/\ tbody = (t1 :> "NotStarted" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Absent" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> NoTask)
+/\ tmode = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> NoCaller @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 2: <MCCallStart(c1) line 96, col 35 to line 96, col 66 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> NoWorker @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 0)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Attempt")
+/\ tbody = (t1 :> "NotStarted" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Absent" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> NoTask)
+/\ tmode = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> NoCaller @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 3: <MCSubmitNewWorker(c1,t1,w1) line 102, col 35 to line 102, col 78 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> NoWorker @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "NotStarted" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Assigned" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 4: <MCWorkerRunTaskStart(w1) line 130, col 35 to line 130, col 75 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> NoWorker @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "NotStarted" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "RunCAS" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 5: <MCWorkerRunnerCAS(w1) line 131, col 35 to line 131, col 72 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> w1 @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "NotStarted" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "InRun" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 6: <MCBodyStart(w1,"Ret") line 132, col 35 to line 132, col 69 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> w1 @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "Running" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Body" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "Ret" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 7: <MCBodyReturns(w1) line 134, col 35 to line 134, col 68 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NEW" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> w1 @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "Result" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "Done" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "BodyDone" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "Ret" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 8: <MCSetCASWon(w1) line 136, col 35 to line 136, col 66 of module MC>
+/\ curTag = (c1 :> "none")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "COMPLETING" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> w1 @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 0,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "Result" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "Wait")
+/\ tbody = (t1 :> "Done" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Completing" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "Ret" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "none" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 9: <MCGetTimeout(c1) line 66, col 5 to line 68, col 74 of module MC>
+/\ curTag = (c1 :> "Timeout")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "COMPLETING" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> w1 @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> t1 @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 1,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "Result" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "CancelTO")
+/\ tbody = (t1 :> "Done" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "Completing" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "Ret" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "Timeout" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+State 10: <MCSetFinish(w1) line 138, col 35 to line 138, col 66 of module MC>
+/\ curTag = (c1 :> "Timeout")
+/\ wOuter = (w1 :> NoCaller @@ w2 :> NoCaller @@ w3 :> NoCaller)
+/\ tstate = (t1 :> "NORMAL" @@ t2 :> "NEW" @@ t3 :> "NEW")
+/\ trunner = (t1 :> NoWorker @@ t2 :> NoWorker @@ t3 :> NoWorker)
+/\ curQueued = (c1 :> FALSE)
+/\ wtask = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ cancelR = (c1 :> NoWorker)
+/\ tqueued = (t1 :> FALSE @@ t2 :> FALSE @@ t3 :> FALSE)
+/\ attemptNo = (c1 :> 1)
+/\ cancelAt = (c1 :> -1)
+/\ outcome = (c1 :> "None")
+/\ made = (c1 :> 1)
+/\ itCursor = (c1 :> 0)
+/\ intrSrc = (w1 :> NoTask @@ w2 :> NoTask @@ w3 :> NoTask)
+/\ curInvoked = (c1 :> FALSE)
+/\ cbody = (c1 :> "none")
+/\ mc = [ interrupt |-> 0,
+  outer |-> 0,
+  timeout |-> 1,
+  shutdown |-> 0,
+  idleExit |-> 0,
+  addl |-> 0 ]
+/\ exShutdown = FALSE
+/\ intrDelivered = (c1 :> FALSE)
+/\ notified = (c1 :> <<>>)
+/\ itExpMod = (c1 :> 0)
+/\ bmod = 1
+/\ queue = <<>>
+/\ tres = (t1 :> "Result" @@ t2 :> "none" @@ t3 :> "none")
+/\ ieAt = (c1 :> 0)
+/\ cpc = (c1 :> "CancelTO")
+/\ tbody = (t1 :> "Done" @@ t2 :> "NotStarted" @@ t3 :> "NotStarted")
+/\ bAdding = 0
+/\ outerState = (c1 :> "NA")
+/\ wpc = (w1 :> "GetTask" @@ w2 :> "Absent" @@ w3 :> "Absent")
+/\ exitInfo = (c1 :> [flag |-> FALSE, count |-> 0, tag |-> "none", invoked |-> FALSE])
+/\ elapsedOver = (c1 :> FALSE)
+/\ sleepCls = (c1 :> "none")
+/\ decided = (c1 :> FALSE)
+/\ curTask = (c1 :> t1)
+/\ tmode = (t1 :> "Ret" @@ t2 :> "none" @@ t3 :> "none")
+/\ curExpired = (c1 :> FALSE)
+/\ ttag = (t1 :> "Timeout" @@ t2 :> "none" @@ t3 :> "none")
+/\ blist = <<1>>
+/\ intr = (c1 :> FALSE @@ w1 :> FALSE @@ w2 :> FALSE @@ w3 :> FALSE)
+/\ towner = (t1 :> c1 @@ t2 :> NoCaller @@ t3 :> NoCaller)
+
+246 states generated, 173 distinct states found, 41 states left on queue.
+The depth of the complete state graph search is 13.
+Checkpointing of run /home/ubuntu/tmp/tlc-states-gboyVp/26-11-26-08-05-41.243
+Checkpointing completed at (2026-11-26 08:05:42)
+Finished in 01s at (2026-11-26 08:05:42)
+Trace exploration spec path: ./MC_TTrace_1795680341.tla

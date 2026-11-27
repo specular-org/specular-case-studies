@@ -1,0 +1,110 @@
+$ timeout 1200 /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/test_bugMC-3_timeout_discards_completion.sh 4000   # run at 2026-11-26T09:47:52Z on qiancheng-ubuntu24
+== provenance
+guava-retrying source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-3/worktree (177b6c9b9f3e7957f404f0bdb8e23374cb1de43f)
+guava jar: /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+jsr305 jar: /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar
+== build guava-retrying 2.0.0 (unmodified sources, --release 8)
+== compile repro (--release 11)
+
+================ run on /usr/lib/jvm/java-21-openjdk-amd64
+java.version=21.0.13.1 vm=OpenJDK 64-Bit Server VM cpus=96
+
+### config A: retryIfException() + stopAfterAttempt(2) (limit 1 ms, 4000 trials)
+[TIMEOUT_DISCARDED_COMPLETION] trial 36: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +91.6us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 42: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +89.2us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 47: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +73.4us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 55: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +105.5us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 68: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +77.5us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 89: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +82.2us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[control TIMEOUT_CANCELLED] trial 2004: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = CANCELLED isCancelled()=true | callable returned +91.4us after (submit + limit), worker interrupted=true | callable executions=2 (bodies completed=2) | Retryer.call() returned "result-of-execution-2"
+summary A: retryIfException() + stopAfterAttempt(2):
+  SUCCESS                          2020   callable return time vs (submit + limit): min -1010.8us, median +48.6us, max +1486.7us
+  TIMEOUT_CANCELLED                1715   callable return time vs (submit + limit): min +44.4us, median +92.4us, max +1883.6us
+  TIMEOUT_CANCELLED_BEFORE_START      4   callable return time vs (submit + limit): n/a
+  TIMEOUT_DISCARDED_COMPLETION      261   callable return time vs (submit + limit): min +44.5us, median +73.7us, max +115.0us
+  OTHER                               0   callable return time vs (submit + limit): n/a
+visible outcome per kind (what Retryer's caller and listeners can observe):
+  SUCCESS                         x2020  attempt#1=result(result-of-execution-1), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED               x1714  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() returned "result-of-execution-2"
+  TIMEOUT_CANCELLED               x1  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() threw RetryException
+  TIMEOUT_CANCELLED_BEFORE_START  x1  attempt#1=exception(UncheckedTimeoutException), callable executions=0, call() threw RetryException
+  TIMEOUT_CANCELLED_BEFORE_START  x2  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED_BEFORE_START  x1  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw RetryException
+  TIMEOUT_DISCARDED_COMPLETION    x261  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() returned "result-of-execution-2"
+
+### config B: default rejection predicate (no retry) (limit 1 ms, 4000 trials)
+[TIMEOUT_DISCARDED_COMPLETION] trial 5: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +69.9us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 9: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +69.5us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 11: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +47.4us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 31: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +65.7us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 49: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +70.2us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 50: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +75.9us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[control TIMEOUT_CANCELLED] trial 2001: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = CANCELLED isCancelled()=true | callable returned +99.5us after (submit + limit), worker interrupted=true | callable executions=1 (bodies completed=1) | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+summary B: default rejection predicate (no retry):
+  SUCCESS                          2021   callable return time vs (submit + limit): min -1013.9us, median +50.7us, max +1128.8us
+  TIMEOUT_CANCELLED                1730   callable return time vs (submit + limit): min +45.0us, median +92.7us, max +2739.0us
+  TIMEOUT_CANCELLED_BEFORE_START      2   callable return time vs (submit + limit): n/a
+  TIMEOUT_DISCARDED_COMPLETION      247   callable return time vs (submit + limit): min +47.4us, median +74.1us, max +117.1us
+  OTHER                               0   callable return time vs (submit + limit): n/a
+visible outcome per kind (what Retryer's caller and listeners can observe):
+  SUCCESS                         x2021  attempt#1=result(result-of-execution-1), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED               x1730  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw ExecutionException(UncheckedTimeoutException)
+  TIMEOUT_CANCELLED_BEFORE_START  x2  attempt#1=exception(UncheckedTimeoutException), callable executions=0, call() threw ExecutionException(UncheckedTimeoutException)
+  TIMEOUT_DISCARDED_COMPLETION    x247  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw ExecutionException(UncheckedTimeoutException)
+
+RESULT: TIMEOUT_DISCARDED_COMPLETION hits: config A=261, config B=247
+MC3_DISCARDED_COMPLETION_OBSERVED
+exit code on java-21-openjdk-amd64: 0
+
+================ run on /usr/lib/jvm/java-11-openjdk-amd64
+java.version=11.0.33.1 vm=OpenJDK 64-Bit Server VM cpus=96
+
+### config A: retryIfException() + stopAfterAttempt(2) (limit 1 ms, 4000 trials)
+[TIMEOUT_DISCARDED_COMPLETION] trial 8: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +75.3us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 45: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +72.2us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 47: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +71.7us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 66: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +64.7us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 67: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +68.1us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[TIMEOUT_DISCARDED_COMPLETION] trial 68: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +68.5us after (submit + limit), worker interrupted=false | callable executions=2 (bodies completed=2) | attempts seen by listener=2 | Retryer.call() returned "result-of-execution-2"
+[control TIMEOUT_CANCELLED] trial 2003: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = CANCELLED isCancelled()=true | callable returned +1443.5us after (submit + limit), worker interrupted=true | callable executions=2 (bodies completed=2) | Retryer.call() returned "result-of-execution-2"
+summary A: retryIfException() + stopAfterAttempt(2):
+  SUCCESS                          2020   callable return time vs (submit + limit): min -1874.6us, median +48.6us, max +782.3us
+  TIMEOUT_CANCELLED                1654   callable return time vs (submit + limit): min +43.7us, median +93.5us, max +4220.1us
+  TIMEOUT_CANCELLED_BEFORE_START      7   callable return time vs (submit + limit): n/a
+  TIMEOUT_DISCARDED_COMPLETION      319   callable return time vs (submit + limit): min +42.3us, median +74.8us, max +111.6us
+  OTHER                               0   callable return time vs (submit + limit): n/a
+visible outcome per kind (what Retryer's caller and listeners can observe):
+  SUCCESS                         x2020  attempt#1=result(result-of-execution-1), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED               x1653  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() returned "result-of-execution-2"
+  TIMEOUT_CANCELLED               x1  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() threw RetryException
+  TIMEOUT_CANCELLED_BEFORE_START  x6  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED_BEFORE_START  x1  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw RetryException
+  TIMEOUT_DISCARDED_COMPLETION    x1  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw RetryException
+  TIMEOUT_DISCARDED_COMPLETION    x318  attempt#1=exception(UncheckedTimeoutException), callable executions=2, call() returned "result-of-execution-2"
+
+### config B: default rejection predicate (no retry) (limit 1 ms, 4000 trials)
+[TIMEOUT_DISCARDED_COMPLETION] trial 3: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +66.9us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 24: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +81.5us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 29: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +74.4us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 46: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +85.4us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 47: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +81.2us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[TIMEOUT_DISCARDED_COMPLETION] trial 49: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = NORMAL value="result-of-execution-1" isCancelled()=false | callable returned +78.6us after (submit + limit), worker interrupted=false | callable executions=1 (bodies completed=1) | attempts seen by listener=1 | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+[control TIMEOUT_CANCELLED] trial 2001: attempt#1 recorded as exception(UncheckedTimeoutException) | Future#1 = CANCELLED isCancelled()=true | callable returned +105.3us after (submit + limit), worker interrupted=true | callable executions=1 (bodies completed=1) | Retryer.call() threw ExecutionException(UncheckedTimeoutException)
+summary B: default rejection predicate (no retry):
+  SUCCESS                          2020   callable return time vs (submit + limit): min -1270.8us, median +49.6us, max +1128.5us
+  TIMEOUT_CANCELLED                1722   callable return time vs (submit + limit): min +36.0us, median +91.8us, max +4323.0us
+  TIMEOUT_CANCELLED_BEFORE_START      6   callable return time vs (submit + limit): n/a
+  TIMEOUT_DISCARDED_COMPLETION      252   callable return time vs (submit + limit): min +46.4us, median +74.2us, max +106.7us
+  OTHER                               0   callable return time vs (submit + limit): n/a
+visible outcome per kind (what Retryer's caller and listeners can observe):
+  SUCCESS                         x2020  attempt#1=result(result-of-execution-1), callable executions=1, call() returned "result-of-execution-1"
+  TIMEOUT_CANCELLED               x1722  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw ExecutionException(UncheckedTimeoutException)
+  TIMEOUT_CANCELLED_BEFORE_START  x6  attempt#1=exception(UncheckedTimeoutException), callable executions=0, call() threw ExecutionException(UncheckedTimeoutException)
+  TIMEOUT_DISCARDED_COMPLETION    x252  attempt#1=exception(UncheckedTimeoutException), callable executions=1, call() threw ExecutionException(UncheckedTimeoutException)
+
+RESULT: TIMEOUT_DISCARDED_COMPLETION hits: config A=319, config B=252
+MC3_DISCARDED_COMPLETION_OBSERVED
+exit code on java-11-openjdk-amd64: 0
+
+OVERALL: MC-3 path observed (completed attempt recorded as timeout)
+script exit code: 0

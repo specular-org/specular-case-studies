@@ -1,0 +1,10 @@
+1 Error + retryIfException (noTimeLimit):            ExecutionException(cause=java.lang.AssertionError: boom) ; callable ran 1
+2 Error + retryIfExceptionOfType(Throwable):          RetryException(n=3, cause=java.lang.AssertionError: boom) ; callable ran 3
+3 Weird Throwable + retryIfExceptionOfType(Weird) noTimeLimit:  RetryException(n=3, cause=OutcomeProbe$Weird: weird) ; callable ran 3
+4 Weird Throwable + retryIfExceptionOfType(Weird) fixedTimeLimit: ExecutionException(cause=java.util.concurrent.ExecutionException: OutcomeProbe$Weird: weird <- OutcomeProbe$Weird: weird) ; callable ran 1
+5 fixedTimeLimit(0s) + retryIfRuntimeException:       RetryException(n=3, cause=java.lang.IllegalArgumentException: timeout must be positive: 0) ; callable ran 0
+6 fixedTimeLimit(0s), no retry predicate:              ExecutionException(cause=java.lang.IllegalArgumentException: timeout must be positive: 0) ; callable ran 0
+7 shut-down executor + retryIfException:               RetryException(n=3, cause=java.util.concurrent.RejectedExecutionException: Task java.util.concurrent.FutureTask@58372a00[Not completed, task = OutcomeProbe$4@7ba4f24f] rejected from java.util.concurrent.ThreadPoolExecutor@1b28cdfa[Terminated, pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0]) ; callable ran 0
+8 timeout + retryIfExceptionOfType(TimeoutException):  ExecutionException(cause=com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException <- java.util.concurrent.TimeoutException) ; callable ran 1
+9 null callable + retryIfRuntimeException:             RetryException(n=2, cause=java.lang.NullPointerException: Cannot invoke "java.util.concurrent.Callable.call()" because "callable" is null) ; callable ran 0
+exit=0

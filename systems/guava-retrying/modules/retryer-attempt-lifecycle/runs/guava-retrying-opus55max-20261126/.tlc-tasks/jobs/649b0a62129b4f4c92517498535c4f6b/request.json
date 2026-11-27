@@ -1,0 +1,17 @@
+{
+  "work_dir": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec",
+  "spec_file": "MC.tla",
+  "config_file": "hunt/s5_decision-r2.cfg",
+  "options": [
+    "-t",
+    "30",
+    "-w",
+    "4",
+    "-m",
+    "8G",
+    "-M",
+    "16G"
+  ],
+  "created_at": 1795680652.116653,
+  "owner": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec-validation.log"
+}

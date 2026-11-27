@@ -1,0 +1,161 @@
+=== CR-D-19 reproduction (2026-11-26T10:51:52Z) ===
+host: Linux 6.8.0-1044-azure x86_64, cpus=96, load: 37.38 41.26 46.97
+java: openjdk version "21.0.13.1" 2026-11-17
+java: OpenJDK Runtime Environment (build 21.0.13.1+2-1-24.04.1-Ubuntu)
+java: OpenJDK 64-Bit Server VM (build 21.0.13.1+2-1-24.04.1-Ubuntu, mixed mode, sharing)
+source tree: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-19/worktree
+source HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+source tree modifications (git status --porcelain):
+  (end)
+sha256: 62e792c48a5fc9d51d55845d796e85243951d11bc7c66a0a15610a38c4be2fcc  src/main/java/com/github/rholder/retry/Retryer.java
+sha256: 4367454537d9c66ac95fde4f1e0bbf529514e8b2d79b61238cd0f81f2e6304bd  src/main/java/com/github/rholder/retry/RetryException.java
+sha256: cb38adea77667705c9e998649c4300ba07ab3a01ca4bac0ebf1e50b501ccc39c  src/main/java/com/github/rholder/retry/Attempt.java
+sha256: 75e567e798b184b9978c3fd73280ea2718e49c5160b11a15ede2478e76e38086  src/main/java/com/github/rholder/retry/WaitStrategies.java
+sha256: 76b8d0542934d8d468fdac7dd2f47a363ee7a5ebd599187f73eb9899b3e09a0f  src/main/java/com/github/rholder/retry/StopStrategies.java
+scenarios: P0 A B1 B2 C1 C2 C4
+
+scenario A (builder defaults) runs in the background; its output follows the other scenarios
+
+----- scenario P0 (start 10:51:54) -----
+[P0] RetryException.getNumberOfFailedAttempts() = 3
+[P0] RetryException.getMessage() = "Retrying failed to complete successfully after 3 attempts."
+[P0] RetryException.getLastFailedAttempt().getAttemptNumber() = 3
+[P0] actual failed attempts (listener long counter) = 3 ; (int) actual = 3 ; actual - reported = 0
+[P0] listener: real attempts notified = 3 (long counter kept by the listener)
+[P0] listener: getAttemptNumber() matched the real attempt index for every attempt
+[P0] listener: attempts with getAttemptNumber() <= 0: 0 (first at real attempt -1, value 0); min seen 1; max seen 3
+[P0] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[P0] CONTROL OK (expected count 3, listener numbers 1..3)
+----- scenario P0 end (rc=0, 10:51:54) -----
+
+----- scenario B1 (start 10:51:54) -----
+[B1] config: neverStop + noWait + ExactSleepBlock; retryer.wrap(poll) on an executor; shutdownNow() once the listener has seen 4,439,235,284 attempts
+[B1] progress: 1,715,666,944 attempts after 60 s (2.859e+07/s), target 4,439,235,284
+[B1] progress: 3,417,178,112 attempts after 120 s (2.847e+07/s), target 4,439,235,284
+[B1] reached 4,439,605,248 attempts after 155.7 s (2.852e+07 attempts/s)
+[B1] RetryException.getNumberOfFailedAttempts() = 144,727,207
+[B1] RetryException.getMessage() = "Retrying failed to complete successfully after 144727207 attempts."
+[B1] RetryException.getLastFailedAttempt().getAttemptNumber() = 144,727,207
+[B1] actual failed attempts (listener long counter) = 4,439,694,503 ; (int) actual = 144,727,207 ; actual - reported = 4,294,967,296
+[B1] listener: real attempts notified = 4,439,694,503 (long counter kept by the listener)
+[B1] listener: getAttemptNumber() matched the real index for attempts 1..2,147,483,647; first mismatch at real attempt 2,147,483,648: getAttemptNumber() = -2,147,483,648
+[B1] listener: real attempt 2,147,483,646 -> getAttemptNumber() = 2,147,483,646
+[B1] listener: real attempt 2,147,483,647 -> getAttemptNumber() = 2,147,483,647
+[B1] listener: real attempt 2,147,483,648 -> getAttemptNumber() = -2,147,483,648
+[B1] listener: real attempt 2,147,483,649 -> getAttemptNumber() = -2,147,483,647
+[B1] listener: real attempt 4,294,967,295 -> getAttemptNumber() = -1
+[B1] listener: real attempt 4,294,967,296 -> getAttemptNumber() = 0
+[B1] listener: real attempt 4,294,967,297 -> getAttemptNumber() = 1
+[B1] listener: attempts with getAttemptNumber() <= 0: 2,147,483,649 (first at real attempt 2,147,483,648, value -2,147,483,648); min seen -2,147,483,648; max seen 2,147,483,647
+[B1] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[B1] largest attempt number any listener/strategy ever saw: 2,147,483,647 although 4,439,694,503 attempts were made
+[B1] RESULT: BUG TRIGGERED -- count reported modulo 2^32: 144727207 for 4439694503 failed attempts
+----- scenario B1 end (rc=0, 10:54:30) -----
+
+----- scenario B2 (start 10:54:30) -----
+[B2] calibration: 2.749e+07 attempts/s -> stopAfterDelay(117,176 ms) targets ~3,221,233,354 attempts
+[B2] config: StopStrategies.stopAfterDelay(117176, MILLISECONDS) + noWait + ExactSleepBlock + retryIfResult(equalTo(FALSE)); retryer.call(poll) on the main thread
+[B2] call() ended after 117.2 s
+[B2] RetryException.getNumberOfFailedAttempts() = -916,908,789
+[B2] RetryException.getMessage() = "Retrying failed to complete successfully after -916908789 attempts."
+[B2] RetryException.getLastFailedAttempt().getAttemptNumber() = -916,908,789
+[B2] actual failed attempts (listener long counter) = 3,378,058,507 ; (int) actual = -916,908,789 ; actual - reported = 4,294,967,296
+[B2] listener: real attempts notified = 3,378,058,507 (long counter kept by the listener)
+[B2] listener: getAttemptNumber() matched the real index for attempts 1..2,147,483,647; first mismatch at real attempt 2,147,483,648: getAttemptNumber() = -2,147,483,648
+[B2] listener: real attempt 2,147,483,646 -> getAttemptNumber() = 2,147,483,646
+[B2] listener: real attempt 2,147,483,647 -> getAttemptNumber() = 2,147,483,647
+[B2] listener: real attempt 2,147,483,648 -> getAttemptNumber() = -2,147,483,648
+[B2] listener: real attempt 2,147,483,649 -> getAttemptNumber() = -2,147,483,647
+[B2] listener: attempts with getAttemptNumber() <= 0: 1,230,574,860 (first at real attempt 2,147,483,648, value -2,147,483,648); min seen -2,147,483,648; max seen 2,147,483,647
+[B2] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[B2] RESULT: BUG TRIGGERED -- stopAfterDelay ended the call with RetryException count -916908789 after 3378058507 failed attempts
+----- scenario B2 end (rc=0, 10:56:33) -----
+
+----- scenario C1 (start 10:56:33) -----
+[C1] config: neverStop + WaitStrategies.incrementingWait(50, MILLISECONDS, -10, MILLISECONDS) (50,40,30,20,10 ms, then clamped to 0) + ExactSleepBlock; retryer.wrap(poll) on an executor
+[C1] listener reached 2,147,483,648 attempts after 75.2 s
+[C1] 5 s later: attempts 2,147,483,648 -> 2,147,483,648; worker state TIMED_WAITING, top frame java.base/java.lang.Thread.sleep0(Native Method)
+[C1] positive sleep requests: 6; last one: 21,474,836,540 ms (= 248.6 days) requested after real attempt 2,147,483,648
+[C1] RetryException.getNumberOfFailedAttempts() = -2,147,483,648
+[C1] RetryException.getMessage() = "Retrying failed to complete successfully after -2147483648 attempts."
+[C1] RetryException.getLastFailedAttempt().getAttemptNumber() = -2,147,483,648
+[C1] actual failed attempts (listener long counter) = 2,147,483,648 ; (int) actual = -2,147,483,648 ; actual - reported = 4,294,967,296
+[C1] listener: real attempts notified = 2,147,483,648 (long counter kept by the listener)
+[C1] listener: getAttemptNumber() matched the real index for attempts 1..2,147,483,647; first mismatch at real attempt 2,147,483,648: getAttemptNumber() = -2,147,483,648
+[C1] listener: real attempt 2,147,483,646 -> getAttemptNumber() = 2,147,483,646
+[C1] listener: real attempt 2,147,483,647 -> getAttemptNumber() = 2,147,483,647
+[C1] listener: real attempt 2,147,483,648 -> getAttemptNumber() = -2,147,483,648
+[C1] listener: attempts with getAttemptNumber() <= 0: 1 (first at real attempt 2,147,483,648, value -2,147,483,648); min seen -2,147,483,648; max seen 2,147,483,647
+[C1] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[C1] RESULT: BUG TRIGGERED -- decreasing incrementingWait asked for a 21474836540 ms sleep right after attempt 2147483648
+----- scenario C1 end (rc=0, 10:57:53) -----
+
+----- scenario C2 (start 10:57:53) -----
+[C2] LEVEL 1 (virtual time): neverStop + WaitStrategies.exponentialWait(1, 2, MILLISECONDS) + VirtualClockBlock (records requested sleeps, does not sleep); retryer.wrap(poll) on an executor
+[C2] progress: 1,256,521,728 attempts after 60 s (2.094e+07/s), target 2,157,483,648
+[C2] reached 2,157,641,728 attempts after 103.2 s (2.092e+07 attempts/s)
+[C2] RetryException.getNumberOfFailedAttempts() = -2,137,261,835
+[C2] RetryException.getMessage() = "Retrying failed to complete successfully after -2137261835 attempts."
+[C2] RetryException.getLastFailedAttempt().getAttemptNumber() = -2,137,261,835
+[C2] actual failed attempts (listener long counter) = 2,157,705,461 ; (int) actual = -2,137,261,835 ; actual - reported = 4,294,967,296
+[C2] listener: real attempts notified = 2,157,705,461 (long counter kept by the listener)
+[C2] listener: getAttemptNumber() matched the real index for attempts 1..2,147,483,647; first mismatch at real attempt 2,147,483,648: getAttemptNumber() = -2,147,483,648
+[C2] listener: real attempt 2,147,483,646 -> getAttemptNumber() = 2,147,483,646
+[C2] listener: real attempt 2,147,483,647 -> getAttemptNumber() = 2,147,483,647
+[C2] listener: real attempt 2,147,483,648 -> getAttemptNumber() = -2,147,483,648
+[C2] listener: real attempt 2,147,483,649 -> getAttemptNumber() = -2,147,483,647
+[C2] listener: attempts with getAttemptNumber() <= 0: 10,221,814 (first at real attempt 2,147,483,648, value -2,147,483,648); min seen -2,147,483,648; max seen 2,147,483,647
+[C2] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[C2] before the wrap: 2,147,483,647 positive and 0 zero sleep requests, max 2 ms; virtual time slept = 4,294,967,294 ms (= 49.7 days)
+[C2] requested sleep after real attempt 2,147,483,647: 2 ms; after 2,147,483,648: 0 ms; after 2,147,483,649: 0 ms
+[C2] after the wrap: 0 positive and 10,221,813 zero sleep requests, max 0 ms
+[C2] RESULT: BUG TRIGGERED -- exponential back-off (cap 2 ms) collapsed to 0 ms at the wrap (Level 1 virtual time; ~49.7 days of real sleeping needed to get there)
+----- scenario C2 end (rc=0, 10:59:36) -----
+
+----- scenario C4 (start 10:59:36) -----
+[C4] fibonacciWait(10 ms).computeSleepTime(attempt 16,777,216) = 10 ms, took 0.008 s (0.49 ns per loop iteration)
+[C4] fibonacciWait(10 ms).computeSleepTime(attempt 134,217,728) = 10 ms, took 0.076 s (0.57 ns per loop iteration)
+[C4] fibonacciWait(10 ms).computeSleepTime(attempt 2,147,483,647) = 10 ms, took 0.587 s (0.27 ns per loop iteration)
+[C4] reaching the wrap with fibonacciWait needs sum_{n=1}^{2^31-1} n = 2.306e+18 fib-loop iterations ~ 20 years of CPU in computeSleepTime alone
+[C4] RESULT: NOT TRIGGERED -- the Fibonacci 'collapse to 0' after the wrap is not reachable in practice (O(n) fib per attempt)
+----- scenario C4 end (rc=0, 10:59:37) -----
+
+----- scenario A (start 10:51:54) -----
+[A] config: RetryerBuilder defaults (neverStop, noWait, BlockStrategies.threadSleepStrategy -> Thread.sleep(0)) + retryIfResult(equalTo(FALSE)) + listener; retryer.wrap(poll) on a single-thread executor; executor.shutdownNow() once the listener has seen 2^31 + 5,000,000 attempts
+[A] progress: 180,944,896 attempts after 300 s (6.031e+05/s), target 2,152,483,648
+[A] progress: 364,314,624 attempts after 600 s (6.072e+05/s), target 2,152,483,648
+[A] progress: 545,456,128 attempts after 900 s (6.061e+05/s), target 2,152,483,648
+[A] progress: 726,663,168 attempts after 1200 s (6.055e+05/s), target 2,152,483,648
+[A] progress: 909,967,360 attempts after 1500 s (6.066e+05/s), target 2,152,483,648
+[A] progress: 1,094,451,200 attempts after 1800 s (6.080e+05/s), target 2,152,483,648
+[A] progress: 1,278,803,968 attempts after 2100 s (6.089e+05/s), target 2,152,483,648
+[A] progress: 1,463,484,416 attempts after 2400 s (6.098e+05/s), target 2,152,483,648
+[A] progress: 1,647,706,112 attempts after 2700 s (6.102e+05/s), target 2,152,483,648
+[A] progress: 1,832,255,488 attempts after 3000 s (6.107e+05/s), target 2,152,483,648
+[A] progress: 2,016,346,112 attempts after 3300 s (6.110e+05/s), target 2,152,483,648
+[A] reached 2,152,529,920 attempts after 3522.1 s (6.112e+05 attempts/s)
+[A] RetryException.getNumberOfFailedAttempts() = -2,142,427,672
+[A] RetryException.getMessage() = "Retrying failed to complete successfully after -2142427672 attempts."
+[A] RetryException.getLastFailedAttempt().getAttemptNumber() = -2,142,427,672
+[A] actual failed attempts (listener long counter) = 2,152,539,624 ; (int) actual = -2,142,427,672 ; actual - reported = 4,294,967,296
+[A] listener: real attempts notified = 2,152,539,624 (long counter kept by the listener)
+[A] listener: getAttemptNumber() matched the real index for attempts 1..2,147,483,647; first mismatch at real attempt 2,147,483,648: getAttemptNumber() = -2,147,483,648
+[A] listener: real attempt 2,147,483,646 -> getAttemptNumber() = 2,147,483,646
+[A] listener: real attempt 2,147,483,647 -> getAttemptNumber() = 2,147,483,647
+[A] listener: real attempt 2,147,483,648 -> getAttemptNumber() = -2,147,483,648
+[A] listener: real attempt 2,147,483,649 -> getAttemptNumber() = -2,147,483,647
+[A] listener: attempts with getAttemptNumber() <= 0: 5,055,977 (first at real attempt 2,147,483,648, value -2,147,483,648); min seen -2,147,483,648; max seen 2,147,483,647
+[A] listener: getAttemptNumber() == (long)(int) realIndex for every attempt: true
+[A] RESULT: BUG TRIGGERED -- builder defaults: listeners saw attempt number -2147483648 at real attempt 2147483648; RetryException reports -2142427672 failed attempts after 2152539624
+----- scenario A end (rc=0, 11:50:36) -----
+
+===== summary =====
+[P0] CONTROL OK (expected count 3, listener numbers 1..3)
+[B1] RESULT: BUG TRIGGERED -- count reported modulo 2^32: 144727207 for 4439694503 failed attempts
+[B2] RESULT: BUG TRIGGERED -- stopAfterDelay ended the call with RetryException count -916908789 after 3378058507 failed attempts
+[C1] RESULT: BUG TRIGGERED -- decreasing incrementingWait asked for a 21474836540 ms sleep right after attempt 2147483648
+[C2] RESULT: BUG TRIGGERED -- exponential back-off (cap 2 ms) collapsed to 0 ms at the wrap (Level 1 virtual time; ~49.7 days of real sleeping needed to get there)
+[C4] RESULT: NOT TRIGGERED -- the Fibonacci 'collapse to 0' after the wrap is not reachable in practice (O(n) fib per attempt)
+[A] RESULT: BUG TRIGGERED -- builder defaults: listeners saw attempt number -2147483648 at real attempt 2147483648; RetryException reports -2142427672 failed attempts after 2152539624
+OVERALL: BUG TRIGGERED (int attempt counter wrap observed through the public API)
+script exit=0

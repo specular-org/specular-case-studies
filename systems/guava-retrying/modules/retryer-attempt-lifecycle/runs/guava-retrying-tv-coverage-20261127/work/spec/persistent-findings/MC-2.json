@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "id": "MC-2",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "fixedTimeLimit(d, unit): a timed-out attempt that ignores interrupts pins a non-daemon pool thread forever; each retry pins another and the JVM cannot exit",
+  "cause": "The two-argument AttemptTimeLimiters.fixedTimeLimit creates new SimpleTimeLimiter(), i.e. a private Executors.newCachedThreadPool() (unbounded, non-daemon threads, no shutdown path, not reachable through the API). On timeout SimpleTimeLimiter.callWithTimeout only calls future.cancel(true), which sets the worker's interrupt flag but cannot stop a body that ignores interrupts, and Retryer.call immediately submits the next attempt, which the cached pool runs on a new thread because the old one is still busy.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit(d, unit) and retryIfException()/retryIfRuntimeException() calls a callable that blocks in an operation that ignores Thread.interrupt() (a java.net.Socket read without SO_TIMEOUT against a peer that accepts but never answers, or entering a monitor held by a hung thread); every attempt times out.",
+  "consequence": "Each timed-out attempt permanently pins one non-daemon pool thread: one call() with 2 attempts leaves 2 stuck threads; call() can return 42 while attempt 1 still runs; under the default neverStop the pinned threads grow linearly (100 after 5 s at a 50 ms limit) until thread creation fails and call() throws ExecutionException(OutOfMemoryError: unable to create native thread); after main() returns the JVM does not exit (still alive 95 s later, beyond the 60 s keep-alive behind issue #92).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:57",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:90",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "src/main/java/com/github/rholder/retry/Retryer.java:160",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:83",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:165"
+  ],
+  "actions": [
+    "MCSubmitNewWorker",
+    "MCGetTimeout",
+    "MCBodyStart",
+    "MCCancelDoInterrupt",
+    "MCGetReturn",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "StuckBodiesPerCallAtMostOne",
+    "StuckBodiesEndWithCall"
+  ],
+  "premises": [
+    "The callable is arbitrary user code that may block in an operation that ignores Thread.interrupt() (classic socket read without timeout, monitor entry, swallowed InterruptedException).",
+    "Built and run against Guava 22.0: SimpleTimeLimiter() delegates to Executors.newCachedThreadPool() (SimpleTimeLimiter.java:81-84) and callWithTimeout reacts to a timeout only with future.cancel(true) (SimpleTimeLimiter.java:164-166).",
+    "JDK Executors.newCachedThreadPool() creates non-daemon threads with an unbounded maximum pool size; its 60 s keep-alive reaps only idle threads.",
+    "Timeouts are retried only when the rejection predicate accepts UncheckedTimeoutException (retryIfException/retryIfRuntimeException); without that each call() pins at most one thread, but repeated calls still accumulate pinned threads.",
+    "Scope is the 2-argument fixedTimeLimit overload; with the 3-argument overload a user-supplied daemon pool avoids the JVM-exit hang but not the per-attempt thread growth."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "2f1b0885aa8b259df8c3cf80b98dcb75cac4dc00f801b4182ac1760f7d76f599"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiter.java",
+      "sha256": "f836f9ff3c9634a47ba52e2bd4fc458e74c23163c6f4a0d5d1ac7cbf5a5ea8d5"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "                    blockStrategy.block(sleepTime);",
+      "sha256": "d1c3a4d44114b73f8c0c4c47aee6d4d16fafa34f41611c07890e25754585a9ac"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_overlap.cfg",
+      "sha256": "dc172cb03601bd13903f8e8169c991a37f022d4c34f31f3c2ea51565b78ab1d1"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s1_timelimit.cfg",
+      "sha256": "5ddb0aa3f2198fc5ba4586c547c0a4de0c8611a15aa54a5ceca60a1c2b450a8b"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-2.md",
+      "path": "spec/persistent-findings/evidence/MC-2/spec/finding-confirmation/MC-2.md",
+      "sha256": "b9af9a002f5fb066928852e4892b9e820238af4aa99f363dc4be6730f10c09af"
+    },
+    {
+      "original": "confirmation/MC-2/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-2/confirmation/MC-2/investigation.md",
+      "sha256": "a14bee83e56105456cb110db3f84d15b1e367b23971c396ce2541192051cee3c"
+    },
+    {
+      "original": "repro/test_bugMC-2_stuck_attempt_thread_leak.sh",
+      "path": "spec/persistent-findings/evidence/MC-2/repro/test_bugMC-2_stuck_attempt_thread_leak.sh",
+      "sha256": "c1d30916c7fa5da78c607de9f85fbd4a15a33558895c5b82956e5b64c063a230"
+    },
+    {
+      "original": "repro/MC-2.log",
+      "path": "spec/persistent-findings/evidence/MC-2/repro/MC-2.log",
+      "sha256": "8b9132247a96a10abbe4da18bf690db5dbbf99c8d3192d3aa0e53727751aecac"
+    },
+    {
+      "original": "repro/MC-2.run2.log",
+      "path": "spec/persistent-findings/evidence/MC-2/repro/MC-2.run2.log",
+      "sha256": "4c649ccea69bb29adbbbc38f716cf507f37ffd9c7bf1666607abb01375fcc220"
+    },
+    {
+      "original": "spec/output/hunt_s1_overlap_d3b.out",
+      "path": "spec/persistent-findings/evidence/MC-2/spec/output/hunt_s1_overlap_d3b.out",
+      "sha256": "2a7cf1d8dad0b94e4f5e386c11e5f4e3769b5a3c38540e6ea95d123d22031d1b"
+    },
+    {
+      "original": "spec/output/hunt_s1_overlap_d3a.out",
+      "path": "spec/persistent-findings/evidence/MC-2/spec/output/hunt_s1_overlap_d3a.out",
+      "sha256": "eceefc1839abd6f685a35430f5ae9cab2d10b28199fb39d54fa19e52429eaab3"
+    },
+    {
+      "original": "repro/MC-2.r1.log",
+      "path": "spec/persistent-findings/evidence/MC-2/repro/MC-2.r1.log",
+      "sha256": "7b6a873760a538746b76cf3d278d688f8784517b65850d2dbb9704b8f86bba56"
+    },
+    {
+      "original": "spec/output/repair-r1/repair1_s1_timelimit_d3b.out",
+      "path": "spec/persistent-findings/evidence/MC-2/spec/output/repair-r1/repair1_s1_timelimit_d3b.out",
+      "sha256": "51e85f8c924ae9f4cdc4fdcc8e2201cfffa15b4c213507e30402cf2ecd132b68"
+    },
+    {
+      "original": "spec/output/repair-r1/repair1_s1_timelimit_d3a.out",
+      "path": "spec/persistent-findings/evidence/MC-2/spec/output/repair-r1/repair1_s1_timelimit_d3a.out",
+      "sha256": "300613fb4ff13854f71b84112afa11bfc050156fa7b584672cecc8678c6819c4"
+    }
+  ]
+}

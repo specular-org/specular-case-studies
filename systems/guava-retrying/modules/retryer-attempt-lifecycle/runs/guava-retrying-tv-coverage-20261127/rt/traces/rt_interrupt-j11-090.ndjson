@@ -1,0 +1,8 @@
+{"tag":"config","callers":["c1"],"numInitListeners":1,"numExtraListeners":0,"limiter":"None","execKind":"Cached","poolSize":1,"queueCap":0,"retryOn":["Timeout","CallerIE","CallableExc","CallableIE","Rejected"],"stopKind":"AfterAttempt","stopAfter":3,"sleepClasses":["Zero","Positive"],"modes":["Ret","Exc","IntrRet","IntrBlock"],"wrapCallers":[],"wrapOnLimiterPool":[],"workers":[],"tasks":[],"outerWorkers":{}}
+{"tag":"trace","event":"CallStart","tid":"c1","start":260935,"attemptNo":1,"intr":false,"end":1013418}
+{"tag":"trace","event":"CallerBodyStart","tid":"c1","start":1013418,"end":1013418,"attemptNo":1,"intr":false,"mode":"IntrRet"}
+{"tag":"trace","event":"CallerBodyReturns","tid":"c1","start":3429871,"end":3429871,"attemptNo":1,"intr":false,"attemptKind":"Result","expired":false}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":3429871,"end":5029266,"attemptNo":1,"intr":false,"modCount":1,"size":1}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":5045590,"end":5045590,"attemptNo":1,"intr":false,"listener":1,"cursor":1}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":5058729,"attemptNo":1,"intr":false,"cursor":1,"size":1,"end":5096225}
+{"tag":"trace","event":"PredicateAccepts","tid":"c1","start":5058729,"end":5096225,"attemptNo":1,"intr":false,"outcome":"Returned"}

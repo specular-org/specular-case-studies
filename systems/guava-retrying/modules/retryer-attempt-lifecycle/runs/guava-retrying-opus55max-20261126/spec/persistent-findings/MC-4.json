@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "id": "MC-4",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Retryer with fixedTimeLimit swallows a caller interrupt: Future.get clears it, then call() retries and returns or throws with the interrupt status clear",
+  "cause": "With AttemptTimeLimiters.fixedTimeLimit the calling thread waits in Guava SimpleTimeLimiter.callWithTimeout's future.get (amInterruptible=true, AttemptTimeLimiters.java:107). An interrupt makes JDK FutureTask.awaitDone clear the interrupt status and throw InterruptedException; Guava cancels the attempt and rethrows it (SimpleTimeLimiter.java:155-157, even when cancel fails because the attempt already completed). Retryer.call's catch (Throwable) (Retryer.java:162-163) records it as an ordinary failed attempt and lets the rejection predicate / stop strategy decide; the interrupt status is restored only when blockStrategy.block throws (Retryer.java:179-181), which no longer happens because the status is already clear.",
+  "trigger": "The thread running Retryer.call is interrupted while a fixedTimeLimit attempt is in flight, or enters call() with its interrupt status already set. The interrupt can come from Thread.interrupt, from Future.cancel(true) on an executor task that runs a RetryerCallable from Retryer.wrap, or from ExecutorService.shutdownNow. The same holds when one Retryer and one time-limiter executor are shared by several threads.",
+  "consequence": "Retrying continues after the interrupt, and the interrupt status is clear whichever way call() ends: it returns normally (retryIfException), throws ExecutionException(InterruptedException) (predicates that do not reject InterruptedException), or throws RetryException (stop strategy). This contradicts Retryer.java:151-153. An attempt is counted although its callable never ran. A completed attempt's result or exception can be discarded and the callable run again. A wrapped RetryerCallable cannot be stopped: after Future.cancel(true) returned true it called the service 18 more times and held the pool thread for 2 s before returning normally; after ExecutorService.shutdownNow, awaitTermination(2s) returned false.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:162",
+    "src/main/java/com/github/rholder/retry/Retryer.java:170",
+    "src/main/java/com/github/rholder/retry/Retryer.java:173",
+    "src/main/java/com/github/rholder/retry/Retryer.java:179",
+    "src/main/java/com/github/rholder/retry/Retryer.java:318",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:155"
+  ],
+  "actions": [
+    "MCInterrupt",
+    "MCCancelOuter",
+    "MCGetInterrupted",
+    "MCCancelCASWon",
+    "MCCancelFinish",
+    "MCSetCASWon",
+    "MCSetFinish",
+    "MCBlockZero",
+    "MCSubmitNewWorker",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptPreserved",
+    "NoRetryAfterObservedInterrupt",
+    "ExecutionExceptionMeansCallableThrew",
+    "CountedImpliesInvoked",
+    "CountedImpliesInvokedNoStartRace",
+    "NoDiscardedCompletion"
+  ],
+  "premises": [
+    "Library built from unmodified guava-retrying 177b6c9 (2.0.0) against Guava 22.0, the newest Guava that still has the SimpleTimeLimiter constructors and 4-argument callWithTimeout that AttemptTimeLimiters uses.",
+    "Guava 22.0 SimpleTimeLimiter.callWithTimeout(callable, d, unit, true) runs the callable on its executor, and on InterruptedException from future.get cancels the future and rethrows without checking the cancel result (SimpleTimeLimiter.java:149-158).",
+    "JDK FutureTask.get(timeout) clears the caller's interrupt status when it throws InterruptedException (JDK 11 FutureTask.java:416-418, JDK 21 FutureTask.java:469-471); observed on OpenJDK 11.0.33.1 and 21.0.13.1.",
+    "JDK FutureTask.cancel(true) interrupts the thread running the task, so cancelling the Future of a submitted Retryer.wrap() task interrupts the thread inside Retryer.call.",
+    "Retryer.call has no interrupt handling around attemptTimeLimiter.call; the only restore is the blockStrategy.block catch at Retryer.java:179-181, which needs a still-pending interrupt.",
+    "Callers interrupt once (Thread.interrupt, Future.cancel(true), ExecutorService.shutdownNow); nothing re-delivers the lost interrupt.",
+    "The interrupt path of NoDiscardedCompletion is kept by RR-001 (only the timeout-path counterpart, former MC-3, was withdrawn); every cited trace and every reproduced discard here is interrupt-path (10 s limit, no timeout fires).",
+    "In repair1_ctl_sharing_ndc.out and repair1_ctl_sharing_cir.out the second caller never takes a step; sharing adds no cross-caller mechanism, and a concurrently active non-interrupted sharer saw no anomaly in the repro."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "fb7054c09a3b82725a0c4396ebade5a5ab978bd26ff149fffd462139ae3898cd"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            throw e;",
+      "sha256": "7b5f9669805bfbd6e614ea3e7b8e5a6965ccfc36d9ca5995bbd643aee74786ae"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "be8b629fbd06f55946249accc973fdccefb6a2529c3798db27dec244211db09e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "2f1b0885aa8b259df8c3cf80b98dcb75cac4dc00f801b4182ac1760f7d76f599"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "        BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;",
+      "sha256": "3bf69efd9b3a539c79271d426caf42cc0a5cf984cd86f55790ec80ebcc8d74da"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_interrupt_fixed.cfg",
+      "sha256": "6046083bc9cf1cb04be19d2b2b4a1ecea9cae2a2b2a957fdaf1c78b00198f5e6"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_interrupt_narrow.cfg",
+      "sha256": "fb337e6f7ed42cfbf7828871b329a89e46835bc9b48927377e30e86c2db1f29d"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s2_interrupt_fixed_bfs5.out",
+      "sha256": "5a5b426ec4d8305c8ca57a52b92d6ed87bfb2346b7edddc8d18674127c7817ce"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s2_interrupt_fixed_bfs3.out",
+      "sha256": "e198b52235cda5ed767f262cdaab7fd717d375974260d381873b84f76fab9eec"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s2_interrupt_fixed_bfs2.out",
+      "sha256": "c4b56a509faac08d8c01b5f08bcf5d1753a38304bd6ebd8076d96e224bc58236"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s2_interrupt_fixed_bfs1.out",
+      "sha256": "9c3744de806ffc61cb3af98146281e8350c5fcedd6ac5db7b7a937d562d1abe8"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s2_interrupt_narrow_bfs1.out",
+      "sha256": "07d816df86c6b6a9985043c73663cda8e5892c74a1668737207ffb87e67acb16"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/repair-r1/repair1_ctl_s2_wrap_cancel_ndc.out",
+      "sha256": "99af30154fc771e5a708f8c2f2074f0c44a4f2286cac0dc9af4644b5686ae960"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/repair-r1/repair1_ctl_sharing_ndc.out",
+      "sha256": "6867d1c1eea8121c9f27517180612b6677391ce61b405de9f32ef970ac9aaebb"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/repair-r1/repair1_ctl_sharing_cir.out",
+      "sha256": "49f6ab4fe65b048639f9e976cdcd70887e1afd0901b3c2b40d3b3cde97a1a024"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-4.md",
+      "path": "spec/persistent-findings/evidence/MC-4/spec/finding-confirmation/MC-4.md",
+      "sha256": "ac20bffdda42ea14e9631551418431a30a4877c07344fcaf77116903f5cc0b79"
+    },
+    {
+      "original": "confirmation/MC-4/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-4/confirmation/MC-4/investigation.md",
+      "sha256": "b74ebc47dcf5eabbfe77f6cb9f1e9299090967436f30e099a284587f4f679b70"
+    },
+    {
+      "original": "repro/test_bugMC-4_interrupt_swallowed.sh",
+      "path": "spec/persistent-findings/evidence/MC-4/repro/test_bugMC-4_interrupt_swallowed.sh",
+      "sha256": "d3846fc2f950c3f897071eee7e04dcdd3d688b59630f3dad37ae2b397a347463"
+    },
+    {
+      "original": "confirmation/MC-4/repro-run1.log",
+      "path": "spec/persistent-findings/evidence/MC-4/confirmation/MC-4/repro-run1.log",
+      "sha256": "2fdd79d76ba8fb77f3a67ef0b4b718fd7bd4a5a8ba810ab4670e5ab87786e213"
+    },
+    {
+      "original": "confirmation/MC-4/repro-run2.log",
+      "path": "spec/persistent-findings/evidence/MC-4/confirmation/MC-4/repro-run2.log",
+      "sha256": "c38d6897c0998d799b727a7450674008c4bc4a9d34089c25a05eaf5c25df1f36"
+    },
+    {
+      "original": "confirmation/MC-4/repro-run3.log",
+      "path": "spec/persistent-findings/evidence/MC-4/confirmation/MC-4/repro-run3.log",
+      "sha256": "980014a49f5ba4c52385fd700de2daae4f4944c864f34e52a1b5f747fa9c9c38"
+    },
+    {
+      "original": "repro/test_bugMC-4_wrap_cancel_sharing.sh",
+      "path": "spec/persistent-findings/evidence/MC-4/repro/test_bugMC-4_wrap_cancel_sharing.sh",
+      "sha256": "b6db17b4c31697120fc93825a62311fb02ef4d808593a49b1736897727eb5d95"
+    },
+    {
+      "original": "confirmation/MC-4/repro-r1-run1.log",
+      "path": "spec/persistent-findings/evidence/MC-4/confirmation/MC-4/repro-r1-run1.log",
+      "sha256": "8cda7becfe8729ebbf5984c1a7feee3d65e9757817326c80252003b429e37220"
+    }
+  ]
+}

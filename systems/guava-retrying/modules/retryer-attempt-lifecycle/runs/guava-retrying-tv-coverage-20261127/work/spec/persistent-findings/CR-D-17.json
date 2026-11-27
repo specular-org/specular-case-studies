@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "id": "CR-D-17",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "exceptionWait passes a negative user-function value to Thread.sleep; IllegalArgumentException escapes Retryer.call after one attempt",
+  "cause": "ExceptionWaitStrategy.computeSleepTime (WaitStrategies.java:386-394) returns function.apply(cause) without clamping it to >= 0, unlike the other built-ins that compute a per-attempt value (incrementing/exponential/Fibonacci clamp to 0). CompositeWaitStrategy (join) sums components unclamped, and Retryer.call (Retryer.java:176-182) passes the value unvalidated to the default ThreadSleepStrategy (BlockStrategies.java:46), catching only InterruptedException.",
+  "trigger": "exceptionWait(E.class, e -> e.retryAtMillis - System.currentTimeMillis()) with retryIfExceptionOfType(E) and stopAfterAttempt(5); the first attempt fails with a server-supplied retry time that has already passed on the client clock (clock skew, latency, 1-second HTTP-date resolution), e.g. 250 ms in the past or a Retry-After HTTP-date from a server whose clock is 2 s behind.",
+  "consequence": "Thread.sleep throws IllegalArgumentException('timeout value is negative'), which escapes Retryer.call after 1 of 5 permitted attempts. call() documents only ExecutionException and RetryException, so a README-style caller's handlers never run and its thread dies with the exception. A wrap()ped task's Future fails with IllegalArgumentException as the cause. Inside join(fixedWait(400 ms), exceptionWait) a -250 ms value cuts the wait to 150 ms, and a -600 ms value makes the total negative, which throws the same IllegalArgumentException.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:ExceptionWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:CompositeWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/BlockStrategies.java:ThreadSleepStrategy.block"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "The Retryer uses the default block strategy BlockStrategies.threadSleepStrategy() (RetryerBuilder.build default), and JDK Thread.sleep(long) throws IllegalArgumentException for a negative argument (observed on JDK 21).",
+    "The exceptionWait function derives the sleep from a server-supplied absolute retry time (retryAt - now). No documented contract (exceptionWait Javadoc, Guava Function) restricts its sign, and it is negative once that time has passed.",
+    "Retryer.call catches only InterruptedException around blockStrategy.block and does not validate the computed sleep time.",
+    "Library built from guava-retrying v2.0.0 source (177b6c9) against Guava 22.0 and jsr305 2.0.2 with --release 8."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "     * Returns a strategy which sleeps for an amount of time based on the Exception that occurred. The",
+      "end": "        return new ExceptionWaitStrategy<T>(exceptionClass, function);",
+      "sha256": "aab842fcdf30699dc26798e84cd2f083b82a4d7efdd5476e1cd42b443a2d6d9e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    public static WaitStrategy join(WaitStrategy... waitStrategies) {",
+      "end": "        return new CompositeWaitStrategy(waitStrategyList);",
+      "sha256": "1236ae5792ddd096b01eab2809ab69fc492342a4c4ac1117c6085e372878cd97"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "end": "            return waitTime;",
+      "sha256": "66369862e9b61394d9af2b7ad2be8940b09e600e6341a529f2bc0a3ae6c80991"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class ExceptionWaitStrategy<T extends Throwable> implements WaitStrategy {",
+      "end": "            return 0L;",
+      "sha256": "0572365fc7b708ca01d1aa2b9be4a8058ab9126e5c46514aa284a0438f3fa0db"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "                    throw new RetryException(attemptNumber, attempt);",
+      "sha256": "61a1c3cecd2b01f37d84b07f5087791244e3b761dde30835befee5d4b103185f"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "        public X call() throws ExecutionException, RetryException {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "e3e7bd9d01d5731c2170d6e624bb746fbec1272aabc471b5d40d3b6ecf2d20cb"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "        BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;",
+      "end": "        BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;",
+      "sha256": "45861f566d8bd0c12ef02ed9576c298d683b69445ad6a3cdc52fecd4f091c9ce"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java",
+      "sha256": "ac90de11d2ff4f2bf784675f61822378b7fd094f04dade4cd6ebba2874a18585"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-17.md",
+      "path": "spec/persistent-findings/evidence/CR-D-17/spec/finding-confirmation/CR-D-17.md",
+      "sha256": "4033018a0c0035235753bfdb7daa55b76a1d8cb3344d27efa49e9753d131d382"
+    },
+    {
+      "original": "confirmation/CR-D-17/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-17/confirmation/CR-D-17/investigation.md",
+      "sha256": "f8b8085d712d4a05940faa0ba357f1e2546fa42f2f1081c2f2fd561e3ccc69cf"
+    },
+    {
+      "original": "repro/test_bugCR-D-17_exception_wait_negative_sleep.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-17/repro/test_bugCR-D-17_exception_wait_negative_sleep.sh",
+      "sha256": "53a05f405a63e65a1869ad4e4609d167420671ee5157226118c7f3eb56745e4f"
+    },
+    {
+      "original": "repro/CR-D-17.log",
+      "path": "spec/persistent-findings/evidence/CR-D-17/repro/CR-D-17.log",
+      "sha256": "b75ff2d3161406d83d51ee4089c38a4d157d84c54ddbadec436fcf198400afd0"
+    },
+    {
+      "original": "repro/CR-D-17.run2.log",
+      "path": "spec/persistent-findings/evidence/CR-D-17/repro/CR-D-17.run2.log",
+      "sha256": "5b3ec23b2e8dfa1bd2a67585a5a32f69d208a2f616e37299a357d80d69290f44"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+== environment
+java:   openjdk version "21.0.13.1" 2026-11-17
+javac:  javac 21.0.13.1
+source: /tmp/crd11-fixcheck.LxOovi  (git HEAD n/a; src diff vs v2.0.0: '')
+guava:  /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar  sha256=1158e94c7de4da48…
+jsr305: /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar
+site:   57:    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) { 69:    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit, @Nonnull ExecutorService executorService) { 
+
+################ PRIMARY RUN: guava-retrying 2.0.0 source + Guava 22.0 ################
+== C0 control: other parameterized built-in factories reject bad values eagerly
+  [CTRL ok] WaitStrategies.fixedWait(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): sleepTime must be >= 0 but is %d [-1000]
+  [CTRL ok] WaitStrategies.randomWait(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): maximum must be > minimum but maximum is %d and minimum is [-1000, 0]
+  [CTRL ok] StopStrategies.stopAfterAttempt(0) -> IllegalArgumentException at the factory call (eager validation): maxAttemptNumber must be >= 1 but is %d [0]
+  [CTRL ok] StopStrategies.stopAfterDelay(-1, SECONDS) -> IllegalArgumentException at the factory call (eager validation): maxDelay must be >= 0 but is %d [-1000]
+== C1 control: positive limit, default predicate -> callable runs once, call() returns
+  [CTRL ok] fixedTimeLimit(1, SECONDS): call() returned 'ok', callable invocations=1, tasks submitted to user executor=n/a
+  [CTRL ok] fixedTimeLimit(1, SECONDS, userExecutor): call() returned 'ok', callable invocations=1, tasks submitted to user executor=1
+== B1: fixedTimeLimit with a zero / negative duration is accepted at construction and build()
+  [NO-BUG ] fixedTimeLimit(0, ..., withExecutor=false) rejected eagerly: duration must be > 0 but is 0
+  [NO-BUG ] fixedTimeLimit(0, ..., withExecutor=true) rejected eagerly: duration must be > 0 but is 0
+  [NO-BUG ] fixedTimeLimit(-1, ..., withExecutor=false) rejected eagerly: duration must be > 0 but is -1
+  [NO-BUG ] fixedTimeLimit(-1, ..., withExecutor=true) rejected eagerly: duration must be > 0 but is -1
+  fixedTimeLimit rejects non-positive durations at the factory call; the remaining scenarios cannot arise.
+
+SUMMARY: bug observations 0/4, controls ok 6/6
+RESULT: BUG NOT (fully) REPRODUCED
+primary exit status: 1
+script exit status: 1

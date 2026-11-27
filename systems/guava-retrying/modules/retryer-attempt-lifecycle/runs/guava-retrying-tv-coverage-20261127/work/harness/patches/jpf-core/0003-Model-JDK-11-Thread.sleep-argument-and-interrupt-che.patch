@@ -1,0 +1,78 @@
+From 45f5bfb1a9ffe2f6fb3b51d07b934a7acb1812c9 Mon Sep 17 00:00:00 2001
+From: local <local@localhost>
+Date: Thu, 26 Nov 2026 07:06:12 +0000
+Subject: [PATCH 3/5] Model JDK 11 Thread.sleep argument and interrupt checks
+
+---
+ .../modules/java.base/java/lang/Thread.java   | 38 +++++++++++++++++--
+ .../gov/nasa/jpf/vm/JPF_java_lang_Thread.java |  2 +-
+ 2 files changed, 36 insertions(+), 4 deletions(-)
+
+diff --git a/src/classes/modules/java.base/java/lang/Thread.java b/src/classes/modules/java.base/java/lang/Thread.java
+index dbf2cf9..30ea12b 100644
+--- a/src/classes/modules/java.base/java/lang/Thread.java
++++ b/src/classes/modules/java.base/java/lang/Thread.java
+@@ -353,12 +353,44 @@ public class Thread implements Runnable {
+     }
+   }
+ 
++  // JDK 11 Thread.sleep(long) is JVM_Sleep (hotspot/share/prims/jvm.cpp):
++  // a negative argument throws IllegalArgumentException, then a pending
++  // interrupt is cleared and thrown as InterruptedException, 0 ms only yields,
++  // and a positive time is an interruptible sleep (os::sleep) that clears and
++  // throws an interrupt delivered while sleeping. Time is not modeled: sleep0
++  // is the scheduling point at which other threads run during the sleep.
+   public static void sleep (long millis) throws InterruptedException {
+-    sleep(millis, 0);
++    if (millis < 0) {
++      throw new IllegalArgumentException("timeout value is negative");
++    }
++    if (interrupted()) {
++      throw new InterruptedException("sleep interrupted");
++    }
++    if (millis == 0) {
++      yield();
++      return;
++    }
++    sleep0(millis, 0);
++    if (interrupted()) {
++      throw new InterruptedException("sleep interrupted");
++    }
++  }
++
++  // JDK 11 Thread.sleep(long, int)
++  public static void sleep (long millis, int nanos) throws InterruptedException {
++    if (millis < 0) {
++      throw new IllegalArgumentException("timeout value is negative");
++    }
++    if (nanos < 0 || nanos > 999999) {
++      throw new IllegalArgumentException("nanosecond timeout value out of range");
++    }
++    if (nanos >= 500000 || (nanos != 0 && millis == 0)) {
++      millis++;
++    }
++    sleep(millis);
+   }
+ 
+-  public static native void sleep (long millis, int nanos)
+-                            throws InterruptedException;
++  private static native void sleep0 (long millis, int nanos);
+ 
+   public native void start();
+   public native void stop();
+diff --git a/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Thread.java b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Thread.java
+index 11362aa..be5ff50 100644
+--- a/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Thread.java
++++ b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Thread.java
+@@ -217,7 +217,7 @@ public class JPF_java_lang_Thread extends NativePeer {
+   }
+ 
+   @MJI
+-  public void sleep__JI__V (MJIEnv env, int clsObjRef, long millis, int nanos) {
++  public void sleep0__JI__V (MJIEnv env, int clsObjRef, long millis, int nanos) {
+     ThreadInfo ti = env.getThreadInfo();
+ 
+     // check scheduling point
+-- 
+2.43.0
+

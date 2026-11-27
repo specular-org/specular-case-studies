@@ -1,0 +1,7 @@
+run 1: violated CountedImpliesInvoked (trace 8 states, distinct 71)
+run 2: violated NoDiscardedCompletion (trace 11 states, distinct 97)
+run 3: violated NoRetryAfterObservedInterrupt (trace 14 states, distinct 274)
+run 4: violated SequentialAttempts (trace 21 states, distinct 983)
+run 5: violated InterruptPreserved (trace 25 states, distinct 2941)
+run 6: violated NoActivityAfterOutcome (trace 29 states, distinct 5502)
+run 7: no error, distinct 7566

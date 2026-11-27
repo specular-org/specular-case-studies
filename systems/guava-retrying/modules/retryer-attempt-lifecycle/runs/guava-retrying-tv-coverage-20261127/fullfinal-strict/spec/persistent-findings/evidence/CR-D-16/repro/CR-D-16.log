@@ -1,0 +1,341 @@
+=== CR-D-16 repro: join() sum overflow -> negative sleep -> IAE escapes Retryer.call ===
+date: 2026-11-26T10:36:48Z
+library source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-16/worktree
+library HEAD:   177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+library dirty files (must be 0, library unmodified): 0
+guava:  /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+jsr305: /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar sha1=516c03b21d50a644d538de0f0369c620989cd8f0
+javac:  javac 21.0.13.1
+--- composite sum site (WaitStrategies.java:364-371) ---
+        @Override
+        public long computeSleepTime(Attempt failedAttempt) {
+            long waitTime = 0L;
+            for (WaitStrategy waitStrategy : waitStrategies) {
+                waitTime += waitStrategy.computeSleepTime(failedAttempt);
+            }
+            return waitTime;
+        }
+--- block step (Retryer.java:173-183) ---
+            if (stopStrategy.shouldStop(attempt)) {
+                throw new RetryException(attemptNumber, attempt);
+            } else {
+                long sleepTime = waitStrategy.computeSleepTime(attempt);
+                try {
+                    blockStrategy.block(sleepTime);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RetryException(attemptNumber, attempt);
+                }
+            }
+--- default block strategy (BlockStrategies.java:44-47) ---
+        @Override
+        public void block(long sleepTime) throws InterruptedException {
+            Thread.sleep(sleepTime);
+        }
+library compiled (javac --release 8 against guava 22.0 + jsr305 2.0.2)
+
+################ running driver on: java (openjdk version "21.0.13.1" 2026-11-17) ################
+command: timeout 300 java -cp <driver>:<lib>:guava-22.0.jar:jsr305-2.0.2.jar CrD16Repro
+java.version=21.0.13.1 java.vendor=Ubuntu
+Long.MAX_VALUE = 9223372036854775807;  Long.MAX_VALUE + 1000 (plain long add) = -9223372036854774809
+TimeUnit.DAYS.toMillis(Long.MAX_VALUE) = 9223372036854775807;  TimeUnit.SECONDS.toMillis(10^16) = 9223372036854775807
+
+--- C0 control: join(fixedWait(50ms), fixedWait(70ms)) waits the documented total ---
+  [C0] callable invocations = 2 (stop strategy allows 5)
+  [C0] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 2 attempts.
+  [C0]   RetryException.getNumberOfFailedAttempts() = 2
+  [C0]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 2)
+  [C0]   last callable failure reachable from the thrown exception: true
+  [C0] caller interrupt status after call() = false, elapsed 121 ms
+  [C0] values passed to block(): [120]
+  => [CONTROL OK] C0: block(120) then RetryException after 2 attempts
+
+--- C1 control: fixedWait(Long.MAX_VALUE, MILLISECONDS) alone (no join), default block strategy ---
+  [C1] callable invocations = 1 (stop strategy allows 5)
+  [C1] after watchdog: caller still inside call(), state=TIMED_WAITING, blocked in Thread.sleep=true
+        at java.base/java.lang.Thread.sleep0(Native Method)
+        at java.base/java.lang.Thread.sleep(Thread.java:509)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [C1] watchdog interrupted the caller
+  [C1] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C1]   RetryException.getNumberOfFailedAttempts() = 1
+  [C1]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [C1]   last callable failure reachable from the thrown exception: true
+  [C1] caller interrupt status after call() = true, elapsed 1501 ms
+  => [CONTROL OK] C1: caller sleeps; on interrupt -> documented RetryException(1 attempt, last failure kept), interrupt status set
+
+--- B1 bug: join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)), default block strategy ---
+  [B1] callable invocations = 1 (stop strategy allows 5)
+  [B1] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B1]     at java.base/java.lang.Thread.sleep(Thread.java:500)
+  [B1]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B1]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B1]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B1]     at java.base/java.lang.Thread.run(Thread.java:1583)
+  [B1]   thrown.getCause() = null
+  [B1]   last callable failure reachable from the thrown exception: false
+  [B1] caller interrupt status after call() = false, elapsed 0 ms
+  => [BUG TRIGGERED] B1: call() escaped with IllegalArgumentException after 1 attempt instead of waiting (documented: total wait)
+
+--- B1-diag: same join, recording wrapper around the built-in threadSleepStrategy ---
+  [B1-diag] values passed to block(): [-9223372036854774809]  (expected total 9223372036854775807 + 1000, not representable)
+  [B1-diag] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  => [BUG TRIGGERED] B1-diag: CompositeWaitStrategy returned -9223372036854774809 (negative)
+
+--- B2 bug: join(fixedWait(Long.MAX_VALUE, DAYS), fixedWait(1, MILLISECONDS)) ---
+  [B2] callable invocations = 1 (stop strategy allows 5)
+  [B2] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B2]     at java.base/java.lang.Thread.sleep(Thread.java:500)
+  [B2]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B2]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B2]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B2]     at java.base/java.lang.Thread.run(Thread.java:1583)
+  [B2]   thrown.getCause() = null
+  [B2]   last callable failure reachable from the thrown exception: false
+  [B2] caller interrupt status after call() = false, elapsed 0 ms
+  => [BUG TRIGGERED] B2: saturated component + 1 ms wraps negative
+
+--- B3 bug: join(exceptionWait(RateLimitedException, e -> SECONDS.toMillis(e.retryAfterSeconds)), randomWait(1, SECONDS)), hint = 10^16 s ---
+  [B3 run#1] callable invocations = 1 (stop strategy allows 5)
+  [B3 run#1] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B3 run#1]     at java.base/java.lang.Thread.sleep(Thread.java:500)
+  [B3 run#1]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B3 run#1]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B3 run#1]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B3 run#1]     at java.base/java.lang.Thread.run(Thread.java:1583)
+  [B3 run#1]   thrown.getCause() = null
+  [B3 run#1]   last callable failure reachable from the thrown exception: false
+  [B3 run#1] caller interrupt status after call() = false, elapsed 0 ms
+  [B3] 20 runs: IllegalArgumentException=20, slept (jitter happened to be 0 ms)=0, other=0
+  => [BUG TRIGGERED] B3: back-off hint saturates to Long.MAX_VALUE, + jitter wraps negative in 20/20 runs
+
+--- C2 control: caller interrupted during attempt, non-overflowing join(fixedWait(10ms), randomWait(1, SECONDS)) ---
+  [C2] callable invocations = 1 (stop strategy allows 5)
+  [C2] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C2]   RetryException.getNumberOfFailedAttempts() = 1
+  [C2]   RetryException.getLastFailedAttempt().getExceptionCause() = java.nio.channels.ClosedByInterruptException
+  [C2]   last callable failure reachable from the thrown exception: true
+  [C2] caller interrupt status after call() = true, elapsed 315 ms
+  => [CONTROL OK] C2: documented: RetryException and interrupt status set
+
+--- C3 control: caller interrupted during attempt, fixedWait(Long.MAX_VALUE, MILLISECONDS) alone ---
+  [C3] callable invocations = 1 (stop strategy allows 5)
+  [C3] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C3]   RetryException.getNumberOfFailedAttempts() = 1
+  [C3]   RetryException.getLastFailedAttempt().getExceptionCause() = java.nio.channels.ClosedByInterruptException
+  [C3]   last callable failure reachable from the thrown exception: true
+  [C3] caller interrupt status after call() = true, elapsed 301 ms
+  => [CONTROL OK] C3: documented: RetryException and interrupt status set
+
+--- B4 bug: caller interrupted during attempt, join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)) ---
+  [B4] callable invocations = 1 (stop strategy allows 5)
+  [B4] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B4]     at java.base/java.lang.Thread.sleep(Thread.java:500)
+  [B4]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B4]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B4]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B4]     at java.base/java.lang.Thread.run(Thread.java:1583)
+  [B4]   thrown.getCause() = null
+  [B4]   last callable failure reachable from the thrown exception: false
+  [B4] caller interrupt status after call() = true, elapsed 300 ms
+  => [BUG TRIGGERED] B4: interrupted caller gets IllegalArgumentException, not the documented RetryException
+
+--- C4 control: caller pre-interrupted, non-overflowing join(fixedWait(10ms), fixedWait(1, SECONDS)) ---
+  [C4] callable invocations = 1 (stop strategy allows 5)
+  [C4] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C4]   RetryException.getNumberOfFailedAttempts() = 1
+  [C4]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [C4]   last callable failure reachable from the thrown exception: true
+  [C4] caller interrupt status after call() = true, elapsed 0 ms
+  => [CONTROL OK] C4: documented: RetryException and interrupt status set
+
+--- B5 bug: caller pre-interrupted, join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)) ---
+  [B5] callable invocations = 1 (stop strategy allows 5)
+  [B5] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B5]     at java.base/java.lang.Thread.sleep(Thread.java:500)
+  [B5]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B5]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B5]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B5]     at java.base/java.lang.Thread.run(Thread.java:1583)
+  [B5]   thrown.getCause() = null
+  [B5]   last callable failure reachable from the thrown exception: false
+  [B5] caller interrupt status after call() = true, elapsed 0 ms
+  => [BUG TRIGGERED] B5: interrupted caller gets IllegalArgumentException, not the documented RetryException
+
+--- B6 bug: Retryer.wrap(callable) submitted to an ExecutorService, same overflowing join ---
+  [B6] Future.get() -> ExecutionException cause = java.lang.IllegalArgumentException: timeout value is negative, callable invocations = 1
+  => [BUG TRIGGERED] B6: RetryerCallable surfaces IllegalArgumentException as the task failure
+
+--- F1 expected behaviour: same components with a saturating sum (user-side WaitStrategy) ---
+  [F1] callable invocations = 1 (stop strategy allows 5)
+  [F1] after watchdog: caller still inside call(), state=TIMED_WAITING, blocked in Thread.sleep=true
+        at java.base/java.lang.Thread.sleep0(Native Method)
+        at java.base/java.lang.Thread.sleep(Thread.java:509)
+        at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [F1] watchdog interrupted the caller
+  [F1] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [F1]   RetryException.getNumberOfFailedAttempts() = 1
+  [F1]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [F1]   last callable failure reachable from the thrown exception: true
+  [F1] caller interrupt status after call() = true, elapsed 1500 ms
+  => [CONTROL OK] F1: caller waits (Long.MAX_VALUE ms); interrupt -> RetryException(1 attempt, last failure kept), interrupt status set
+
+SUMMARY (java 21.0.13.1): bug cases triggered 7/7; controls as documented 6/6
+RESULT: BUG REPRODUCED
+driver exit code on java: 0
+
+################ running driver on: /usr/lib/jvm/java-11-openjdk-amd64/bin/java (openjdk version "11.0.33.1" 2026-11-17) ################
+command: timeout 300 /usr/lib/jvm/java-11-openjdk-amd64/bin/java -cp <driver>:<lib>:guava-22.0.jar:jsr305-2.0.2.jar CrD16Repro
+java.version=11.0.33.1 java.vendor=Ubuntu
+Long.MAX_VALUE = 9223372036854775807;  Long.MAX_VALUE + 1000 (plain long add) = -9223372036854774809
+TimeUnit.DAYS.toMillis(Long.MAX_VALUE) = 9223372036854775807;  TimeUnit.SECONDS.toMillis(10^16) = 9223372036854775807
+
+--- C0 control: join(fixedWait(50ms), fixedWait(70ms)) waits the documented total ---
+  [C0] callable invocations = 2 (stop strategy allows 5)
+  [C0] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 2 attempts.
+  [C0]   RetryException.getNumberOfFailedAttempts() = 2
+  [C0]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 2)
+  [C0]   last callable failure reachable from the thrown exception: true
+  [C0] caller interrupt status after call() = false, elapsed 122 ms
+  [C0] values passed to block(): [120]
+  => [CONTROL OK] C0: block(120) then RetryException after 2 attempts
+
+--- C1 control: fixedWait(Long.MAX_VALUE, MILLISECONDS) alone (no join), default block strategy ---
+  [C1] callable invocations = 1 (stop strategy allows 5)
+  [C1] after watchdog: caller still inside call(), state=TIMED_WAITING, blocked in Thread.sleep=true
+        at java.base@11.0.33.1/java.lang.Thread.sleep(Native Method)
+        at app//com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at app//CrD16Repro$5.run(CrD16Repro.java:131)
+  [C1] watchdog interrupted the caller
+  [C1] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C1]   RetryException.getNumberOfFailedAttempts() = 1
+  [C1]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [C1]   last callable failure reachable from the thrown exception: true
+  [C1] caller interrupt status after call() = true, elapsed 1500 ms
+  => [CONTROL OK] C1: caller sleeps; on interrupt -> documented RetryException(1 attempt, last failure kept), interrupt status set
+
+--- B1 bug: join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)), default block strategy ---
+  [B1] callable invocations = 1 (stop strategy allows 5)
+  [B1] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B1]     at java.base/java.lang.Thread.sleep(Native Method)
+  [B1]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B1]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B1]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B1]     at java.base/java.lang.Thread.run(Thread.java:829)
+  [B1]   thrown.getCause() = null
+  [B1]   last callable failure reachable from the thrown exception: false
+  [B1] caller interrupt status after call() = false, elapsed 0 ms
+  => [BUG TRIGGERED] B1: call() escaped with IllegalArgumentException after 1 attempt instead of waiting (documented: total wait)
+
+--- B1-diag: same join, recording wrapper around the built-in threadSleepStrategy ---
+  [B1-diag] values passed to block(): [-9223372036854774809]  (expected total 9223372036854775807 + 1000, not representable)
+  [B1-diag] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  => [BUG TRIGGERED] B1-diag: CompositeWaitStrategy returned -9223372036854774809 (negative)
+
+--- B2 bug: join(fixedWait(Long.MAX_VALUE, DAYS), fixedWait(1, MILLISECONDS)) ---
+  [B2] callable invocations = 1 (stop strategy allows 5)
+  [B2] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B2]     at java.base/java.lang.Thread.sleep(Native Method)
+  [B2]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B2]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B2]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B2]     at java.base/java.lang.Thread.run(Thread.java:829)
+  [B2]   thrown.getCause() = null
+  [B2]   last callable failure reachable from the thrown exception: false
+  [B2] caller interrupt status after call() = false, elapsed 0 ms
+  => [BUG TRIGGERED] B2: saturated component + 1 ms wraps negative
+
+--- B3 bug: join(exceptionWait(RateLimitedException, e -> SECONDS.toMillis(e.retryAfterSeconds)), randomWait(1, SECONDS)), hint = 10^16 s ---
+  [B3 run#1] callable invocations = 1 (stop strategy allows 5)
+  [B3 run#1] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B3 run#1]     at java.base/java.lang.Thread.sleep(Native Method)
+  [B3 run#1]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B3 run#1]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B3 run#1]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B3 run#1]     at java.base/java.lang.Thread.run(Thread.java:829)
+  [B3 run#1]   thrown.getCause() = null
+  [B3 run#1]   last callable failure reachable from the thrown exception: false
+  [B3 run#1] caller interrupt status after call() = false, elapsed 0 ms
+  [B3] 20 runs: IllegalArgumentException=20, slept (jitter happened to be 0 ms)=0, other=0
+  => [BUG TRIGGERED] B3: back-off hint saturates to Long.MAX_VALUE, + jitter wraps negative in 20/20 runs
+
+--- C2 control: caller interrupted during attempt, non-overflowing join(fixedWait(10ms), randomWait(1, SECONDS)) ---
+  [C2] callable invocations = 1 (stop strategy allows 5)
+  [C2] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C2]   RetryException.getNumberOfFailedAttempts() = 1
+  [C2]   RetryException.getLastFailedAttempt().getExceptionCause() = java.nio.channels.ClosedByInterruptException
+  [C2]   last callable failure reachable from the thrown exception: true
+  [C2] caller interrupt status after call() = true, elapsed 310 ms
+  => [CONTROL OK] C2: documented: RetryException and interrupt status set
+
+--- C3 control: caller interrupted during attempt, fixedWait(Long.MAX_VALUE, MILLISECONDS) alone ---
+  [C3] callable invocations = 1 (stop strategy allows 5)
+  [C3] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C3]   RetryException.getNumberOfFailedAttempts() = 1
+  [C3]   RetryException.getLastFailedAttempt().getExceptionCause() = java.nio.channels.ClosedByInterruptException
+  [C3]   last callable failure reachable from the thrown exception: true
+  [C3] caller interrupt status after call() = true, elapsed 301 ms
+  => [CONTROL OK] C3: documented: RetryException and interrupt status set
+
+--- B4 bug: caller interrupted during attempt, join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)) ---
+  [B4] callable invocations = 1 (stop strategy allows 5)
+  [B4] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B4]     at java.base/java.lang.Thread.sleep(Native Method)
+  [B4]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B4]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B4]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B4]     at java.base/java.lang.Thread.run(Thread.java:829)
+  [B4]   thrown.getCause() = null
+  [B4]   last callable failure reachable from the thrown exception: false
+  [B4] caller interrupt status after call() = true, elapsed 301 ms
+  => [BUG TRIGGERED] B4: interrupted caller gets IllegalArgumentException, not the documented RetryException
+
+--- C4 control: caller pre-interrupted, non-overflowing join(fixedWait(10ms), fixedWait(1, SECONDS)) ---
+  [C4] callable invocations = 1 (stop strategy allows 5)
+  [C4] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [C4]   RetryException.getNumberOfFailedAttempts() = 1
+  [C4]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [C4]   last callable failure reachable from the thrown exception: true
+  [C4] caller interrupt status after call() = true, elapsed 0 ms
+  => [CONTROL OK] C4: documented: RetryException and interrupt status set
+
+--- B5 bug: caller pre-interrupted, join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)) ---
+  [B5] callable invocations = 1 (stop strategy allows 5)
+  [B5] call() threw: java.lang.IllegalArgumentException: timeout value is negative
+  [B5]     at java.base/java.lang.Thread.sleep(Native Method)
+  [B5]     at com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+  [B5]     at com.github.rholder.retry.Retryer.call(Retryer.java:178)
+  [B5]     at CrD16Repro$5.run(CrD16Repro.java:131)
+  [B5]     at java.base/java.lang.Thread.run(Thread.java:829)
+  [B5]   thrown.getCause() = null
+  [B5]   last callable failure reachable from the thrown exception: false
+  [B5] caller interrupt status after call() = true, elapsed 0 ms
+  => [BUG TRIGGERED] B5: interrupted caller gets IllegalArgumentException, not the documented RetryException
+
+--- B6 bug: Retryer.wrap(callable) submitted to an ExecutorService, same overflowing join ---
+  [B6] Future.get() -> ExecutionException cause = java.lang.IllegalArgumentException: timeout value is negative, callable invocations = 1
+  => [BUG TRIGGERED] B6: RetryerCallable surfaces IllegalArgumentException as the task failure
+
+--- F1 expected behaviour: same components with a saturating sum (user-side WaitStrategy) ---
+  [F1] callable invocations = 1 (stop strategy allows 5)
+  [F1] after watchdog: caller still inside call(), state=TIMED_WAITING, blocked in Thread.sleep=true
+        at java.base@11.0.33.1/java.lang.Thread.sleep(Native Method)
+        at app//com.github.rholder.retry.BlockStrategies$ThreadSleepStrategy.block(BlockStrategies.java:46)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:178)
+        at app//CrD16Repro$5.run(CrD16Repro.java:131)
+  [F1] watchdog interrupted the caller
+  [F1] call() threw: com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.
+  [F1]   RetryException.getNumberOfFailedAttempts() = 1
+  [F1]   RetryException.getLastFailedAttempt().getExceptionCause() = java.io.IOException: backend unavailable (invocation 1)
+  [F1]   last callable failure reachable from the thrown exception: true
+  [F1] caller interrupt status after call() = true, elapsed 1500 ms
+  => [CONTROL OK] F1: caller waits (Long.MAX_VALUE ms); interrupt -> RetryException(1 attempt, last failure kept), interrupt status set
+
+SUMMARY (java 11.0.33.1): bug cases triggered 7/7; controls as documented 6/6
+RESULT: BUG REPRODUCED
+driver exit code on /usr/lib/jvm/java-11-openjdk-amd64/bin/java: 0
+
+FINAL: BUG REPRODUCED on all JDKs run

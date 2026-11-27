@@ -1,0 +1,199 @@
+== MC-8 repro ==
+source tree : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-8/worktree (177b6c9, dirty files: 0)
+guava       : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (sha1 3564ef3803de)
+java        : openjdk version "21.0.13.1" 2026-11-17
+== compiling unmodified library sources + harness (javac --release 8) ==
+
+================ run 1/3 ================
+
+--- S1 | limiter pool = ThreadPoolExecutor(1,1,ArrayBlockingQueue(1))  [bounded, as in MC_hunt_s4_executor] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+      18 ms  caller-1  Retryer.call() begins
+      33 ms  pool-1-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+      34 ms  caller-2  Retryer.call() begins
+     335 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     335 ms  caller-2  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     335 ms  caller-1  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     335 ms  caller-2  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     336 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+     336 ms  caller-2  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+    1534 ms  pool-1-thread-1 caller-1 callable finished (#1)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=1; caller-2 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=0 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 exception=UncheckedTimeoutException (limiter queue=1, busy workers=1)
+  [OK  ] caller-2 attempt#1 counted as UncheckedTimeoutException while its task sat in the queue (CE bfs1 end state)
+  [OK  ] caller-2: RetryException counts 2 failed attempts, callable invoked 0 times
+  [OK  ] caller-2 attempt#2 = RejectedExecutionException (its own cancelled task still fills the queue)
+  [OK  ] caller-1: RetryException counts 2 failed attempts, callable invoked 1 time, last = RejectedExecutionException (CE bfs3 end state)
+
+--- S1 control | limiter pool = Executors.newCachedThreadPool()  [CONTROL: the library's default kind of pool] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+    2139 ms  caller-1  Retryer.call() begins
+    2140 ms  pool-2-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+    2140 ms  caller-2  Retryer.call() begins
+    2140 ms  pool-2-thread-2 caller-2 callable INVOKED (#1)
+    2141 ms  caller-2  [listener] attempt#1 result=c2-done | limiter queue=0 busy workers=1
+    2141 ms  caller-2  Retryer.call() ends: returned c2-done
+    2440 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=0 busy workers=1
+    2441 ms  pool-2-thread-2 caller-1 callable INVOKED (#2), ignores interrupts, runs 1500 ms
+    2741 ms  caller-1  [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=0 busy workers=2
+    2742 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException)
+    3640 ms  pool-2-thread-1 caller-1 callable finished (#2)
+    3941 ms  pool-2-thread-2 caller-1 callable finished (#2)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException), callable invocations=2; caller-2 -> returned c2-done, callable invocations=1 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 result=c2-done (limiter queue=0, busy workers=1)
+  [OK  ] control: caller-2 succeeds on attempt#1 and its callable ran once
+  [OK  ] control: caller-1 RetryException counts 2 attempts and its callable ran 2 times (counted == invoked)
+
+--- S2 | limiter pool = 1-thread pool; RetryerCallable submitted to THE SAME pool  [as in MC_hunt_s4_wrap_samepool] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    4845 ms  pool-3-thread-1 [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+    5145 ms  pool-3-thread-1 [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=2 busy workers=1
+    5446 ms  pool-3-thread-1 [listener] attempt#3 exception=UncheckedTimeoutException | limiter queue=3 busy workers=1
+  summary: RetryerCallable -> RetryException(numberOfFailedAttempts=3, last cause=UncheckedTimeoutException), callable invocations=0 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] RetryException counts 3 failed attempts (each UncheckedTimeoutException while queued), callable invoked 0 times (CE wrap_samepool end state)
+  [OK  ] each cancelled attempt task stayed queued behind the RetryerCallable (queue grew to 3)
+
+--- S2 control | limiter pool = 1-thread pool; RetryerCallable submitted to a SEPARATE pool  [CONTROL] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    5448 ms  pool-4-thread-1 callable INVOKED (#1)
+    5448 ms  pool-5-thread-1 [listener] attempt#1 result=ok | limiter queue=0 busy workers=0
+  summary: RetryerCallable -> returned ok, callable invocations=1 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] control: returns 'ok' on attempt#1, callable invoked once
+
+--- S2b | wrap() on the limiter's own 1-thread pool, fixedTimeLimit(100 ms), retryIfExceptionOfType(UncheckedTimeoutException), neverStop; observe 3000 ms
+    6449 ms  main      after 1000 ms: attempts counted=9, callable invocations=0, limiter queue=10, outer done=false
+    7450 ms  main      after 2000 ms: attempts counted=19, callable invocations=0, limiter queue=20, outer done=false
+    8450 ms  main      after 3000 ms: attempts counted=29, callable invocations=0, limiter queue=30, outer done=false
+    8451 ms  main      after cancelling the outer task: pool terminated=true, callable invocations=0
+  [OK  ] neverStop: the call kept making and counting attempts for 3000 ms (29 attempts) without ever invoking the callable
+  [OK  ] cancelled attempt tasks accumulated in the limiter queue (30 queued)
+  [OK  ] after the outer task was cancelled the queued (cancelled) attempts were drained without running the callable
+
+RESULT: MC-8 counterexample path realised in the real library (all scenarios + controls as predicted)
+run 1: exit 0
+
+================ run 2/3 ================
+
+--- S1 | limiter pool = ThreadPoolExecutor(1,1,ArrayBlockingQueue(1))  [bounded, as in MC_hunt_s4_executor] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+      18 ms  caller-1  Retryer.call() begins
+      34 ms  pool-1-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+      35 ms  caller-2  Retryer.call() begins
+     335 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     335 ms  caller-1  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     336 ms  caller-2  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     336 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+     336 ms  caller-2  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     337 ms  caller-2  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+    1535 ms  pool-1-thread-1 caller-1 callable finished (#1)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=1; caller-2 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=0 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 exception=UncheckedTimeoutException (limiter queue=1, busy workers=1)
+  [OK  ] caller-2 attempt#1 counted as UncheckedTimeoutException while its task sat in the queue (CE bfs1 end state)
+  [OK  ] caller-2: RetryException counts 2 failed attempts, callable invoked 0 times
+  [OK  ] caller-2 attempt#2 = RejectedExecutionException (its own cancelled task still fills the queue)
+  [OK  ] caller-1: RetryException counts 2 failed attempts, callable invoked 1 time, last = RejectedExecutionException (CE bfs3 end state)
+
+--- S1 control | limiter pool = Executors.newCachedThreadPool()  [CONTROL: the library's default kind of pool] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+    2139 ms  caller-1  Retryer.call() begins
+    2141 ms  pool-2-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+    2141 ms  caller-2  Retryer.call() begins
+    2142 ms  pool-2-thread-2 caller-2 callable INVOKED (#1)
+    2143 ms  caller-2  [listener] attempt#1 result=c2-done | limiter queue=0 busy workers=1
+    2143 ms  caller-2  Retryer.call() ends: returned c2-done
+    2441 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=0 busy workers=1
+    2442 ms  pool-2-thread-2 caller-1 callable INVOKED (#2), ignores interrupts, runs 1500 ms
+    2742 ms  caller-1  [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=0 busy workers=2
+    2742 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException)
+    3641 ms  pool-2-thread-1 caller-1 callable finished (#2)
+    3942 ms  pool-2-thread-2 caller-1 callable finished (#2)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException), callable invocations=2; caller-2 -> returned c2-done, callable invocations=1 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 result=c2-done (limiter queue=0, busy workers=1)
+  [OK  ] control: caller-2 succeeds on attempt#1 and its callable ran once
+  [OK  ] control: caller-1 RetryException counts 2 attempts and its callable ran 2 times (counted == invoked)
+
+--- S2 | limiter pool = 1-thread pool; RetryerCallable submitted to THE SAME pool  [as in MC_hunt_s4_wrap_samepool] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    4845 ms  pool-3-thread-1 [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+    5145 ms  pool-3-thread-1 [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=2 busy workers=1
+    5446 ms  pool-3-thread-1 [listener] attempt#3 exception=UncheckedTimeoutException | limiter queue=3 busy workers=1
+  summary: RetryerCallable -> RetryException(numberOfFailedAttempts=3, last cause=UncheckedTimeoutException), callable invocations=0 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] RetryException counts 3 failed attempts (each UncheckedTimeoutException while queued), callable invoked 0 times (CE wrap_samepool end state)
+  [OK  ] each cancelled attempt task stayed queued behind the RetryerCallable (queue grew to 3)
+
+--- S2 control | limiter pool = 1-thread pool; RetryerCallable submitted to a SEPARATE pool  [CONTROL] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    5449 ms  pool-4-thread-1 callable INVOKED (#1)
+    5449 ms  pool-5-thread-1 [listener] attempt#1 result=ok | limiter queue=0 busy workers=0
+  summary: RetryerCallable -> returned ok, callable invocations=1 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] control: returns 'ok' on attempt#1, callable invoked once
+
+--- S2b | wrap() on the limiter's own 1-thread pool, fixedTimeLimit(100 ms), retryIfExceptionOfType(UncheckedTimeoutException), neverStop; observe 3000 ms
+    6450 ms  main      after 1000 ms: attempts counted=9, callable invocations=0, limiter queue=10, outer done=false
+    7451 ms  main      after 2000 ms: attempts counted=19, callable invocations=0, limiter queue=20, outer done=false
+    8452 ms  main      after 3000 ms: attempts counted=29, callable invocations=0, limiter queue=30, outer done=false
+    8452 ms  main      after cancelling the outer task: pool terminated=true, callable invocations=0
+  [OK  ] neverStop: the call kept making and counting attempts for 3000 ms (29 attempts) without ever invoking the callable
+  [OK  ] cancelled attempt tasks accumulated in the limiter queue (30 queued)
+  [OK  ] after the outer task was cancelled the queued (cancelled) attempts were drained without running the callable
+
+RESULT: MC-8 counterexample path realised in the real library (all scenarios + controls as predicted)
+run 2: exit 0
+
+================ run 3/3 ================
+
+--- S1 | limiter pool = ThreadPoolExecutor(1,1,ArrayBlockingQueue(1))  [bounded, as in MC_hunt_s4_executor] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+      19 ms  caller-1  Retryer.call() begins
+      44 ms  pool-1-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+      45 ms  caller-2  Retryer.call() begins
+     345 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     345 ms  caller-2  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+     346 ms  caller-1  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     346 ms  caller-2  [listener] attempt#2 exception=RejectedExecutionException | limiter queue=1 busy workers=1
+     346 ms  caller-2  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+     346 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException)
+    1545 ms  pool-1-thread-1 caller-1 callable finished (#1)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=1; caller-2 -> RetryException(numberOfFailedAttempts=2, last cause=RejectedExecutionException), callable invocations=0 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 exception=UncheckedTimeoutException (limiter queue=1, busy workers=1)
+  [OK  ] caller-2 attempt#1 counted as UncheckedTimeoutException while its task sat in the queue (CE bfs1 end state)
+  [OK  ] caller-2: RetryException counts 2 failed attempts, callable invoked 0 times
+  [OK  ] caller-2 attempt#2 = RejectedExecutionException (its own cancelled task still fills the queue)
+  [OK  ] caller-1: RetryException counts 2 failed attempts, callable invoked 1 time, last = RejectedExecutionException (CE bfs3 end state)
+
+--- S1 control | limiter pool = Executors.newCachedThreadPool()  [CONTROL: the library's default kind of pool] | fixedTimeLimit(300 ms), retryIfRuntimeException(), stopAfterAttempt(2), fixedWait 0
+    2150 ms  caller-1  Retryer.call() begins
+    2151 ms  pool-2-thread-1 caller-1 callable INVOKED (#1), ignores interrupts, runs 1500 ms
+    2151 ms  caller-2  Retryer.call() begins
+    2152 ms  pool-2-thread-2 caller-2 callable INVOKED (#1)
+    2153 ms  caller-2  [listener] attempt#1 result=c2-done | limiter queue=0 busy workers=1
+    2153 ms  caller-2  Retryer.call() ends: returned c2-done
+    2451 ms  caller-1  [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=0 busy workers=1
+    2451 ms  pool-2-thread-2 caller-1 callable INVOKED (#2), ignores interrupts, runs 1500 ms
+    2751 ms  caller-1  [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=0 busy workers=2
+    2752 ms  caller-1  Retryer.call() ends: RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException)
+    3651 ms  pool-2-thread-1 caller-1 callable finished (#2)
+    3952 ms  pool-2-thread-2 caller-1 callable finished (#2)
+  summary: caller-1 -> RetryException(numberOfFailedAttempts=2, last cause=UncheckedTimeoutException), callable invocations=2; caller-2 -> returned c2-done, callable invocations=1 (after the pool drained and terminated)
+  caller-2 first attempt as seen by the listener: caller-2 attempt#1 result=c2-done (limiter queue=0, busy workers=1)
+  [OK  ] control: caller-2 succeeds on attempt#1 and its callable ran once
+  [OK  ] control: caller-1 RetryException counts 2 attempts and its callable ran 2 times (counted == invoked)
+
+--- S2 | limiter pool = 1-thread pool; RetryerCallable submitted to THE SAME pool  [as in MC_hunt_s4_wrap_samepool] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    4855 ms  pool-3-thread-1 [listener] attempt#1 exception=UncheckedTimeoutException | limiter queue=1 busy workers=1
+    5155 ms  pool-3-thread-1 [listener] attempt#2 exception=UncheckedTimeoutException | limiter queue=2 busy workers=1
+    5456 ms  pool-3-thread-1 [listener] attempt#3 exception=UncheckedTimeoutException | limiter queue=3 busy workers=1
+  summary: RetryerCallable -> RetryException(numberOfFailedAttempts=3, last cause=UncheckedTimeoutException), callable invocations=0 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] RetryException counts 3 failed attempts (each UncheckedTimeoutException while queued), callable invoked 0 times (CE wrap_samepool end state)
+  [OK  ] each cancelled attempt task stayed queued behind the RetryerCallable (queue grew to 3)
+
+--- S2 control | limiter pool = 1-thread pool; RetryerCallable submitted to a SEPARATE pool  [CONTROL] | fixedTimeLimit(300 ms), retryIfExceptionOfType(UncheckedTimeoutException), stopAfterAttempt(3)
+    5458 ms  pool-4-thread-1 callable INVOKED (#1)
+    5458 ms  pool-5-thread-1 [listener] attempt#1 result=ok | limiter queue=0 busy workers=0
+  summary: RetryerCallable -> returned ok, callable invocations=1 (after both pools terminated); cancelled attempt tasks left in the limiter queue when call() ended=0
+  [OK  ] control: returns 'ok' on attempt#1, callable invoked once
+
+--- S2b | wrap() on the limiter's own 1-thread pool, fixedTimeLimit(100 ms), retryIfExceptionOfType(UncheckedTimeoutException), neverStop; observe 3000 ms
+    6460 ms  main      after 1000 ms: attempts counted=9, callable invocations=0, limiter queue=10, outer done=false
+    7460 ms  main      after 2000 ms: attempts counted=19, callable invocations=0, limiter queue=20, outer done=false
+    8461 ms  main      after 3000 ms: attempts counted=29, callable invocations=0, limiter queue=30, outer done=false
+    8461 ms  main      after cancelling the outer task: pool terminated=true, callable invocations=0
+  [OK  ] neverStop: the call kept making and counting attempts for 3000 ms (29 attempts) without ever invoking the callable
+  [OK  ] cancelled attempt tasks accumulated in the limiter queue (30 queued)
+  [OK  ] after the outer task was cancelled the queued (cancelled) attempts were drained without running the callable
+
+RESULT: MC-8 counterexample path realised in the real library (all scenarios + controls as predicted)
+run 3: exit 0
+
+MC-8 REPRO: counterexample path realised in 3/3 runs

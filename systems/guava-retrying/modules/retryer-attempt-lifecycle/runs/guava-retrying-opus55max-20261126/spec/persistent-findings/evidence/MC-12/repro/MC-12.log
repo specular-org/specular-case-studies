@@ -1,0 +1,86 @@
+== MC-12 provenance
+source dir : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-12/worktree
+source HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f  dirty-files: 0
+guava jar  : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+jsr305 jar : /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar
+java       : openjdk version "21.0.13.1" 2026-11-17
+built      : 13 unmodified library sources with javac --release 8
+
+== run 1/5 (verbose): timeout 120 java -cp <lib+test+guava-22.0+jsr305> MC12Repro
+[     0 ms] S1  exact CE: the limit expires before the new worker starts the callable (Level 1: user ThreadFactory delays thread start)
+[    15 ms]     config: fixedTimeLimit(300 ms, cachedPool(delayed-start 1500 ms)), retryIfExceptionOfType(IOException), stopAfterAttempt(5), fixedWait(50 ms)
+[    32 ms]     worker mc12-w1 created with the attempt task assigned; its start is delayed 1500 ms
+[   333 ms]     listener.onRetry: attempt #1 exception UncheckedTimeoutException (delaySinceFirstAttempt=301 ms)
+[   333 ms]     call() THREW ExecutionException with cause com.google.common.util.concurrent.UncheckedTimeoutException after 302 ms
+[  1532 ms]     worker mc12-w1 now runs the attempt's FutureTask: isCancelled()=true
+[  1533 ms]     the delayed worker has processed the attempt's FutureTask: true (isCancelled()=true isDone()=true)
+S1 OBSERVED: ExecutionException(UncheckedTimeoutException) after 302 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=0 => BUG
+[  1533 ms] S2  canonical: attempt 1 stalls past the limit, attempt 2 would succeed (Level 0: public API only)
+[  1533 ms]     config: fixedTimeLimit(500 ms) [library-default executor], retryIfExceptionOfType(IOException), stopAfterAttempt(5), fixedWait(50 ms)
+[  1535 ms]     callable invocation #1 on pool-1-thread-1: stalls 10000 ms (transient stall)
+[  2035 ms]     listener.onRetry: attempt #1 exception UncheckedTimeoutException (delaySinceFirstAttempt=500 ms)
+[  2035 ms]     callable invocation #1 interrupted by the limiter's future.cancel(true)
+[  2035 ms]     call() THREW ExecutionException with cause com.google.common.util.concurrent.UncheckedTimeoutException after 500 ms
+S2 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+[  2035 ms] S3  upstream #29 configuration: no retryIf; fixedWait + stopAfterDelay (Level 0)
+[  2035 ms]     config: fixedTimeLimit(500 ms), fixedWait(100 ms), stopAfterDelay(3000 ms)
+[  2036 ms]     callable invocation #1 on pool-2-thread-1: stalls 10000 ms (transient stall)
+[  2536 ms]     listener.onRetry: attempt #1 exception UncheckedTimeoutException (delaySinceFirstAttempt=500 ms)
+[  2536 ms]     callable invocation #1 interrupted by the limiter's future.cancel(true)
+[  2536 ms]     call() THREW ExecutionException with cause com.google.common.util.concurrent.UncheckedTimeoutException after 500 ms
+S3 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+[  2536 ms] C1  control: S2 config, attempt 1 throws IOException (an ordinary transient failure)
+[  2537 ms]     callable invocation #1 throws IOException("transient")
+[  2538 ms]     listener.onRetry: attempt #1 exception IOException (delaySinceFirstAttempt=1 ms)
+[  2539 ms]     stopAfterAttempt(5).shouldStop(attempt #1) -> false
+[  2539 ms]     fixedWait(50 ms).computeSleepTime(attempt #1) -> 50 ms
+[  2589 ms]     callable invocation #2 returns "ok"
+[  2590 ms]     listener.onRetry: attempt #2 result ok (delaySinceFirstAttempt=52 ms)
+[  2590 ms]     call() RETURNED "ok" after 52 ms
+C1 OBSERVED: returned "ok" after 52 ms | attempts seen by listener=[#1 exception IOException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+[  2590 ms] C2  control: S2 config + retryIfExceptionOfType(UncheckedTimeoutException) (the #29 workaround)
+[  2590 ms]     callable invocation #1 on pool-4-thread-1: stalls 10000 ms (transient stall)
+[  3090 ms]     listener.onRetry: attempt #1 exception UncheckedTimeoutException (delaySinceFirstAttempt=500 ms)
+[  3090 ms]     callable invocation #1 interrupted by the limiter's future.cancel(true)
+[  3091 ms]     stopAfterAttempt(5).shouldStop(attempt #1) -> false
+[  3091 ms]     fixedWait(50 ms).computeSleepTime(attempt #1) -> 50 ms
+[  3141 ms]     callable invocation #2 returns "ok"
+[  3141 ms]     listener.onRetry: attempt #2 result ok (delaySinceFirstAttempt=551 ms)
+[  3141 ms]     call() RETURNED "ok" after 551 ms
+C2 OBSERVED: returned "ok" after 551 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+RESULT: PASS (bug triggered: the first attempt timeout ended call() with ExecutionException(UncheckedTimeoutException); stop/wait strategies never consulted)
+
+== run 2/5 (quiet)
+S1 OBSERVED: ExecutionException(UncheckedTimeoutException) after 302 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=0 => BUG
+S2 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+S3 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+C1 OBSERVED: returned "ok" after 52 ms | attempts seen by listener=[#1 exception IOException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+C2 OBSERVED: returned "ok" after 550 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+RESULT: PASS (bug triggered: the first attempt timeout ended call() with ExecutionException(UncheckedTimeoutException); stop/wait strategies never consulted)
+
+== run 3/5 (quiet)
+S1 OBSERVED: ExecutionException(UncheckedTimeoutException) after 302 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=0 => BUG
+S2 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+S3 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+C1 OBSERVED: returned "ok" after 52 ms | attempts seen by listener=[#1 exception IOException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+C2 OBSERVED: returned "ok" after 550 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+RESULT: PASS (bug triggered: the first attempt timeout ended call() with ExecutionException(UncheckedTimeoutException); stop/wait strategies never consulted)
+
+== run 4/5 (quiet)
+S1 OBSERVED: ExecutionException(UncheckedTimeoutException) after 302 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=0 => BUG
+S2 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+S3 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+C1 OBSERVED: returned "ok" after 52 ms | attempts seen by listener=[#1 exception IOException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+C2 OBSERVED: returned "ok" after 550 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+RESULT: PASS (bug triggered: the first attempt timeout ended call() with ExecutionException(UncheckedTimeoutException); stop/wait strategies never consulted)
+
+== run 5/5 (quiet)
+S1 OBSERVED: ExecutionException(UncheckedTimeoutException) after 301 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=0 => BUG
+S2 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+S3 OBSERVED: ExecutionException(UncheckedTimeoutException) after 500 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException] | stop.shouldStop calls=0 | wait.computeSleepTime calls=0 | callable invocations=1 => BUG
+C1 OBSERVED: returned "ok" after 52 ms | attempts seen by listener=[#1 exception IOException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+C2 OBSERVED: returned "ok" after 550 ms | attempts seen by listener=[#1 exception UncheckedTimeoutException, #2 result ok] | stop.shouldStop calls=1 | wait.computeSleepTime calls=1 | callable invocations=2 => control OK
+RESULT: PASS (bug triggered: the first attempt timeout ended call() with ExecutionException(UncheckedTimeoutException); stop/wait strategies never consulted)
+
+OVERALL: PASS (bug triggered in 5/5 runs)
+script exit status: 0

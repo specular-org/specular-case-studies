@@ -1,0 +1,37 @@
+== source: /tmp/crd20-fixcheck.MG4wpF
+== javac 21.0.13.1  guava: guava-22.0.jar  jsr305: jsr305-2.0.2.jar
+TimeUnit.DAYS.toMillis(Long.MAX_VALUE) = 9223372036854775807  (saturates)
+
+[A] Retryer.call with DEFAULT block strategy (Thread.sleep), incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS), stopAfterAttempt(6)
+    finished=false outcome=null attempts=2 wall=30022ms
+    gap attempt 1 -> 2: observed 1001 ms   documented sleep: 1000 ms
+    A: not triggered: retryer still sleeping after attempt 2 (documented behavior)
+
+[B] Retryer.call, incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS), stopAfterAttempt(6), recording BlockStrategy delegating to BlockStrategies.threadSleepStrategy()
+    finished=false outcome=null attempts=2
+    sleeps requested by Retryer.call : [1000, 9223372036854775807]
+    observed gaps between attempts   : [1000] ms
+    B: not triggered
+
+[C] control: incrementingWait(100, MILLISECONDS, 100, MILLISECONDS), stopAfterAttempt(6)
+    finished=true outcome=RetryException(numberOfFailedAttempts=6)
+    sleeps requested by Retryer.call : [100, 200, 300, 400, 500]
+    observed gaps between attempts   : [100, 200, 301, 400, 500] ms
+    C: OK (incrementing as documented)
+
+[D] public WaitStrategy.computeSleepTime(Attempt) for incrementingWait(1000 ms, +Long.MAX_VALUE ms)
+    attempt 1: computeSleepTime=1000   documented=1000
+    attempt 2: computeSleepTime=9223372036854775807   documented=9223372036854776807 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 3: computeSleepTime=9223372036854775807   documented=18446744073709552614 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 4: computeSleepTime=9223372036854775807   documented=27670116110564328421 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 5: computeSleepTime=9223372036854775807   documented=36893488147419104228 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 6: computeSleepTime=9223372036854775807   documented=46116860184273880035 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 7: computeSleepTime=9223372036854775807   documented=55340232221128655842 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 999: computeSleepTime=9223372036854775807   documented=9204925292781066256386 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1000: computeSleepTime=9223372036854775807   documented=9214148664817921032193 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1001: computeSleepTime=9223372036854775807   documented=9223372036854775808000 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1002: computeSleepTime=9223372036854775807   documented=9232595408891630583807 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1003: computeSleepTime=9223372036854775807   documented=9241818780928485359614 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+
+RESULT: NOT REPRODUCED
+== exit status: 1

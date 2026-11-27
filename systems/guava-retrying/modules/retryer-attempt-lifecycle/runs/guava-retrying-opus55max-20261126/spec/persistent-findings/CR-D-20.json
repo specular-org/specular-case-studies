@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "id": "CR-D-20",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "incrementingWait overflows initial + increment*(n-1) for huge increments; overflow is clamped to 0, so Retryer sleeps 1000, 0, 998, 0, ... ms",
+  "cause": "IncrementingWaitStrategy.computeSleepTime computes initialSleepTime + increment * (attemptNumber - 1) in unchecked long arithmetic and maps any negative (overflowed) result to 0 (WaitStrategies.java:282-283). Neither the incrementingWait factory nor the constructor bounds increment (only initialSleepTime >= 0 is checked), and TimeUnit.toMillis saturates large increments to Long.MAX_VALUE.",
+  "trigger": "Public API only: RetryerBuilder.withWaitStrategy(WaitStrategies.incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS)) or incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS), a stop strategy that allows at least 3 attempts (e.g. stopAfterAttempt(6)), and a callable whose attempts keep being rejected.",
+  "consequence": "Retryer.call (Retryer.java:176-178) receives sleeps 1000, 0, 998, 0, 996 ms and Thread.sleep(0) re-invokes the user callable immediately after every even-numbered attempt, instead of the documented non-decreasing ('incrementing') waits (exact value exceeds Long.MAX_VALUE, i.e. effectively unbounded). For later attempts the sequence degenerates further (attempt 1002 returns Long.MAX_VALUE for initial 1000, then 0 again).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:IncrementingWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:282",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:incrementingWait",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "incrementingWait/IncrementingWaitStrategy accept any increment unvalidated (only initialSleepTime >= 0 is checked) and TimeUnit.toMillis saturates oversized increments to Long.MAX_VALUE.",
+    "Retryer.call passes computeSleepTime's value straight to BlockStrategy.block with no downstream correction; the default ThreadSleepStrategy calls Thread.sleep(sleepTime), so 0 means an immediate retry.",
+    "The trigger needs an extreme increment (at least about Long.MAX_VALUE/(n-1) ms to overflow within n attempts), e.g. a Long.MAX_VALUE sentinel or a saturating TimeUnit conversion; moderate increments cannot overflow before the int attempt counter reaches ~2^31.",
+    "The factory Javadoc promises 'incrementing amounts of time after each additional failed attempt'; the sibling Fibonacci/Exponential strategies saturate on overflow instead of collapsing to 0."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    public static WaitStrategy incrementingWait(long initialSleepTime,",
+      "end": "                incrementTimeUnit.toMillis(increment));",
+      "sha256": "d4a4aa792051ed8eb0cb707847e86a5d8bd58711b18d2e1bc596567baf872711"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class IncrementingWaitStrategy implements WaitStrategy {",
+      "end": "    private static final class ExponentialWaitStrategy implements WaitStrategy {",
+      "sha256": "628b2bc938263bcf80c139c1485707fb584f367668ae26a6edd86a2146b95cb0"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "                    blockStrategy.block(sleepTime);",
+      "sha256": "d1c3a4d44114b73f8c0c4c47aee6d4d16fafa34f41611c07890e25754585a9ac"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> withWaitStrategy(@Nonnull WaitStrategy waitStrategy) throws IllegalStateException {",
+      "end": "        this.waitStrategy = waitStrategy;",
+      "sha256": "402af65db4bd3ccfa3aa0a2265f3bb7b92631c012f33ca5c11f7e0a60b48555f"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java",
+      "sha256": "ac90de11d2ff4f2bf784675f61822378b7fd094f04dade4cd6ebba2874a18585"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-20.md",
+      "path": "spec/persistent-findings/evidence/CR-D-20/spec/finding-confirmation/CR-D-20.md",
+      "sha256": "5b82da8ec1b582f5af4f3bb475e6669ecd2b145ee3f782b6aad230625383808d"
+    },
+    {
+      "original": "confirmation/CR-D-20/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-20/confirmation/CR-D-20/investigation.md",
+      "sha256": "99e93d975c4cf69e238c86516463690ab67370f765c355daa1f369ee596c8ce5"
+    },
+    {
+      "original": "repro/test_bugCR-D-20_incrementing_wait_overflow.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-20/repro/test_bugCR-D-20_incrementing_wait_overflow.sh",
+      "sha256": "c953815c527c189b66689501db6f3a84b55d92c8f5cd5093b616acbe29275f95"
+    },
+    {
+      "original": "repro/CR-D-20.log",
+      "path": "spec/persistent-findings/evidence/CR-D-20/repro/CR-D-20.log",
+      "sha256": "bbd66922dd210cf15c31988fed28ccfdbe2cefa31a2312e6bc80ea9869fe338e"
+    },
+    {
+      "original": "repro/CR-D-20.run2.log",
+      "path": "spec/persistent-findings/evidence/CR-D-20/repro/CR-D-20.run2.log",
+      "sha256": "cda8c35f511df4b230a8abb4b184f7f9b94dc8aedd0f15c5547ed8180a46afe3"
+    },
+    {
+      "original": "repro/CR-D-20.fixcheck.log",
+      "path": "spec/persistent-findings/evidence/CR-D-20/repro/CR-D-20.fixcheck.log",
+      "sha256": "c3b40f74d91b4830f07ced7fb7bd0838777aa3a1e508b7566045b7a6e9422524"
+    },
+    {
+      "original": "confirmation/CR-D-20/fixcheck.patch",
+      "path": "spec/persistent-findings/evidence/CR-D-20/confirmation/CR-D-20/fixcheck.patch",
+      "sha256": "59cf28fe8d29889e5ab0cd891adb31b9263631e7bc7ddc72450d28eee9233726"
+    },
+    {
+      "original": "confirmation/CR-D-20/fixcheck-unit-tests.log",
+      "path": "spec/persistent-findings/evidence/CR-D-20/confirmation/CR-D-20/fixcheck-unit-tests.log",
+      "sha256": "a212dd3f940ba4bf9296d0e6b199e46c088f704f0b700af97443fa0b5e9064c2"
+    }
+  ]
+}

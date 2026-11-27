@@ -1,0 +1,32 @@
+From 7496666c505d8f236fef1cb80ea73a577179cae8 Mon Sep 17 00:00:00 2001
+From: local <local@localhost>
+Date: Thu, 26 Nov 2026 04:03:38 +0000
+Subject: [PATCH 1/5] Add no-op native peer for Reference.reachabilityFence
+
+---
+ .../nasa/jpf/vm/JPF_java_lang_ref_Reference.java    | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+ create mode 100644 src/peers/gov/nasa/jpf/vm/JPF_java_lang_ref_Reference.java
+
+diff --git a/src/peers/gov/nasa/jpf/vm/JPF_java_lang_ref_Reference.java b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_ref_Reference.java
+new file mode 100644
+index 0000000..f29338e
+--- /dev/null
++++ b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_ref_Reference.java
+@@ -0,0 +1,13 @@
++package gov.nasa.jpf.vm;
++
++import gov.nasa.jpf.annotation.MJI;
++
++/**
++ * Native peer for java.lang.ref.Reference. reachabilityFence only keeps its
++ * argument strongly reachable, which needs no action inside JPF.
++ */
++public class JPF_java_lang_ref_Reference extends NativePeer {
++  @MJI
++  public static void reachabilityFence__Ljava_lang_Object_2__V (MJIEnv env, int clsRef, int objRef) {
++  }
++}
+-- 
+2.43.0
+

@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>check</groupId><artifactId>guava-retrying-check</artifactId><version>2.0.0</version>
+  <properties><maven.compiler.release>8</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
+  <dependencies>
+    <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>22.0</version></dependency>
+    <dependency><groupId>com.google.code.findbugs</groupId><artifactId>jsr305</artifactId><version>2.0.2</version></dependency>
+    <dependency><groupId>junit</groupId><artifactId>junit</artifactId><version>4.11</version><scope>test</scope></dependency>
+    <dependency><groupId>org.mockito</groupId><artifactId>mockito-all</artifactId><version>1.9.5</version><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <sourceDirectory>/home/ubuntu/scratch/guava-retrying-src/guava-retrying/src/main/java</sourceDirectory>
+    <testSourceDirectory>/home/ubuntu/scratch/guava-retrying-src/guava-retrying/src/test/java</testSourceDirectory>
+    <directory>/home/ubuntu/scratch/guava-retrying-buildcheck/target</directory>
+    <plugins>
+      <plugin><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version></plugin>
+      <plugin><artifactId>maven-surefire-plugin</artifactId><version>3.2.5</version></plugin>
+    </plugins>
+  </build>
+</project>

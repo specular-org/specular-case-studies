@@ -1,0 +1,40 @@
+From 3050f2fb54610bfabc0aac54f8ed0ac1b66a19d1 Mon Sep 17 00:00:00 2001
+From: local <local@localhost>
+Date: Thu, 26 Nov 2026 04:15:43 +0000
+Subject: [PATCH 2/5] Model weakCompareAndSet and setRelease on
+ JPFFieldVarHandle
+
+---
+ .../java/lang/invoke/JPFFieldVarHandle.java    | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/src/classes/modules/java.base/java/lang/invoke/JPFFieldVarHandle.java b/src/classes/modules/java.base/java/lang/invoke/JPFFieldVarHandle.java
+index de64b61..478bdd2 100644
+--- a/src/classes/modules/java.base/java/lang/invoke/JPFFieldVarHandle.java
++++ b/src/classes/modules/java.base/java/lang/invoke/JPFFieldVarHandle.java
+@@ -59,4 +59,22 @@ public class JPFFieldVarHandle extends VarHandle {
+   public void set(Object called, Object value) {
+     //This is implemented in the corresponding peer
+   }
++
++  // JPF executes sequentially consistent, so weak CAS never fails spuriously
++  // and release stores behave like plain stores (used by FutureTask).
++  public boolean weakCompareAndSet(Object owner, int expect, int update) {
++    return compareAndSet(owner, expect, update);
++  }
++
++  public boolean weakCompareAndSet(Object owner, Object expect, Object update) {
++    return compareAndSet(owner, expect, update);
++  }
++
++  public void setRelease(Object owner, int value) {
++    set(owner, value);
++  }
++
++  public void setRelease(Object owner, Object value) {
++    set(owner, value);
++  }
+ }
+-- 
+2.43.0
+

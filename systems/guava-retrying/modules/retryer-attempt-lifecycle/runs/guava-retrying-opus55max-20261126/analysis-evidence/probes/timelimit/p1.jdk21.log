@@ -1,0 +1,6 @@
+mode=allTimeout | RetryException attempts=4 cause=com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException after 403ms
+at call() end: attemptsStarted=4 stillRunning=4 maxConcurrentAttempts=4 poolThreads=4
+1s later: finished=4 finishedAfterCallEnded=4 interruptsDeliveredToAttempts=4 stillRunning=0 poolThreads=4
+mode=lastSucceeds | call() returned 4 after 303ms
+at call() end: attemptsStarted=4 stillRunning=3 maxConcurrentAttempts=4 poolThreads=4
+1s later: finished=3 finishedAfterCallEnded=3 interruptsDeliveredToAttempts=3 stillRunning=0 poolThreads=4

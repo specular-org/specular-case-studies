@@ -1,0 +1,26 @@
+fixedTimeLimit(0, SECONDS) built fine; call(): RetryException attempts=25447 in 100ms, callableInvocations=0 cause=java.lang.IllegalArgumentException: timeout must be positive: 0
+fixedTimeLimit(-1, SECONDS) built fine; call(): RetryException attempts=27510 in 100ms, callableInvocations=0 cause=java.lang.IllegalArgumentException: timeout must be positive: -1
+noTimeLimit: initial stack length=1
+  after +1 attempts: SHARED.getStackTrace().length=1
+  after +10 attempts: SHARED.getStackTrace().length=1
+  after +100 attempts: SHARED.getStackTrace().length=1
+  after +1000 attempts: SHARED.getStackTrace().length=1
+  after +10000 attempts: SHARED.getStackTrace().length=1
+fixedTimeLimit: initial stack length=1
+  after +1 attempts: SHARED.getStackTrace().length=7
+  after +10 attempts: SHARED.getStackTrace().length=67
+  after +100 attempts: SHARED.getStackTrace().length=667
+  after +1000 attempts: SHARED.getStackTrace().length=6667
+  after +10000 attempts: SHARED.getStackTrace().length=66667
+noTimeLimit    + retryIfExceptionOfType(Weird): invocations=3 -> RetryException attempts=3 cause=P7Weird$Weird: weird
+fixedTimeLimit + retryIfExceptionOfType(Weird): invocations=1 -> ExecutionException cause=java.util.concurrent.ExecutionException: P7Weird$Weird: weird / inner=P7Weird$Weird: weird
+retryIfExceptionOfType(TimeoutException.class): invocations=1 -> ExecutionException cause=com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+no retryIf* (issue #29 config): invocations=1 -> ExecutionException cause=com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+retryIfRuntimeException(): invocations=3 -> RetryException attempts=3 cause=com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+Executors.newSingleThreadExecutor(): returned 2 | attempt1:startedInterrupted=false attempt2:startedInterrupted=false
+naive custom executor (take() then run(), no interrupt clearing): returned 2 | attempt1:startedInterrupted=false attempt2:startedInterrupted=false
+--- JDK11
+Executors.newSingleThreadExecutor(): returned 2 | attempt1:startedInterrupted=false attempt2:startedInterrupted=false
+naive custom executor (take() then run(), no interrupt clearing): returned 2 | attempt1:startedInterrupted=false attempt2:startedInterrupted=false
+noTimeLimit    + retryIfExceptionOfType(Weird): invocations=3 -> RetryException attempts=3 cause=P7Weird$Weird: weird
+fixedTimeLimit + retryIfExceptionOfType(Weird): invocations=1 -> ExecutionException cause=java.util.concurrent.ExecutionException: P7Weird$Weird: weird / inner=P7Weird$Weird: weird

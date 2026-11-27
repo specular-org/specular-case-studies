@@ -1,0 +1,109 @@
+{
+  "id": "MC-10",
+  "title": "Negative computed sleep makes Retryer.call() throw IllegalArgumentException, replacing the RetryException owed to an interrupted thread",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "Retryer.call passes waitStrategy.computeSleepTime(attempt) to the block strategy without validating it and catches only InterruptedException (Retryer.java:176-182). The default ThreadSleepStrategy calls Thread.sleep(sleepTime) directly (BlockStrategies.java:46). Thread.sleep rejects a negative value with IllegalArgumentException before it checks the interrupt status.",
+  "trigger": "A retryable attempt fails, the stop strategy does not stop, and the wait strategy returns a negative value. Examples: WaitStrategies.join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, MILLISECONDS)), whose unchecked long sum is Long.MIN_VALUE, or exceptionWait(cls, e -> retryAt - now) with a Retry-After instant that has already passed. Optionally the caller thread is also interrupted before the block step, e.g. by another thread during the RetryListener loop (CE bfs3 step 7) or with an interrupt pending before call().",
+  "consequence": "Retryer.call() ends with IllegalArgumentException('timeout value is negative'), and so do RetryerCallable.call() and the Future it backs. This is not a documented outcome. Retrying stops after attempt 1 even when the next attempt would succeed. An interrupted caller gets the IAE, with its interrupt status still set, instead of RetryException, so the attempt count and the last failure are lost (the IAE has no cause).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:176",
+    "src/main/java/com/github/rholder/retry/Retryer.java:178",
+    "src/main/java/com/github/rholder/retry/Retryer.java:179",
+    "src/main/java/com/github/rholder/retry/BlockStrategies.java:46"
+  ],
+  "actions": [
+    "MCWaitStrategyComputes",
+    "MCBlockNegative",
+    "MCInterrupt"
+  ],
+  "invariants": [
+    "DocumentedOutcomesOnly",
+    "InterruptedCallThrowsRetryException"
+  ],
+  "premises": [
+    "Retryer.call neither validates nor clamps sleepTime, and catches only InterruptedException around blockStrategy.block (Retryer.java:176-182).",
+    "RetryerBuilder.build defaults the block strategy to ThreadSleepStrategy, which calls Thread.sleep(sleepTime) without a clamp (BlockStrategies.java:46).",
+    "JDK Thread.sleep(long) throws IllegalArgumentException for a negative value before it checks the interrupt status. Observed on JDK 11.0.33.1 and 21.0.13.1 in the first confirmation run (repro/MC-10.log) and again in the repair-round-1 re-run against the unchanged 177b6c9 source (repro/MC-10.r1.log).",
+    "Built-in strategies with valid parameters can produce a negative sleep: the unchecked long sum in WaitStrategies.join (WaitStrategies.java:365-371) and the unclamped function value in exceptionWait (WaitStrategies.java:386-394). Those producers are tracked separately as CR-D-16 and CR-D-17 and serve here only as triggers.",
+    "The Retryer.call Javadoc lists only three outcomes: a returned result, ExecutionException, and RetryException (with the interrupt status set when the thread was interrupted)."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "                    throw new RetryException(attemptNumber, attempt);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategy.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    public static <T extends Throwable> WaitStrategy exceptionWait(@Nonnull Class<T> exceptionClass,",
+      "end": "        return new CompositeWaitStrategy(waitStrategyList);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class FixedWaitStrategy implements WaitStrategy {",
+      "end": "            Preconditions.checkArgument(sleepTime >= 0L, \"sleepTime must be >= 0 but is %d\", sleepTime);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "end": "            return 0L;"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s5_decision.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla"
+    },
+    {
+      "root": "work",
+      "path": "spec/MCHunt.tla"
+    },
+    {
+      "root": "work",
+      "path": "spec/base.tla"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-10/investigation.md",
+    "repro/test_bugMC-10_negative_sleep_iae.sh",
+    "repro/MC-10.log",
+    "repro/MC-10.r1.log",
+    "spec/output/hunt_s5_decision_bfs1.out",
+    "spec/output/hunt_s5_decision_bfs3.out"
+  ]
+}

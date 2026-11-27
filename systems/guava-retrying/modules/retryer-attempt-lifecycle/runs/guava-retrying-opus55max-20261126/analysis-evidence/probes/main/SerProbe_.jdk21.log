@@ -1,0 +1,2 @@
+NotSerializableException: com.github.rholder.retry.Retryer$ExceptionAttempt
+exit=0

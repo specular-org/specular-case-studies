@@ -1,0 +1,14 @@
+java.version=11.0.33.1
+H2.1a fixed5s retryIfException neverStop -> RETURNED ok | interruptFlagAtExit=false | callableInvocations=2
+H2.1b fixed5s retryIfException stopAfterAttempt(1) -> RetryException attempts=1 cause=java.lang.InterruptedException | interruptFlagAtExit=false | callableInvocations=1
+H2.1c fixed5s retryIfRuntimeException -> ExecutionException cause=java.lang.InterruptedException | interruptFlagAtExit=false | callableInvocations=1
+H2.1d fixed5s retryIfExceptionOfType(IOException) -> ExecutionException cause=java.lang.InterruptedException | interruptFlagAtExit=false | callableInvocations=1
+H2.1e fixed5s retryIfResult(isNull) -> ExecutionException cause=java.lang.InterruptedException | interruptFlagAtExit=false | callableInvocations=1
+H2.1f fixed5s retryIfException fixedWait(50ms) neverStop -> RETURNED ok | interruptFlagAtExit=false | callableInvocations=2
+H2.3a noLimit retryIfException neverStop -> RETURNED ok | interruptFlagAtExit=false | callableInvocations=2
+H2.3b noLimit retryIfException stopAfterAttempt(1) -> RetryException attempts=1 cause=java.lang.InterruptedException: sleep interrupted | interruptFlagAtExit=false | callableInvocations=1
+H2.3c noLimit retryIfRuntimeException -> ExecutionException cause=java.lang.InterruptedException: sleep interrupted | interruptFlagAtExit=false | callableInvocations=1
+H2.3d noLimit retryIfResult(isNull) -> ExecutionException cause=java.lang.InterruptedException: sleep interrupted | interruptFlagAtExit=false | callableInvocations=1
+H2.5 noLimit retryIfResult(isNull) fixedWait(5s), interrupt in sleep -> RetryException attempts=1 cause=null | interruptFlagAtExit=true | callableInvocations=1
+H2.5b fixed5s retryIfException fixedWait(5s), interrupt in sleep -> RetryException attempts=1 cause=java.io.IOException: fail | interruptFlagAtExit=true | callableInvocations=1
+exit=0

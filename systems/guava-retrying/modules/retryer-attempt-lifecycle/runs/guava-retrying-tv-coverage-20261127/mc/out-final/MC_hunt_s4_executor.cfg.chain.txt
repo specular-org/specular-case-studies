@@ -1,0 +1,2 @@
+run 1: violated NoActivityAfterOutcome (trace 23 states, distinct 13218)
+run 2: no error, distinct 168438

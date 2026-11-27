@@ -1,0 +1,56 @@
+{
+  "id": "MC-11",
+  "title": "Listener added to a RetryerBuilder after build() is notified by already-built Retryers, including a call already in flight (known #48)",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "RetryerBuilder keeps one mutable ArrayList of listeners (RetryerBuilder.java:40) and build() hands that same object to every Retryer it builds (RetryerBuilder.java:196 -> Retryer.java:137, no copy); withRetryListener appends to it (RetryerBuilder.java:63) and Retryer.call iterates the live list after every attempt (Retryer.java:166-168). Upstream issue #48 (open, unfixed).",
+  "trigger": "Public API only: build a Retryer from a builder, then call builder.withRetryListener(L2) - either before the Retryer's next call() (Level 0, one thread) or from another thread while call() is running an attempt (Level 1, MC trace hunt_s3_listeners_bfs2.out: add completes during attempt 1's callable, iterator created afterwards so no CME). JPF also reaches the straddle variant of hunt_sharing_bfs4.out (iterator created between ArrayList.add's modCount++ and its size store).",
+  "consequence": "The already-built Retryer, including a call() already in flight, invokes L2.onRetry for attempts L2 was never registered for; the set of notified listeners changes between attempts of one call. Per-retryer metrics/audit listeners receive another Retryer's attempts (repro: metricsB counted retryerA's attempts [1, 2] while retryerB never ran). Permanent for the Retryer's lifetime; no removal API.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+    "src/main/java/com/github/rholder/retry/Retryer.java:137",
+    "src/main/java/com/github/rholder/retry/Retryer.java:166"
+  ],
+  "actions": [
+    "MCAddListenerBegin",
+    "MCAddListenerEnd",
+    "MCListenersBegin",
+    "MCListenerNotify",
+    "MCCallerBodyStart",
+    "MCCallerBodyReturns"
+  ],
+  "invariants": [
+    "ListenersFixedAtBuild"
+  ],
+  "premises": [
+    "build() passes the builder's listener ArrayList by reference and neither RetryerBuilder.build() nor the Retryer constructor copies it.",
+    "withRetryListener has no built/frozen guard, so application code can keep using the builder after build() (issue #48's template-builder pattern).",
+    "No time limiter, fault, or special configuration is needed; the default noTimeLimit/neverStop/noWait setup triggers it.",
+    "Retryer is documented as thread-safe (Retryer.java:39-40) and the maintainer endorses sharing one across threads (issue #35); RetryListener is @Beta.",
+    "Upstream master is still 177b6c9 and issue #48 is OPEN with no fixing PR (checked 2026-11-26)."
+  ],
+  "dependencies": [
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();", "end": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public RetryerBuilder<V> withRetryListener(@Nonnull RetryListener listener) {", "end": "        listeners.add(listener);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public Retryer<V> build() {", "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": " * is thread-safe, provided the arguments passed to its constructor are thread-safe.", "end": "    private final Collection<RetryListener> listeners;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "                   @Nonnull Collection<RetryListener> listeners) {", "end": "        this.listeners = listeners;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {", "end": "            if (!rejectionPredicate.apply(attempt)) {"},
+    {"root": "work", "path": "spec/MC_hunt_s3_listeners.cfg"},
+    {"root": "work", "path": "spec/MC.tla"},
+    {"root": "work", "path": "spec/base.tla"}
+  ],
+  "evidence": [
+    "confirmation/MC-11/investigation.md",
+    "repro/test_bugMC-11_listener_added_after_build.sh",
+    "repro/MC-11.log",
+    "spec/output/hunt_s3_listeners_bfs2.out",
+    "spec/output/hunt_sharing_bfs4.out",
+    "confirmation/MC-11/jpf/run_jpf_straddle.sh",
+    "confirmation/MC-11/jpf/src/MC11Straddle.java",
+    "confirmation/MC-11/jpf/src/MC11StraddleListener.java",
+    "confirmation/MC-11/jpf/jpf_straddle.log"
+  ]
+}

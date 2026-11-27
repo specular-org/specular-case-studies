@@ -1,0 +1,2 @@
+run 1: violated InterruptedCallEventuallyExits (trace 60 states, distinct 35153)
+run 2: no error, distinct 35153

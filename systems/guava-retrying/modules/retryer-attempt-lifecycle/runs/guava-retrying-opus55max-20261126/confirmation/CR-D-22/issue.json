@@ -1,0 +1,34 @@
+{
+  "id": "CR-D-22",
+  "title": "stopAfterDelay(d, unit) truncates sub-millisecond limits with toMillis, so Retryer.call stops before the delay elapses (sub-ms limit: one attempt only)",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "StopStrategies.stopAfterDelay(long, TimeUnit) converts the limit with timeUnit.toMillis(duration), which truncates toward zero, and StopAfterDelayStrategy.shouldStop returns getDelaySinceFirstAttempt() >= maxDelay; the effective stop condition is elapsed >= floor(limit in ms), so any sub-millisecond part of the limit is dropped and a limit below 1 ms becomes 0.",
+  "trigger": "A Retryer built through public API with StopStrategies.stopAfterDelay(d, MICROSECONDS or NANOSECONDS) where d has a sub-millisecond part (e.g. 500 us, 999_999 ns, 1900 us), and an attempt that is rejected (exception or rejected result) before the configured delay has elapsed.",
+  "consequence": "Retryer.call (and RetryerCallable/Future.get) throws RetryException before the configured delay has elapsed: for a sub-ms limit after the first failed attempt (about 2 us elapsed; the attempt that would have returned a value never runs), in general up to 0.999 ms early, contrary to the Javadoc 'has exceeded the given delay amount'.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/StopStrategies.java:87",
+    "src/main/java/com/github/rholder/retry/StopStrategies.java:124",
+    "src/main/java/com/github/rholder/retry/Retryer.java:173"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "stopAfterDelay(long, TimeUnit) accepts every TimeUnit; no precondition rejects or rounds sub-millisecond values (only maxDelay >= 0 is checked after conversion).",
+    "Retryer.call computes the delay as NANOSECONDS.toMillis(nanoTime - startTime) and throws RetryException as soon as shouldStop returns true; no library mechanism re-attempts or recovers afterwards.",
+    "Reproduced at Level 0 (public API only) against guava-retrying 2.0.0 (177b6c9) compiled unmodified with Guava 22.0 and jsr305 2.0.2 on JDK 21 with --release 8."
+  ],
+  "dependencies": [
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/StopStrategies.java", "start": "    @Deprecated", "end": "        return new StopAfterDelayStrategy(timeUnit.toMillis(duration));"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/StopStrategies.java", "start": "    private static final class StopAfterDelayStrategy implements StopStrategy {", "end": "            return failedAttempt.getDelaySinceFirstAttempt() >= maxDelay;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {", "end": "                long sleepTime = waitStrategy.computeSleepTime(attempt);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Attempt.java", "start": "     * The delay since the start of the first attempt, in milliseconds.", "end": "    public long getDelaySinceFirstAttempt();"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public Retryer<V> build() {", "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"}
+  ],
+  "evidence": [
+    "confirmation/CR-D-22/investigation.md",
+    "repro/test_bugCR-D-22_subms_stop_after_delay.sh",
+    "repro/CR-D-22.log",
+    "repro/CR-D-22.run2.log"
+  ]
+}

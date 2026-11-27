@@ -1,0 +1,102 @@
+== MC-5 repro: 2026-11-26T16:43:54Z
+== library source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/MC-5/worktree (git HEAD: 177b6c9; dirty files: 0)
+== Retryer.java sha256: 62e792c48a5fc9d5
+== deps: guava-22.0.jar, jsr305-2.0.2.jar; javac: javac 21.0.13.1
+== fix control diff (temp copy only):
+@@ -167,6 +167,11 @@
+                 listener.onRetry(attempt);
+             }
+ 
++            if (attempt.hasException() && attempt.getExceptionCause() instanceof InterruptedException) {
++                Thread.currentThread().interrupt();
++                throw new RetryException(attemptNumber, attempt);
++            }
++
+             if (!rejectionPredicate.apply(attempt)) {
+                 return attempt.get();
+             }
+
+==================== pristine-jdk-default
+java.version=21.0.13.1; Retryer from file:/tmp/mc5-repro.HpabYp/lib-pristine/
+SCENARIO A detail (run 1 of 50): retryIfException + stopAfterAttempt(5), defaults noTimeLimit/noWait; interrupt the caller while attempt 1 is parked in queue.take()
+  A: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false), attempt#2=result:value-for-attempt-2 (interrupt status seen by listener=false)]
+  A: attempt 2 started after the interrupt = true
+  A: outcome = call() returned normally: "value-for-attempt-2"
+  A: Thread.currentThread().isInterrupted() right after call() = false
+  A: total attempts = 2 -> BUG_TRIGGERED
+SCENARIO A (MC trace bfs1/bfs2): BUG_TRIGGERED in 50/50 runs; CONTRACT_HELD in 0/50; OTHER 0
+SCENARIO B detail: retryer.wrap(callable) on Executors.newSingleThreadExecutor(); all-default retryer + retryIfException; shutdownNow()
+  B: shutdownNow() -> 0 never-run tasks; isShutdown=true; awaitTermination(2s)=false
+  B: attempts after shutdownNow = 2; worker state=WAITING; worker parked in take() again=true
+  B: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false)]
+  B: after offering a value: Future.get() returned normally: "late-value"; awaitTermination(5s)=true; total attempts=2
+SCENARIO B (ExecutorService.shutdownNow consumer): BUG_TRIGGERED
+SCENARIO C detail (supplementary, same catch-all): retryIfRuntimeException (does not match InterruptedException)
+  C: outcome=ExecutionException(cause=java.lang.InterruptedException); interrupt status after call()=false; attempts=1
+SCENARIO C (no retry, status still lost): BUG_TRIGGERED
+CONTROL D detail: interrupt during the inter-attempt Thread.sleep (fixedWait 30s)
+  D: outcome=RetryException(numberOfFailedAttempts=1, cause=java.io.IOException: transient failure #1); interrupt status after call()=true; attempts=1
+CONTROL D (interrupt during wait, Retryer.java:179-181): CONTRACT_HELD
+
+==================== pristine-jdk11
+java.version=11.0.33.1; Retryer from file:/tmp/mc5-repro.HpabYp/lib-pristine/
+SCENARIO A detail (run 1 of 50): retryIfException + stopAfterAttempt(5), defaults noTimeLimit/noWait; interrupt the caller while attempt 1 is parked in queue.take()
+  A: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false), attempt#2=result:value-for-attempt-2 (interrupt status seen by listener=false)]
+  A: attempt 2 started after the interrupt = true
+  A: outcome = call() returned normally: "value-for-attempt-2"
+  A: Thread.currentThread().isInterrupted() right after call() = false
+  A: total attempts = 2 -> BUG_TRIGGERED
+SCENARIO A (MC trace bfs1/bfs2): BUG_TRIGGERED in 50/50 runs; CONTRACT_HELD in 0/50; OTHER 0
+SCENARIO B detail: retryer.wrap(callable) on Executors.newSingleThreadExecutor(); all-default retryer + retryIfException; shutdownNow()
+  B: shutdownNow() -> 0 never-run tasks; isShutdown=true; awaitTermination(2s)=false
+  B: attempts after shutdownNow = 2; worker state=WAITING; worker parked in take() again=true
+  B: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false)]
+  B: after offering a value: Future.get() returned normally: "late-value"; awaitTermination(5s)=true; total attempts=2
+SCENARIO B (ExecutorService.shutdownNow consumer): BUG_TRIGGERED
+SCENARIO C detail (supplementary, same catch-all): retryIfRuntimeException (does not match InterruptedException)
+  C: outcome=ExecutionException(cause=java.lang.InterruptedException); interrupt status after call()=false; attempts=1
+SCENARIO C (no retry, status still lost): BUG_TRIGGERED
+CONTROL D detail: interrupt during the inter-attempt Thread.sleep (fixedWait 30s)
+  D: outcome=RetryException(numberOfFailedAttempts=1, cause=java.io.IOException: transient failure #1); interrupt status after call()=true; attempts=1
+CONTROL D (interrupt during wait, Retryer.java:179-181): CONTRACT_HELD
+
+==================== fixed-control-jdk-default
+java.version=21.0.13.1; Retryer from file:/tmp/mc5-repro.HpabYp/lib-fixed/
+SCENARIO A detail (run 1 of 50): retryIfException + stopAfterAttempt(5), defaults noTimeLimit/noWait; interrupt the caller while attempt 1 is parked in queue.take()
+  A: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false)]
+  A: attempt 2 started after the interrupt = false
+  A: outcome = RetryException(numberOfFailedAttempts=1, cause=java.lang.InterruptedException)
+  A: Thread.currentThread().isInterrupted() right after call() = true
+  A: total attempts = 1 -> CONTRACT_HELD
+SCENARIO A (MC trace bfs1/bfs2): BUG_TRIGGERED in 0/50 runs; CONTRACT_HELD in 50/50; OTHER 0
+SCENARIO B detail: retryer.wrap(callable) on Executors.newSingleThreadExecutor(); all-default retryer + retryIfException; shutdownNow()
+  B: shutdownNow() -> 0 never-run tasks; isShutdown=true; awaitTermination(2s)=true
+  B: attempts after shutdownNow = 1; worker state=TERMINATED; worker parked in take() again=false
+  B: listener log = [attempt#1=exception:java.lang.InterruptedException (interrupt status seen by listener=false)]
+  B: after offering a value: Future.get() threw ExecutionException(cause=com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 1 attempts.); awaitTermination(5s)=true; total attempts=1
+SCENARIO B (ExecutorService.shutdownNow consumer): CONTRACT_HELD
+SCENARIO C detail (supplementary, same catch-all): retryIfRuntimeException (does not match InterruptedException)
+  C: outcome=RetryException(numberOfFailedAttempts=1, cause=java.lang.InterruptedException); interrupt status after call()=true; attempts=1
+SCENARIO C (no retry, status still lost): CONTRACT_HELD
+CONTROL D detail: interrupt during the inter-attempt Thread.sleep (fixedWait 30s)
+  D: outcome=RetryException(numberOfFailedAttempts=1, cause=java.io.IOException: transient failure #1); interrupt status after call()=true; attempts=1
+CONTROL D (interrupt during wait, Retryer.java:179-181): CONTRACT_HELD
+
+==================== summary
+ pristine library (pristine-jdk-default):
+  [ok]   A: interrupted attempt retried, call() returned normally, status clear (50/50)
+  [ok]   B: shutdownNow() could not stop the task; it was retried and completed normally
+  [ok]   C: ExecutionException(InterruptedException) with status clear
+  [ok]   D: positive control - interrupt during the wait honoured
+ pristine library (pristine-jdk11):
+  [ok]   A: interrupted attempt retried, call() returned normally, status clear (50/50)
+  [ok]   B: shutdownNow() could not stop the task; it was retried and completed normally
+  [ok]   C: ExecutionException(InterruptedException) with status clear
+  [ok]   D: positive control - interrupt during the wait honoured
+ fix control (temp copy with the 4-line fix):
+  [ok]   A: RetryException + status set (50/50)
+  [ok]   B: shutdownNow() terminates the task
+  [ok]   C: RetryException + status set
+  [ok]   D: unchanged
+
+RESULT: MC-5 REPRODUCED (Level 0) on the unmodified library; fix control restores the documented contract

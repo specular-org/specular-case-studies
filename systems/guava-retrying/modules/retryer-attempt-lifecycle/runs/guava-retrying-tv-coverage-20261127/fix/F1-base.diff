@@ -1,0 +1,19 @@
+126a127,129
+>               "Release",     \* TV-exp F1: task done, Worker lock still held until
+>                              \* runWorker's w.unlock() (JDK11 TPE.java:1133-1137);
+>                              \* interruptIdleWorkers' tryLock (TPE.java:789) skips it
+326c329
+<     /\ wpc'   = [wpc   EXCEPT ![w] = IF ExecKind = "Cached" THEN "GetTask" ELSE "Idle"]
+---
+>     /\ wpc'   = [wpc   EXCEPT ![w] = "Release"]   \* TV-exp F1 (was GetTask / Idle)
+328a332,339
+> \* TV-exp F1: runWorker's finally releases the Worker lock (TPE.java:1137) and
+> \* loops into getTask(): only from here on can shutdown()'s interruptIdleWorkers
+> \* interrupt the thread.
+> WorkerUnlock(w) ==
+>     /\ wpc[w] = "Release"
+>     /\ wpc' = [wpc EXCEPT ![w] = IF ExecKind = "Cached" THEN "GetTask" ELSE "Idle"]
+>     /\ UNCHANGED <<callerLocal, callerGhost, intr, taskVars, wtask, wOuter, intrSrc, execVars, listVars>>
+> 
+1242a1254
+>     \/ WorkerUnlock(w)

@@ -1,0 +1,17 @@
+{
+  "work_dir": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec",
+  "spec_file": "MC.tla",
+  "config_file": "MC.cfg",
+  "options": [
+    "-t",
+    "30",
+    "-w",
+    "16",
+    "-m",
+    "8G",
+    "-M",
+    "16G"
+  ],
+  "created_at": 1795696311.4944246,
+  "owner": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec-repair.log"
+}

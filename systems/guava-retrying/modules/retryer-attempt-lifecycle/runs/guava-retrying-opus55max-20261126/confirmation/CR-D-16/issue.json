@@ -1,0 +1,41 @@
+{
+  "id": "CR-D-16",
+  "title": "WaitStrategies.join sums component sleeps without overflow protection; a total >= 2^63 ms wraps negative and Retryer.call throws IllegalArgumentException",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "CompositeWaitStrategy.computeSleepTime (built by WaitStrategies.join) adds component sleeps with plain long addition and no saturation or sign check, unlike the other arithmetic built-ins; Retryer.call passes the wrapped negative value unvalidated to the default ThreadSleepStrategy, whose Thread.sleep throws IllegalArgumentException, and call() catches only InterruptedException.",
+  "trigger": "A joined wait strategy whose components sum to 2^63 ms or more on a failed attempt, e.g. join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)), join(fixedWait(Long.MAX_VALUE, DAYS), fixedWait(1, MILLISECONDS)), or join(exceptionWait(X.class, e -> SECONDS.toMillis(hint)), randomWait(1, SECONDS)) with a hint that saturates to Long.MAX_VALUE; built with RetryerBuilder and the default block strategy, callable fails once and is retried.",
+  "consequence": "Retryer.call (and RetryerCallable via wrap) ends after one attempt with IllegalArgumentException(\"timeout value is negative\") instead of waiting the documented total: an undocumented outcome that drops the attempt count and the last failure (no cause/suppressed link), and on an interrupted caller pre-empts the documented RetryException. The same components alone or with a saturating sum wait and, on interrupt, yield RetryException(1 attempt, last failure) with the interrupt status set.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:CompositeWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:join",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/BlockStrategies.java:ThreadSleepStrategy.block"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Code-review finding; no model-checking counterexample. Reproduced at escalation Level 0 through public API only, on the unmodified library at 177b6c9 built against Guava 22.0 and jsr305 2.0.2, on JDK 21.0.13.1 and JDK 11.0.33.1.",
+    "Component factories accept the triggering values: fixedWait checks only sleepTime >= 0 and TimeUnit.toMillis saturates to Long.MAX_VALUE; exceptionWait returns the user function's value unbounded.",
+    "The default (and only built-in) BlockStrategy is ThreadSleepStrategy; Thread.sleep rejects a negative argument with IllegalArgumentException before checking the interrupt status (JDK 8 through 21).",
+    "No caller-side guard: Retryer.call validates neither the sleep value nor catches RuntimeException around block; RetryerCallable.call delegates without a catch.",
+    "Not reported upstream as of 2026-11-26: rholder/guava-retrying issues and PRs (all states, including PR #107 closed 2026-09-05) and forks rhuffman/re-retrying and itning/guava-retrying3 were searched; both forks keep the same unguarded sum."
+  ],
+  "dependencies": [
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    public static WaitStrategy fixedWait(long sleepTime, @Nonnull TimeUnit timeUnit) throws IllegalStateException {", "end": "        return new FixedWaitStrategy(timeUnit.toMillis(sleepTime));"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    public static WaitStrategy join(WaitStrategy... waitStrategies) {", "end": "        return new CompositeWaitStrategy(waitStrategyList);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    private static final class FixedWaitStrategy implements WaitStrategy {", "end": "            this.sleepTime = sleepTime;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    private static final class CompositeWaitStrategy implements WaitStrategy {", "end": "            return waitTime;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java", "start": "    private static final class ExceptionWaitStrategy<T extends Throwable> implements WaitStrategy {", "end": "                    return function.apply((T) cause);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {", "end": "                    throw new RetryException(attemptNumber, attempt);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "        public X call() throws ExecutionException, RetryException {", "end": "            return retryer.call(callable);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java", "start": "    private static class ThreadSleepStrategy implements BlockStrategy {", "end": "            Thread.sleep(sleepTime);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public Retryer<V> build() {", "end": "        BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java"}
+  ],
+  "evidence": [
+    "confirmation/CR-D-16/investigation.md",
+    "repro/test_bugCR-D-16_join_sum_overflow.sh",
+    "repro/CR-D-16.log"
+  ]
+}

@@ -1,0 +1,17 @@
+{"tag":"config","callers":["c1"],"numInitListeners":1,"numExtraListeners":1,"limiter":"None","execKind":"Cached","poolSize":1,"queueCap":0,"retryOn":["CallableExc"],"stopKind":"AfterAttempt","stopAfter":2,"sleepClasses":["Zero"],"modes":["Ret","Exc"],"wrapCallers":[],"wrapOnLimiterPool":[],"workers":[],"tasks":[],"outerWorkers":{},"workload":"listeners_add","path":87,"endReason":"end","prefix":false}
+{"tag":"trace","event":"CallStart","tid":"c1","start":1,"end":1,"attemptNo":1,"intr":false,"ts":"835279083568952"}
+{"tag":"trace","event":"CallerBodyStart","tid":"c1","start":2,"end":2,"attemptNo":1,"intr":false,"mode":"Exc","ts":"835279083577274"}
+{"tag":"trace","event":"CallerBodyThrows","tid":"c1","start":3,"end":3,"attemptNo":1,"intr":false,"attemptKind":"CallableExc","expired":false,"ts":"835279083862366"}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":4,"end":4,"attemptNo":1,"intr":false,"modCount":1,"size":1,"ts":"835279084354253"}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":5,"end":5,"attemptNo":1,"intr":false,"listener":1,"cursor":1,"ts":"835279084571344"}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":6,"end":6,"attemptNo":1,"intr":false,"cursor":1,"size":1,"ts":"835279084803627"}
+{"tag":"trace","event":"WaitStrategyComputes","tid":"c1","start":7,"end":7,"attemptNo":1,"intr":false,"sleep":"Zero","ts":"835279085055199"}
+{"tag":"trace","event":"BlockZero","tid":"c1","start":8,"end":8,"attemptNo":2,"intr":false,"ts":"835279085076360"}
+{"tag":"trace","event":"CallerBodyStart","tid":"c1","start":9,"end":9,"attemptNo":2,"intr":false,"mode":"Exc","ts":"835279085157119"}
+{"tag":"trace","event":"CallerBodyThrows","tid":"c1","start":10,"end":10,"attemptNo":2,"intr":false,"attemptKind":"CallableExc","expired":false,"ts":"835279085486927"}
+{"tag":"trace","event":"ListenersBegin","tid":"c1","start":11,"end":11,"attemptNo":2,"intr":false,"modCount":1,"size":1,"ts":"835279085632662"}
+{"tag":"trace","event":"ListenerNotify","tid":"c1","start":12,"end":12,"attemptNo":2,"intr":false,"listener":1,"cursor":1,"ts":"835279085795223"}
+{"tag":"trace","event":"ListenersEnd","tid":"c1","start":13,"end":13,"attemptNo":2,"intr":false,"cursor":1,"size":1,"ts":"835279086293309"}
+{"tag":"trace","event":"AddListenerBegin","tid":"b","start":14,"end":14,"listener":2,"modCount":2,"ts":"835279086360538"}
+{"tag":"trace","event":"StopStrategyStops","tid":"c1","start":15,"end":15,"attemptNo":2,"intr":false,"count":2,"ts":"835279086709985"}
+{"tag":"trace","event":"AddListenerEnd","tid":"b","start":16,"end":16,"listener":2,"size":2,"ts":"835279087600461"}

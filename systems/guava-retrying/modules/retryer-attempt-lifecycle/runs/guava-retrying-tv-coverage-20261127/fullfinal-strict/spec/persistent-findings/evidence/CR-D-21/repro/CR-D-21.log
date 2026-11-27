@@ -1,0 +1,183 @@
+== CR-D-21 reproduction  (2026-11-26T10:57:28Z)
+source checkout : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-21/worktree
+source HEAD     : 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+source dirty?   : 0 changed paths
+WaitStrategies  : sha256 75e567e798b184b9…
+java            : openjdk version "21.0.13.1" 2026-11-17
+
+== build pristine library (javac --release 8, Guava 22.0, jsr305 2.0.2)
+   ok
+== build driver (public API only, package cr21)
+   ok
+
+== JDK evidence for M3: java.lang.Thread.sleep(long) on this JDK
+  public static void sleep(long) throws java.lang.InterruptedException;
+      20: invokevirtual #83                 // Method java/util/concurrent/TimeUnit.toNanos:(J)J
+
+== L0 reproduction against the PRISTINE build
+### L0-B  Retryer.call -> WaitStrategy.computeSleepTime -> BlockStrategy.block (Retryer.java:176-178)
+# config: WaitStrategies.fibonacciWait()  (multiplier 1, cap Long.MAX_VALUE)
+  Retryer.call -> RetryException after 101 attempts; callable ran 101x; BlockStrategy.block called 100x (once after each failed attempt 1..100)
+  attempt  88 -> block( 1,100,087,778,366,101,931 ms)  = 3.486e+07 years
+  attempt  89 -> block( 1,779,979,416,004,714,189 ms)  = 5.640e+07 years
+  attempt  90 -> block( 2,880,067,194,370,816,120 ms)  = 9.126e+07 years
+  attempt  91 -> block( 4,660,046,610,375,530,309 ms)  = 1.477e+08 years
+  attempt  92 -> block( 7,540,113,804,746,346,429 ms)  = 2.389e+08 years
+  attempt  93 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  94 -> block( 1,293,530,146,158,671,551 ms)  = 4.099e+07 years   <-- DECREASE vs attempt 93, below the cap that attempt 93 already reached
+  attempt  95 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  96 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  97 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  98 -> block( 6,174,643,828,739,884,737 ms)  = 1.957e+08 years   <-- DECREASE vs attempt 97, below the cap that attempt 93 already reached
+  attempt  99 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt 100 -> block( 3,736,710,778,780,434,371 ms)  = 1.184e+08 years   <-- DECREASE vs attempt 99, below the cap that attempt 93 already reached
+  first decrease at attempt 94
+  [ok]   attempt 93 -> block(Long.MAX_VALUE): F(93) wrapped negative, guard (:330) mapped it to the cap
+  [ok]   attempt 94 -> block(1293530146158671551): F(94) wrapped POSITIVE below the cap, guard did not fire
+  [ok]   first decrease of the designated sleep is at attempt 94
+  sleeps that must complete before attempt 94's wait is computed (attempts 1..93):
+    designated total          = 28963646256722998973 ms = 9.178e+08 years   (>= 2^63-1 ms: true)
+    JDK 21 Thread.sleep total = 293868841283207 ms = 9312 years   (each sleep saturates at Long.MAX_VALUE ns = 292.3 years)
+  [ok]   M1 time barrier: >= 2^63-1 ms (9.178e+08 years) of designated sleep precede the first below-cap value
+  [ok]   M1 time barrier on JDK 21: > 1000 years (9312 years) of real Thread.sleep precede it
+
+# config: WaitStrategies.fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS)  (multiplier 1000, cap Long.MAX_VALUE)
+  Retryer.call -> RetryException after 101 attempts; callable ran 101x; BlockStrategy.block called 100x (once after each failed attempt 1..100)
+  attempt  76 -> block( 3,416,454,622,906,707,000 ms)  = 1.083e+08 years
+  attempt  77 -> block( 5,527,939,700,884,757,000 ms)  = 1.752e+08 years
+  attempt  78 -> block( 8,944,394,323,791,464,000 ms)  = 2.834e+08 years
+  attempt  79 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  80 -> block( 4,969,984,274,758,133,384 ms)  = 1.575e+08 years   <-- DECREASE vs attempt 79, below the cap that attempt 79 already reached
+  attempt  81 -> block(   995,574,225,724,802,768 ms)  = 3.155e+07 years   <-- DECREASE vs attempt 80, below the cap that attempt 79 already reached
+  attempt  82 -> block( 5,965,558,500,482,936,152 ms)  = 1.890e+08 years, below the cap that attempt 79 already reached
+  attempt  83 -> block( 6,961,132,726,207,738,920 ms)  = 2.206e+08 years, below the cap that attempt 79 already reached
+  attempt  84 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  attempt  85 -> block( 1,441,079,879,188,862,376 ms)  = 4.567e+07 years   <-- DECREASE vs attempt 84, below the cap that attempt 79 already reached
+  attempt  86 -> block( 9,223,372,036,854,775,807 ms)  = 2.923e+08 years
+  first decrease at attempt 80
+  [ok]   attempt 79 -> block(Long.MAX_VALUE): 1000*F(79) wrapped negative, mapped to the cap
+  [ok]   attempt 80 -> block(4969984274758133384): 1000*F(80) wrapped POSITIVE below the cap, guard did not fire
+  [ok]   first decrease of the designated sleep is at attempt 80
+  sleeps that must complete before attempt 80's wait is computed (attempts 1..79):
+    designated total          = 32640100385322459807 ms = 1.034e+09 years   (>= 2^63-1 ms: true)
+    JDK 21 Thread.sleep total = 297066172178643 ms = 9413 years   (each sleep saturates at Long.MAX_VALUE ns = 292.3 years)
+  [ok]   M1 time barrier: >= 2^63-1 ms (1.034e+09 years) of designated sleep precede the first below-cap value
+  [ok]   M1 time barrier on JDK 21: > 1000 years (9413 years) of real Thread.sleep precede it
+
+### L0-C  direct evaluation: WaitStrategy.computeSleepTime(user Attempt) == values handed to block()
+  [ok]   direct evaluation of attempts 1..100 matches what Retryer.call passed to BlockStrategy.block
+
+### L0-A  real Retryer with the built-in ThreadSleepStrategy (default), neverStop, 3 s budget
+  WaitStrategies.fibonacciWait(): after 3.0 s wall clock the Retryer had made 17 attempts and was TIMED_WAITING in Thread.sleep(1597 ms = 1.60 s)
+    after interrupt: RetryException after 17 attempts, interrupt status set=true
+  [ok]   really-sleeping Retryer is gated by the designated sleeps (attempt 17 << 94/80)
+  WaitStrategies.fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS): after 3.0 s wall clock the Retryer had made 3 attempts and was TIMED_WAITING in Thread.sleep(2000 ms = 2.00 s)
+    after interrupt: RetryException after 3 attempts, interrupt status set=true
+  [ok]   really-sleeping Retryer is gated by the designated sleeps (attempt 3 << 94/80)
+
+### M3  JDK 21.0.13.1: Thread.sleep(ms) sleeps MILLISECONDS.toNanos(ms) (see javap above)
+  toNanos(1293530146158671551 ms) = 9223372036854775807 ns;  toNanos(Long.MAX_VALUE ms) = 9223372036854775807 ns
+  [ok]   M3: on JDK 21 ThreadSleepStrategy.block(attempt-94 value) and block(Long.MAX_VALUE) sleep the same Long.MAX_VALUE ns
+  [ok]   M3: same for the x1000 config at attempt 80 (toNanos(4969984274758133384 ms) = Long.MAX_VALUE ns)
+
+REPRO-SUMMARY failures=0
+
+== exhaustive scan against the PRISTINE build
+### SCAN  attempts 1..Integer.MAX_VALUE (Retryer.java:157 'int attemptNumber')
+# WaitStrategies.fibonacciWait()   multiplier=1  cap=9223372036854775807 ms (2.923e+08 years)
+  scanned attempts 1..2147483647 in 15.6 s; true value exceeds the cap from attempt 93 on
+  guard escapes (value != cap at attempt >= 93): 1073727778   decreases: 805295883
+  first escape: attempt 94 -> 1293530146158671551 ms (4.099e+07 years)
+    designated sleep before it ~ 9.178e+08 years;  JDK 21 Thread.sleep before it ~ 9312 years
+  smallest escape: attempt 818715960 -> 3196715680 ms (37.00 days)
+    designated sleep before it ~ 1.795e+17 years;  JDK 21 Thread.sleep before it ~ 2.393e+11 years
+  escapes < 1 hour: 0
+  escapes < 1 day: 0
+  escapes < 1 year: 3 (first at attempt 818715960; JDK 21 Thread.sleep before it ~ 2.393e+11 years)
+  escapes < 292.3 y (shorter than a saturated JDK 21 sleep): 1098 (first at attempt 578550; JDK 21 Thread.sleep before it ~ 1.691e+08 years)
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE) and at the first/smallest escape; n=94:1293530146158671551 n=98:6174643828739884737 n=1000:817770325994397771
+  [ok]   M1: every escape is preceded by >= 2^63-1 ms designated sleep (first: 9.178e+08 years)
+
+# WaitStrategies.fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS)   multiplier=1000  cap=9223372036854775807 ms (2.923e+08 years)
+  scanned attempts 1..2147483647 in 18.3 s; true value exceeds the cap from attempt 79 on
+  guard escapes (value != cap at attempt >= 79): 1073762386   decreases: 805307444
+  first escape: attempt 80 -> 4969984274758133384 ms (1.575e+08 years)
+    designated sleep before it ~ 1.034e+09 years;  JDK 21 Thread.sleep before it ~ 9413 years
+  smallest escape: attempt 710388325 -> 970482856 ms (11.23 days)
+    designated sleep before it ~ 1.557e+17 years;  JDK 21 Thread.sleep before it ~ 2.076e+11 years
+  escapes < 1 hour: 0
+  escapes < 1 day: 0
+  escapes < 1 year: 6 (first at attempt 72817590; JDK 21 Thread.sleep before it ~ 2.128e+10 years)
+  escapes < 292.3 y (shorter than a saturated JDK 21 sleep): 1087 (first at attempt 4627012; JDK 21 Thread.sleep before it ~ 1.352e+09 years)
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE) and at the first/smallest escape; n=94:2258060999002937880 n=98:9223372036854775807 n=1000:6113586751177499896
+  [ok]   M1: every escape is preceded by >= 2^63-1 ms designated sleep (first: 1.034e+09 years)
+
+# fibonacciWait(100, 2, MINUTES)  [README example]   multiplier=100  cap=120000 ms (120.00 s)
+  scanned attempts 1..2147483647 in 12.3 s; true value exceeds the cap from attempt 17 on
+  guard escapes (value != cap at attempt >= 17): 0   decreases: 0
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE); n=94:120000 n=98:120000 n=1000:120000
+  [ok]   M2 guard (:330) absorbs every overflow for this realistic cap over the whole Retryer attempt domain
+
+# fibonacciWait(10, SECONDS)   multiplier=1  cap=10000 ms (10.00 s)
+  scanned attempts 1..2147483647 in 7.7 s; true value exceeds the cap from attempt 21 on
+  guard escapes (value != cap at attempt >= 21): 0   decreases: 0
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE); n=94:10000 n=98:10000 n=1000:10000
+  [ok]   M2 guard (:330) absorbs every overflow for this realistic cap over the whole Retryer attempt domain
+
+# fibonacciWait(1, HOURS)   multiplier=1  cap=3600000 ms (1.00 h)
+  scanned attempts 1..2147483647 in 7.6 s; true value exceeds the cap from attempt 34 on
+  guard escapes (value != cap at attempt >= 34): 0   decreases: 0
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE); n=94:3600000 n=98:3600000 n=1000:3600000
+  [ok]   M2 guard (:330) absorbs every overflow for this realistic cap over the whole Retryer attempt domain
+
+# fibonacciWait(1000, 1, DAYS)   multiplier=1000  cap=86400000 ms (1.00 days)
+  scanned attempts 1..2147483647 in 8.1 s; true value exceeds the cap from attempt 26 on
+  guard escapes (value != cap at attempt >= 26): 0   decreases: 0
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE); n=94:86400000 n=98:86400000 n=1000:86400000
+  [ok]   M2 guard (:330) absorbs every overflow for this realistic cap over the whole Retryer attempt domain
+
+# fibonacciWait(365, DAYS)   multiplier=1  cap=31536000000 ms (365.00 days)
+  scanned attempts 1..2147483647 in 7.8 s; true value exceeds the cap from attempt 52 on
+  guard escapes (value != cap at attempt >= 52): 3   decreases: 3
+  first escape: attempt 818715960 -> 3196715680 ms (37.00 days)
+    designated sleep before it ~ 8.182e+08 years;  JDK 21 Thread.sleep before it ~ 8.182e+08 years
+  smallest escape: attempt 818715960 -> 3196715680 ms (37.00 days)
+    designated sleep before it ~ 8.182e+08 years;  JDK 21 Thread.sleep before it ~ 8.182e+08 years
+  escapes < 1 hour: 0
+  escapes < 1 day: 0
+  escapes < 1 year: 3 (first at attempt 818715960; JDK 21 Thread.sleep before it ~ 8.182e+08 years)
+  escapes < 292.3 y (shorter than a saturated JDK 21 sleep): 3 (first at attempt 818715960; JDK 21 Thread.sleep before it ~ 8.182e+08 years)
+  [ok]   scan == real computeSleepTime at 9 sample attempts (up to Integer.MAX_VALUE) and at the first/smallest escape; n=94:31536000000 n=98:31536000000 n=1000:31536000000
+  (cap > 1 day: not a realistic setting; shown for the time-to-escape law)
+  [ok]   M1 law: designated sleep before the first escape > 1000 years (8.182e+08 years)
+
+SCAN-SUMMARY failures=0
+
+== negative control: recommended fix applied to a TEMP COPY (the checkout is not modified)
+   patched temp copy: /tmp/cr21.wbjQLW/fixsrc/com/github/rholder/retry/WaitStrategies.java
+### FIXCHECK  same public-API runs against a temp copy carrying the recommended fix
+  Retryer.call -> RetryException after 151 attempts; callable ran 151x; BlockStrategy.block called 150x (once after each failed attempt 1..150)
+  WaitStrategies.fibonacciWait(): first decrease=-1, cap first reached at attempt 93, attempts 93/94 -> 9223372036854775807 / 9223372036854775807
+  [ok]   fixed: non-decreasing and pinned to the cap from attempt 93 through 150
+  [ok]   fixed: computeSleepTime(Integer.MAX_VALUE) == cap (0.26 ms)
+  Retryer.call -> RetryException after 151 attempts; callable ran 151x; BlockStrategy.block called 150x (once after each failed attempt 1..150)
+  WaitStrategies.fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS): first decrease=-1, cap first reached at attempt 79, attempts 93/94 -> 9223372036854775807 / 9223372036854775807
+  [ok]   fixed: non-decreasing and pinned to the cap from attempt 79 through 150
+  [ok]   fixed: computeSleepTime(Integer.MAX_VALUE) == cap (0.01 ms)
+  [ok]   fixed: README config still yields 100,100,200,...,98700 then 120000 from attempt 17
+FIXCHECK-SUMMARY failures=0
+
+== upstream WaitStrategiesTest (JUnit 4.11) on pristine and fixed builds
+-- pristine:
+OK (12 tests)
+-- fixed:   
+OK (12 tests)
+
+== RESULT
+DEFECT PATH  : TRIGGERED via public API - Retryer.call handed BlockStrategy.block a wait that drops
+               below the cap after the cap was reached (attempt 94: 1293530146158671551 after Long.MAX_VALUE;
+               x1000 attempt 80: 4969984274758133384 after Long.MAX_VALUE).
+LIVE HARM    : NOT TRIGGERED - masked: M1 (>= 2^63-1 ms designated / ~9e3 years JDK-21 real sleep before the
+               first below-cap wait), M2 (guard absorbs every wrap for realistic caps over 1..Integer.MAX_VALUE),
+               M3 (JDK 21 Thread.sleep saturates the attempt-94/80 values to the same Long.MAX_VALUE ns).
+rc: repro=0 scan=0 fixcheck=0

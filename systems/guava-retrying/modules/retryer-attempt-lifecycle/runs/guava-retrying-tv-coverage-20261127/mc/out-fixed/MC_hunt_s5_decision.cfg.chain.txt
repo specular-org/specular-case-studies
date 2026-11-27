@@ -1,0 +1,2 @@
+run 1: violated DocumentedOutcomesOnly (trace 10 states, distinct 60)
+run 2: no error, distinct 244

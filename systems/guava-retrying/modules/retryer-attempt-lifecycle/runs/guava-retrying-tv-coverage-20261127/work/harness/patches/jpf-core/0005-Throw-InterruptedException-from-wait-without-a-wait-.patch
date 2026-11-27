@@ -1,0 +1,28 @@
+From a77c07a8ec7511d813a0cc586b16f20203f9c049 Mon Sep 17 00:00:00 2001
+From: local <local@localhost>
+Date: Thu, 26 Nov 2026 07:38:55 +0000
+Subject: [PATCH 5/5] Throw InterruptedException from wait() without a wait
+ choice point
+
+---
+ src/peers/gov/nasa/jpf/vm/JPF_java_lang_Object.java | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Object.java b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Object.java
+index 4f2f9ea..8f697e9 100644
+--- a/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Object.java
++++ b/src/peers/gov/nasa/jpf/vm/JPF_java_lang_Object.java
+@@ -93,7 +93,10 @@ public class JPF_java_lang_Object extends NativePeer {
+       }
+ 
+       if (ti.isInterrupted(true)) {
++        // a pending interrupt makes wait() throw at once, without blocking or
++        // a scheduling point (registering the wait CG here lost the exception)
+         env.throwException("java.lang.InterruptedException");
++        return;
+       } else {
+         ei.wait(ti, timeout); // block
+       }
+-- 
+2.43.0
+

@@ -1,0 +1,7 @@
+run 1: violated NoDiscardedCompletion (trace 11 states, distinct 310)
+run 2: violated NoRetryAfterObservedInterrupt (trace 14 states, distinct 709)
+run 3: violated CancelledWrapperStops (trace 14 states, distinct 701)
+run 4: violated NoActivityAfterOutcome (trace 17 states, distinct 1089)
+run 5: violated SequentialAttempts (trace 20 states, distinct 2011)
+run 6: violated InterruptPreserved (trace 25 states, distinct 11142)
+run 7: no error, distinct 519542

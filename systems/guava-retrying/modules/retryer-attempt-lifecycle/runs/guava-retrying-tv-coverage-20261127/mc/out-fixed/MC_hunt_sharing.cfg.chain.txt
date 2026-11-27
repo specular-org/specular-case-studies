@@ -1,0 +1,16 @@
+run 1: violated CountedImpliesInvokedNoStartRace (trace 8 states, distinct 535)
+run 2: violated DocumentedOutcomesOnly (trace 10 states, distinct 973)
+run 3: violated NoLostAttemptOutcome (trace 10 states, distinct 1303)
+run 4: violated NoDiscardedCompletion (trace 11 states, distinct 2970)
+run 5: violated InterruptPreserved (trace 11 states, distinct 3359)
+run 6: violated ListenersFixedAtBuild (trace 12 states, distinct 3350)
+run 7: violated NoActivityAfterOutcome (trace 14 states, distinct 11109)
+run 8: violated NoRetryAfterObservedInterrupt (trace 14 states, distinct 16401)
+run 9: violated SequentialAttempts (trace 20 states, distinct 161402)
+run 10: ended without verdict (distinct 4,818,473)
+-11-27 08:25:19: 15,021,423 states generated (745,025 s/min), 4,087,065 distinct states found (197,280 ds/min), 1,094,725 states left on queue.
+Progress(29) at 2026-11-27 08:26:19: 15,768,543 states generated (747,120 s/min), 4,290,225 distinct states found (203,160 ds/min), 1,146,399 states left on queue.
+Progress(29) at 2026-11-27 08:27:19: 16,562,012 states generated (793,469 s/min), 4,510,212 distinct states found (219,987 ds/min), 1,207,450 states left on queue.
+Progress(29) at 2026-11-27 08:28:19: 17,222,017 states generated (660,005 s/min), 4,689,742 distinct states found (179,530 ds/min), 1,252,098 states left on queue.
+Progress(30) at 2026-11-27 08:29:19: 17,768,764 states generated (546,747 s/min), 4,818,473 distinct states found (128,731 ds/min), 1,276,536 states left on queue.
+

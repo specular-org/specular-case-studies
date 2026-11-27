@@ -1,0 +1,27 @@
+From 38e1b3b9d4befcdec478cc08af38ed26bc26a902 Mon Sep 17 00:00:00 2001
+From: local <local@localhost>
+Date: Thu, 26 Nov 2026 07:06:12 +0000
+Subject: [PATCH 4/5] Set the interrupt flag of a sleeping thread
+
+---
+ src/main/gov/nasa/jpf/vm/ThreadInfo.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/main/gov/nasa/jpf/vm/ThreadInfo.java b/src/main/gov/nasa/jpf/vm/ThreadInfo.java
+index 785d526..2f548d3 100644
+--- a/src/main/gov/nasa/jpf/vm/ThreadInfo.java
++++ b/src/main/gov/nasa/jpf/vm/ThreadInfo.java
+@@ -2536,7 +2536,9 @@ public class ThreadInfo extends InfoObject
+     case UNBLOCKED:
+     case NOTIFIED:
+     case TIMEDOUT:
+-      // just set interrupt flag
++    case SLEEPING:
++      // just set interrupt flag (a sleeping thread is runnable; Thread.sleep
++      // tests the flag when it resumes)
+       eiThread.setBooleanField("interrupted", true);
+       break;
+ 
+-- 
+2.43.0
+

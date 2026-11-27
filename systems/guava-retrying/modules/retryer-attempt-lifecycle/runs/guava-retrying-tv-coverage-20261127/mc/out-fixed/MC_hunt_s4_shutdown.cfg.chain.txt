@@ -1,0 +1,4 @@
+run 1: violated CountedImpliesInvokedNoStartRace (trace 4 states, distinct 106)
+run 2: violated ExecutionExceptionMeansCallableThrewExcept29 (trace 8 states, distinct 274)
+run 3: violated NoActivityAfterOutcome (trace 15 states, distinct 634)
+run 4: no error, distinct 52372

@@ -1,0 +1,391 @@
+guava jar : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (sha1 3564ef3803de51fb0530a8377ec6100b33b0d073; Maven Central guava-22.0.jar = 3564ef3803de51fb0530a8377ec6100b33b0d073)
+source    : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-1/worktree (git HEAD 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f, dirty files: 0
+java      : openjdk version "21.0.13.1" 2026-11-17
+compiling guava-retrying (unmodified) and the repro with --release 8 ...
+java.version=21.0.13.1, rounds=3
+
+############################## round 1 ##############################
+
+=== Scenario A: timeout trigger, call() RETURNS. fixedTimeLimit(300 ms), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    1 ms] pool-1-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  301 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  302 ms] pool-1-thread-2   attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  354 ms] pool-1-thread-2   attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  355 ms] main              listener: attempt #2 produced VALUE-2
+  [t=  356 ms] main              call() RETURNED VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1515 ms] pool-1-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1516 ms] main              later: application cache = VALUE-1, although call() returned VALUE-2
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1159 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  FACT  consumer-visible stale cache                   YES  (cache = VALUE-1 after call() returned VALUE-2)
+  FACT  service saw 2+ concurrent requests of one call YES  (max concurrent requests at the service = 2)
+  FACT  cancel(true) interrupt reached attempt 1       YES  (worker interrupt flag when attempt 1's blocking read finally returned = true)
+
+=== Scenario B: timeout trigger, call() THROWS RetryException. fixedTimeLimit(200 ms), stopAfterAttempt(3); every request is answered with an error after 1000 ms
+  [t=    0 ms] pool-2-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  201 ms] pool-2-thread-2   attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  401 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  402 ms] pool-2-thread-3   attempt 3 ENTER callable body (bodies of this call() in flight = 3)
+  [t=  602 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  602 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 3
+  [t= 1002 ms] pool-2-thread-1   attempt 1 EXIT  callable body: threw IOException: service answered ERR-1 (worker interrupt flag = true; bodies still in flight = 2)
+  [t= 1203 ms] pool-2-thread-2   attempt 2 EXIT  callable body: threw IOException: service answered ERR-2 (worker interrupt flag = true; bodies still in flight = 1)
+  [t= 1404 ms] pool-2-thread-3   attempt 3 EXIT  callable body: threw IOException: service answered ERR-3 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 3)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (3 body(ies) still executing when call() ended; attempt 1 exited 399 ms after call() ended and threw IOException: service answered ERR-1; attempt 2 exited 601 ms after call() ended and threw IOException: service answered ERR-2; attempt 3 exited 802 ms after call() ended and threw IOException: service answered ERR-3; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+
+=== Scenario C: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-3-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  201 ms] caller            call() ended: ExecutionException(cause=InterruptedException); bodies of this call() still executing = 1; application cache = <empty>
+  [t= 1001 ms] pool-3-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1008 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 800 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: ExecutionException(cause=InterruptedException); the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario C2: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-4-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  201 ms] pool-4-thread-2   attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  253 ms] pool-4-thread-2   attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  253 ms] caller            listener: attempt #2 produced VALUE-2
+  [t=  254 ms] caller            call() ended: returned VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1002 ms] pool-4-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1010 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 748 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario F: user-executor factory + Retryer.wrap(). fixedTimeLimit(300 ms, newCachedThreadPool()), wrapped callable submitted to an ExecutorService; same service timing as A
+  [t=    0 ms] pool-5-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] pool-6-thread-1   listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] pool-5-thread-2   attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  353 ms] pool-5-thread-2   attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  353 ms] pool-6-thread-1   listener: attempt #2 produced VALUE-2
+  [t=  353 ms] main              wrapped call completed with VALUE-2 (Future.isDone=true); bodies still executing = 1
+  [t= 1502 ms] pool-5-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1149 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: Future value VALUE-2; the late outcomes above reached nobody)
+
+=== Scenario G: S4 saturated bounded limiter executor shared by two call()s. fixedTimeLimit(300 ms, ThreadPoolExecutor(1 thread, ArrayBlockingQueue(1))), retryIfRuntimeException, stopAfterAttempt(2); caller-1's service answers after 1500 ms, caller-2's after 50 ms; caller-2 starts at ~100 ms
+  [t=    0 ms] pool-7-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  100 ms] main              starting caller-2 on the same Retryer
+  [t=  300 ms] caller-1          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] caller-1          listener: attempt #2 failed with RejectedExecutionException
+  [t=  301 ms] caller-1          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 1; bodies of this call() ever started = 1; limiter pool: active threads = 1, queued tasks = 1
+  [t=  401 ms] caller-2          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  401 ms] caller-2          listener: attempt #2 failed with RejectedExecutionException
+  [t=  401 ms] caller-2          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 0; bodies of this call() ever started = 0; limiter pool: active threads = 1, queued tasks = 1
+  [t= 1501 ms] pool-7-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1512 ms] main              later: caller-1's application cache = VALUE-1, although caller-1's call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException)
+  -- caller-1 (its attempt 1 timed out and kept the limiter's only thread):
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1200 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=2, last cause=RejectedExecutionException); the late outcomes above reached nobody)
+  FACT  caller-1 ended via rejected re-submission      YES  (caller-1 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException))
+  FACT  late side effect after call() threw            YES  (caller-1 cache = VALUE-1)
+  -- caller-2 (shares the Retryer and its limiter executor):
+  FACT  caller-2's callable never ran, its call() failed YES  (caller-2 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException); caller-2 bodies ever started = 0)
+
+=== Scenario G0: S4 single-thread limiter executor (unbounded queue). fixedTimeLimit(300 ms, Executors.newSingleThreadExecutor()), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    0 ms] pool-8-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  600 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  901 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  901 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 1; bodies ever started = 1
+  [t= 1501 ms] pool-8-thread-1   attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1606 ms] main              later: application cache = VALUE-1; bodies ever started = 1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 600 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+  FACT  attempts counted that never ran (queued, timed out) YES  (Retryer counted 3 failed attempts; callable bodies ever started = 1)
+
+=== Scenario D (control): same callable and service timing as A, AttemptTimeLimiters.noTimeLimit()
+  [t=    0 ms] main              attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t= 1501 ms] main              attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = false; bodies still in flight = 0)
+  [t= 1501 ms] main              listener: attempt #1 produced VALUE-1
+  [t= 1501 ms] main              call() RETURNED VALUE-1; bodies still executing = 0; cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         holds  (0 body(ies) still executing when call() ended; )
+  FACT  late outcome silently dropped                  no  (call() delivered: returned VALUE-1; the late outcomes above reached nobody)
+
+=== Scenario E (info): fixedTimeLimit(300 ms) with an interrupt-RESPONSIVE body (Thread.sleep(1500)); not asserted
+  [t=    0 ms] pool-9-thread-1   attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  300 ms] pool-9-thread-1   attempt 1 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  301 ms] pool-9-thread-2   attempt 2 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  601 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  601 ms] pool-9-thread-2   attempt 2 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  601 ms] main              call() ended: RetryException(failedAttempts=2); bodies still executing = 0
+  info: max bodies at once = 1; attempt 1 ran 0..300 ms (cancel at ~300 ms)
+
+############################## round 2 ##############################
+
+=== Scenario A: timeout trigger, call() RETURNS. fixedTimeLimit(300 ms), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    0 ms] pool-10-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] pool-10-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  352 ms] pool-10-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  353 ms] main              listener: attempt #2 produced VALUE-2
+  [t=  353 ms] main              call() RETURNED VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1501 ms] pool-10-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1510 ms] main              later: application cache = VALUE-1, although call() returned VALUE-2
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1148 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  FACT  consumer-visible stale cache                   YES  (cache = VALUE-1 after call() returned VALUE-2)
+  FACT  service saw 2+ concurrent requests of one call YES  (max concurrent requests at the service = 2)
+  FACT  cancel(true) interrupt reached attempt 1       YES  (worker interrupt flag when attempt 1's blocking read finally returned = true)
+
+=== Scenario B: timeout trigger, call() THROWS RetryException. fixedTimeLimit(200 ms), stopAfterAttempt(3); every request is answered with an error after 1000 ms
+  [t=    0 ms] pool-11-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  208 ms] pool-11-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  401 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  401 ms] pool-11-thread-3  attempt 3 ENTER callable body (bodies of this call() in flight = 3)
+  [t=  601 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  602 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 3
+  [t= 1001 ms] pool-11-thread-1  attempt 1 EXIT  callable body: threw IOException: service answered ERR-1 (worker interrupt flag = true; bodies still in flight = 2)
+  [t= 1209 ms] pool-11-thread-2  attempt 2 EXIT  callable body: threw IOException: service answered ERR-2 (worker interrupt flag = true; bodies still in flight = 1)
+  [t= 1403 ms] pool-11-thread-3  attempt 3 EXIT  callable body: threw IOException: service answered ERR-3 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 3)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (3 body(ies) still executing when call() ended; attempt 1 exited 399 ms after call() ended and threw IOException: service answered ERR-1; attempt 2 exited 607 ms after call() ended and threw IOException: service answered ERR-2; attempt 3 exited 801 ms after call() ended and threw IOException: service answered ERR-3; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+
+=== Scenario C: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-12-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  200 ms] caller            call() ended: ExecutionException(cause=InterruptedException); bodies of this call() still executing = 1; application cache = <empty>
+  [t= 1001 ms] pool-12-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1006 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 801 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: ExecutionException(cause=InterruptedException); the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario C2: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-13-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  201 ms] pool-13-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  252 ms] pool-13-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  252 ms] caller            listener: attempt #2 produced VALUE-2
+  [t=  253 ms] caller            call() ended: returned VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1001 ms] pool-13-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1008 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 748 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario F: user-executor factory + Retryer.wrap(). fixedTimeLimit(300 ms, newCachedThreadPool()), wrapped callable submitted to an ExecutorService; same service timing as A
+  [t=    0 ms] pool-14-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] pool-15-thread-1  listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] pool-14-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  352 ms] pool-14-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  352 ms] pool-15-thread-1  listener: attempt #2 produced VALUE-2
+  [t=  353 ms] main              wrapped call completed with VALUE-2 (Future.isDone=true); bodies still executing = 1
+  [t= 1501 ms] pool-14-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1148 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: Future value VALUE-2; the late outcomes above reached nobody)
+
+=== Scenario G: S4 saturated bounded limiter executor shared by two call()s. fixedTimeLimit(300 ms, ThreadPoolExecutor(1 thread, ArrayBlockingQueue(1))), retryIfRuntimeException, stopAfterAttempt(2); caller-1's service answers after 1500 ms, caller-2's after 50 ms; caller-2 starts at ~100 ms
+  [t=    0 ms] pool-16-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  100 ms] main              starting caller-2 on the same Retryer
+  [t=  300 ms] caller-1          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  300 ms] caller-1          listener: attempt #2 failed with RejectedExecutionException
+  [t=  301 ms] caller-1          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 1; bodies of this call() ever started = 1; limiter pool: active threads = 1, queued tasks = 1
+  [t=  400 ms] caller-2          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  401 ms] caller-2          listener: attempt #2 failed with RejectedExecutionException
+  [t=  401 ms] caller-2          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 0; bodies of this call() ever started = 0; limiter pool: active threads = 1, queued tasks = 1
+  [t= 1501 ms] pool-16-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1509 ms] main              later: caller-1's application cache = VALUE-1, although caller-1's call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException)
+  -- caller-1 (its attempt 1 timed out and kept the limiter's only thread):
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1200 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=2, last cause=RejectedExecutionException); the late outcomes above reached nobody)
+  FACT  caller-1 ended via rejected re-submission      YES  (caller-1 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException))
+  FACT  late side effect after call() threw            YES  (caller-1 cache = VALUE-1)
+  -- caller-2 (shares the Retryer and its limiter executor):
+  FACT  caller-2's callable never ran, its call() failed YES  (caller-2 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException); caller-2 bodies ever started = 0)
+
+=== Scenario G0: S4 single-thread limiter executor (unbounded queue). fixedTimeLimit(300 ms, Executors.newSingleThreadExecutor()), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    0 ms] pool-17-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  600 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  901 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  901 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 1; bodies ever started = 1
+  [t= 1501 ms] pool-17-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1605 ms] main              later: application cache = VALUE-1; bodies ever started = 1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 600 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+  FACT  attempts counted that never ran (queued, timed out) YES  (Retryer counted 3 failed attempts; callable bodies ever started = 1)
+
+=== Scenario D (control): same callable and service timing as A, AttemptTimeLimiters.noTimeLimit()
+  [t=    0 ms] main              attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t= 1501 ms] main              attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = false; bodies still in flight = 0)
+  [t= 1501 ms] main              listener: attempt #1 produced VALUE-1
+  [t= 1501 ms] main              call() RETURNED VALUE-1; bodies still executing = 0; cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         holds  (0 body(ies) still executing when call() ended; )
+  FACT  late outcome silently dropped                  no  (call() delivered: returned VALUE-1; the late outcomes above reached nobody)
+
+=== Scenario E (info): fixedTimeLimit(300 ms) with an interrupt-RESPONSIVE body (Thread.sleep(1500)); not asserted
+  [t=    0 ms] pool-18-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  300 ms] pool-18-thread-1  attempt 1 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  300 ms] pool-18-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  601 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  601 ms] pool-18-thread-2  attempt 2 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  601 ms] main              call() ended: RetryException(failedAttempts=2); bodies still executing = 0
+  info: max bodies at once = 1; attempt 1 ran 0..300 ms (cancel at ~300 ms)
+
+############################## round 3 ##############################
+
+=== Scenario A: timeout trigger, call() RETURNS. fixedTimeLimit(300 ms), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    0 ms] pool-19-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] pool-19-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  352 ms] pool-19-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  352 ms] main              listener: attempt #2 produced VALUE-2
+  [t=  352 ms] main              call() RETURNED VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1501 ms] pool-19-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1503 ms] main              later: application cache = VALUE-1, although call() returned VALUE-2
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1149 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  FACT  consumer-visible stale cache                   YES  (cache = VALUE-1 after call() returned VALUE-2)
+  FACT  service saw 2+ concurrent requests of one call YES  (max concurrent requests at the service = 2)
+  FACT  cancel(true) interrupt reached attempt 1       YES  (worker interrupt flag when attempt 1's blocking read finally returned = true)
+
+=== Scenario B: timeout trigger, call() THROWS RetryException. fixedTimeLimit(200 ms), stopAfterAttempt(3); every request is answered with an error after 1000 ms
+  [t=    0 ms] pool-20-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  201 ms] pool-20-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  401 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  401 ms] pool-20-thread-3  attempt 3 ENTER callable body (bodies of this call() in flight = 3)
+  [t=  601 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  602 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 3
+  [t= 1001 ms] pool-20-thread-1  attempt 1 EXIT  callable body: threw IOException: service answered ERR-1 (worker interrupt flag = true; bodies still in flight = 2)
+  [t= 1202 ms] pool-20-thread-2  attempt 2 EXIT  callable body: threw IOException: service answered ERR-2 (worker interrupt flag = true; bodies still in flight = 1)
+  [t= 1403 ms] pool-20-thread-3  attempt 3 EXIT  callable body: threw IOException: service answered ERR-3 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 3)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (3 body(ies) still executing when call() ended; attempt 1 exited 399 ms after call() ended and threw IOException: service answered ERR-1; attempt 2 exited 600 ms after call() ended and threw IOException: service answered ERR-2; attempt 3 exited 801 ms after call() ended and threw IOException: service answered ERR-3; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+
+=== Scenario C: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-21-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  200 ms] caller            call() ended: ExecutionException(cause=InterruptedException); bodies of this call() still executing = 1; application cache = <empty>
+  [t= 1001 ms] pool-21-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1008 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 801 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: ExecutionException(cause=InterruptedException); the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario C2: caller-interrupt trigger. fixedTimeLimit(5 s, never expires here), retryIfException, stopAfterAttempt(3); service answers request 1 after 1000 ms, later requests after 50 ms; caller interrupted at ~200 ms
+  [t=    0 ms] pool-22-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  200 ms] main              interrupting the caller thread
+  [t=  200 ms] caller            listener: attempt #1 failed with InterruptedException
+  [t=  201 ms] pool-22-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  252 ms] pool-22-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  253 ms] caller            listener: attempt #2 produced VALUE-2
+  [t=  253 ms] caller            call() ended: returned VALUE-2; bodies of this call() still executing = 1; application cache = VALUE-2
+  [t= 1002 ms] pool-22-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1010 ms] main              later: application cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 749 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: returned VALUE-2; the late outcomes above reached nobody)
+  note (separate concern, not MC-1): caller interrupt status after call() = false
+
+=== Scenario F: user-executor factory + Retryer.wrap(). fixedTimeLimit(300 ms, newCachedThreadPool()), wrapped callable submitted to an ExecutorService; same service timing as A
+  [t=    0 ms] pool-23-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] pool-24-thread-1  listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  301 ms] pool-23-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 2)
+  [t=  352 ms] pool-23-thread-2  attempt 2 EXIT  callable body: returned VALUE-2 (worker interrupt flag = false; bodies still in flight = 1)
+  [t=  352 ms] pool-24-thread-1  listener: attempt #2 produced VALUE-2
+  [t=  353 ms] main              wrapped call completed with VALUE-2 (Future.isDone=true); bodies still executing = 1
+  [t= 1501 ms] pool-23-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  CHECK SequentialAttempts (max bodies at once > 1)    VIOLATED  (max bodies of ONE call() executing at the same time = 2)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1148 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: Future value VALUE-2; the late outcomes above reached nobody)
+
+=== Scenario G: S4 saturated bounded limiter executor shared by two call()s. fixedTimeLimit(300 ms, ThreadPoolExecutor(1 thread, ArrayBlockingQueue(1))), retryIfRuntimeException, stopAfterAttempt(2); caller-1's service answers after 1500 ms, caller-2's after 50 ms; caller-2 starts at ~100 ms
+  [t=    0 ms] pool-25-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  100 ms] main              starting caller-2 on the same Retryer
+  [t=  300 ms] caller-1          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  300 ms] caller-1          listener: attempt #2 failed with RejectedExecutionException
+  [t=  301 ms] caller-1          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 1; bodies of this call() ever started = 1; limiter pool: active threads = 1, queued tasks = 1
+  [t=  401 ms] caller-2          listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  401 ms] caller-2          listener: attempt #2 failed with RejectedExecutionException
+  [t=  401 ms] caller-2          call() ended: RetryException(failedAttempts=2, last cause=RejectedExecutionException); bodies of this call() still executing = 0; bodies of this call() ever started = 0; limiter pool: active threads = 1, queued tasks = 1
+  [t= 1501 ms] pool-25-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1511 ms] main              later: caller-1's application cache = VALUE-1, although caller-1's call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException)
+  -- caller-1 (its attempt 1 timed out and kept the limiter's only thread):
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 1200 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=2, last cause=RejectedExecutionException); the late outcomes above reached nobody)
+  FACT  caller-1 ended via rejected re-submission      YES  (caller-1 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException))
+  FACT  late side effect after call() threw            YES  (caller-1 cache = VALUE-1)
+  -- caller-2 (shares the Retryer and its limiter executor):
+  FACT  caller-2's callable never ran, its call() failed YES  (caller-2 call() ended with RetryException(failedAttempts=2, last cause=RejectedExecutionException); caller-2 bodies ever started = 0)
+
+=== Scenario G0: S4 single-thread limiter executor (unbounded queue). fixedTimeLimit(300 ms, Executors.newSingleThreadExecutor()), retryIfRuntimeException, stopAfterAttempt(3); service answers request 1 after 1500 ms, later requests after 50 ms
+  [t=    0 ms] pool-26-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  600 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  901 ms] main              listener: attempt #3 failed with UncheckedTimeoutException
+  [t=  901 ms] main              call() ended: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); bodies of this call() still executing = 1; bodies ever started = 1
+  [t= 1501 ms] pool-26-thread-1  attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = true; bodies still in flight = 0)
+  [t= 1607 ms] main              later: application cache = VALUE-1; bodies ever started = 1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         VIOLATED  (1 body(ies) still executing when call() ended; attempt 1 exited 600 ms after call() ended and returned VALUE-1; )
+  FACT  late outcome silently dropped                  YES  (call() delivered: RetryException(failedAttempts=3, last cause=UncheckedTimeoutException); the late outcomes above reached nobody)
+  FACT  attempts counted that never ran (queued, timed out) YES  (Retryer counted 3 failed attempts; callable bodies ever started = 1)
+
+=== Scenario D (control): same callable and service timing as A, AttemptTimeLimiters.noTimeLimit()
+  [t=    0 ms] main              attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t= 1501 ms] main              attempt 1 EXIT  callable body: returned VALUE-1 (worker interrupt flag = false; bodies still in flight = 0)
+  [t= 1501 ms] main              listener: attempt #1 produced VALUE-1
+  [t= 1501 ms] main              call() RETURNED VALUE-1; bodies still executing = 0; cache = VALUE-1
+  CHECK SequentialAttempts (max bodies at once > 1)    holds  (max bodies of ONE call() executing at the same time = 1)
+  CHECK NoActivityAfterOutcome                         holds  (0 body(ies) still executing when call() ended; )
+  FACT  late outcome silently dropped                  no  (call() delivered: returned VALUE-1; the late outcomes above reached nobody)
+
+=== Scenario E (info): fixedTimeLimit(300 ms) with an interrupt-RESPONSIVE body (Thread.sleep(1500)); not asserted
+  [t=    0 ms] pool-27-thread-1  attempt 1 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  300 ms] main              listener: attempt #1 failed with UncheckedTimeoutException
+  [t=  300 ms] pool-27-thread-1  attempt 1 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  301 ms] pool-27-thread-2  attempt 2 ENTER callable body (bodies of this call() in flight = 1)
+  [t=  601 ms] main              listener: attempt #2 failed with UncheckedTimeoutException
+  [t=  601 ms] pool-27-thread-2  attempt 2 EXIT  callable body: threw InterruptedException: sleep interrupted (worker interrupt flag = false; bodies still in flight = 0)
+  [t=  601 ms] main              call() ended: RetryException(failedAttempts=2); bodies still executing = 0
+  info: max bodies at once = 1; attempt 1 ran 0..300 ms (cancel at ~300 ms)
+
+=============================== SUMMARY ===============================
+  A timeout -> return (S1)                             anomaly in 3/3 runs
+  B timeout -> RetryException (S1)                     anomaly in 3/3 runs
+  C  caller interrupt -> ExecutionException (S2)       anomaly in 3/3 runs
+  C2 caller interrupt -> next attempt overlaps (S2)    anomaly in 3/3 runs
+  F wrap() + user executor (S1)                        anomaly in 3/3 runs
+  G  shared bounded executor -> rejection (S4)         anomaly in 3/3 runs
+  G0 single-thread limiter executor (S4)               anomaly in 3/3 runs
+  D control: noTimeLimit (expect clean)                anomaly in 0/3 runs
+  E info: interrupt-responsive body                    anomaly in 0/3 runs
+RESULT: BUG REPRODUCED - attempts of one Retryer.call() overlap, and attempts keep running (their outcomes dropped) after call() returned/threw, also with a bounded/single-thread limiter executor (S4); noTimeLimit control is clean
+exit code: 0
+script exit: 0

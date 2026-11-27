@@ -1,0 +1,56 @@
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running Random Simulation with seed 845100251049758242 with 24 workers on 96 cores with 15701MB heap and 16384MB offheap memory [pid: 963866] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit).
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/MC.tla
+Parsing file /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/spec/base.tla
+Parsing file /tmp/tlc-14795525308402394618/TLC.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-14795525308402394618/_TLCTrace.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/_TLCTrace.tla)
+Parsing file /tmp/tlc-14795525308402394618/Integers.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-14795525308402394618/Sequences.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-14795525308402394618/FiniteSets.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-14795525308402394618/Naturals.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Parsing file /tmp/tlc-14795525308402394618/TLCExt.tla (jar:file:/home/ubuntu/guava-retrying-20261126/Specular/lib/tla2tools.jar!/tla2sany/StandardModules/TLCExt.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module TLCExt
+Semantic processing of module _TLCTrace
+Semantic processing of module MC
+Linting of module base
+Linting of module TLCExt
+Linting of module _TLCTrace
+Linting of module MC
+Starting... (2026-11-26 08:49:18)
+Computed 1 initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-26 08:49:18.
+Progress: 26850519 states checked, 415184 traces generated (trace length: mean=25, var(x)=1684, sd=41)
+Progress: 53557234 states checked, 828000 traces generated (trace length: mean=25, var(x)=1685, sd=41)
+Progress: 80033420 states checked, 1237190 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 107287106 states checked, 1658472 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 136626940 states checked, 2112075 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 164451977 states checked, 2542206 traces generated (trace length: mean=25, var(x)=1686, sd=41)
+Progress: 191817096 states checked, 2965266 traces generated (trace length: mean=25, var(x)=237, sd=15)
+Progress: 219356303 states checked, 3391095 traces generated (trace length: mean=25, var(x)=419, sd=20)
+Progress: 245875391 states checked, 3801150 traces generated (trace length: mean=25, var(x)=555, sd=24)
+Progress: 272274337 states checked, 4209367 traces generated (trace length: mean=25, var(x)=665, sd=26)
+Progress: 300228353 states checked, 4641486 traces generated (trace length: mean=25, var(x)=760, sd=28)
+Progress: 327110532 states checked, 5056950 traces generated (trace length: mean=25, var(x)=836, sd=29)
+Progress: 354278711 states checked, 5476945 traces generated (trace length: mean=25, var(x)=117, sd=11)
+Progress: 382794256 states checked, 5917737 traces generated (trace length: mean=25, var(x)=234, sd=15)
+Progress: 411204933 states checked, 6356856 traces generated (trace length: mean=25, var(x)=334, sd=18)
+Progress: 438914955 states checked, 6785269 traces generated (trace length: mean=25, var(x)=419, sd=20)
+Progress: 466525896 states checked, 7212076 traces generated (trace length: mean=25, var(x)=494, sd=22)
+Progress: 497360012 states checked, 7688663 traces generated (trace length: mean=25, var(x)=10, sd=3)
+Progress: 525085008 states checked, 8117288 traces generated (trace length: mean=25, var(x)=98, sd=10)
+Progress: 551711871 states checked, 8528862 traces generated (trace length: mean=25, var(x)=175, sd=13)
+Progress: 576636360 states checked, 8914154 traces generated (trace length: mean=25, var(x)=240, sd=15)
+Progress: 605471692 states checked, 9360002 traces generated (trace length: mean=25, var(x)=309, sd=18)
+Progress: 633486872 states checked, 9793099 traces generated (trace length: mean=25, var(x)=370, sd=19)
+Progress: 659768668 states checked, 10199384 traces generated (trace length: mean=25, var(x)=1, sd=1)
+Progress: 688776659 states checked, 10647917 traces generated (trace length: mean=25, var(x)=72, sd=8)
+Progress: 722632208 states checked, 11171214 traces generated (trace length: mean=25, var(x)=148, sd=12)
+Progress: 756056627 states checked, 11687809 traces generated (trace length: mean=25, var(x)=216, sd=15)
+Progress: 789161151 states checked, 12199953 traces generated (trace length: mean=25, var(x)=277, sd=17)
+Progress: 823550887 states checked, 12731503 traces generated (trace length: mean=25, var(x)=336, sd=18)

@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "id": "CR-D-19",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Retryer.call's int attempt counter wraps after 2^31-1 attempts: non-positive attempt numbers, RetryException count truncated to int, attempt-based waits jump",
+  "cause": "Retryer.call counts attempts in an int (for (int attemptNumber = 1; ; attemptNumber++), Retryer.java:157) that silently overflows. The wrapped value is widened into the long Attempt.getAttemptNumber() (documented 'starting from 1') of every ResultAttempt/ExceptionAttempt and stored in RetryException's int numberOfFailedAttempts (Retryer.java:174, :181; RetryException.java:34, 44-46).",
+  "trigger": "One call() makes more than 2^31-1 rejected attempts: a stop strategy that does not stop by attempt count (neverStop, the builder default; stopAfterDelay; a custom one) and a rejection predicate that keeps rejecting (e.g. polling a condition). With the builder defaults (noWait, Thread.sleep(0)) this host reached the wrap after about 59 minutes; with a BlockStrategy that skips the Thread.sleep(0) yield, after about 78 s.",
+  "consequence": "Attempt 2,147,483,648 is passed to listeners, stop and wait strategies with getAttemptNumber() = -2,147,483,648; numbers then run through 0 and restart at 1 after 2^32 attempts, so no observer ever sees a number above 2,147,483,647. RetryException.getNumberOfFailedAttempts() and its message report (int) of the real count (144,727,207 for 4,439,694,503 failed attempts; -916,908,789 for 3,378,058,507 when stopAfterDelay ends the call). With incrementingWait(50 ms, -10 ms) the built-in strategy asks for a 21,474,836,540 ms (248.6-day) sleep right at the wrap. exponentialWait collapses to 0 at the wrap but needs at least 2^31 x 2 ms (49.7 days) of sleeping to get there; the Fibonacci collapse is not reachable in practice.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:157",
+    "src/main/java/com/github/rholder/retry/Retryer.java:174",
+    "src/main/java/com/github/rholder/retry/Retryer.java:181",
+    "src/main/java/com/github/rholder/retry/RetryException.java:34",
+    "src/main/java/com/github/rholder/retry/RetryException.java:44-46",
+    "src/main/java/com/github/rholder/retry/Attempt.java:73-78",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:281-284"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "A single call() can make more than 2^31-1 attempts: the configured stop strategy does not stop by attempt count (neverStop, the builder default; stopAfterDelay; or a custom strategy) and the rejection predicate keeps rejecting.",
+    "stopAfterAttempt(int) cannot reach the wrap because its limit is an int <= Integer.MAX_VALUE.",
+    "Nothing downstream re-derives or corrects the count: RetryException.numberOfFailedAttempts is a final int and Attempt numbers are passed through unchanged.",
+    "With fibonacciWait (O(n) fib per attempt, ~20 years of CPU to reach the wrap) or incrementingWait with a positive increment (quadratic total sleep) the wrap is not reachable in practice; exponentialWait needs at least 2^31 x 2 ms of real sleeping.",
+    "Reproduced on JDK 21 with --release 8 against Guava 22.0; the counter arithmetic is Java int overflow and does not depend on the JDK or Guava version."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "sha256": "e237d79af0eea0112807d60b1d12a3eebc556fc0911521b0ebaf38ebc08b87a1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "sha256": "4367454537d9c66ac95fde4f1e0bbf529514e8b2d79b61238cd0f81f2e6304bd"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Attempt.java",
+      "start": "     * The number, starting from 1, of this attempt.",
+      "end": "    public long getAttemptNumber();",
+      "sha256": "a50186d2070cc230f8d5522cfa5d5a2b27a7110dbab289e0e714dc30e3cc8f80"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    public static WaitStrategy incrementingWait(long initialSleepTime,",
+      "end": "        return new IncrementingWaitStrategy(initialSleepTimeUnit.toMillis(initialSleepTime),",
+      "sha256": "1a16b5bf793f4b64abc04d7a3eea0697c576696bb3c531cafc3af088e7ef3462"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class IncrementingWaitStrategy implements WaitStrategy {",
+      "end": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "sha256": "8c2cf5a79e2bc1729e867af59b5476382c2bd78d8c4d6acec3b6bb227087b064"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/StopStrategies.java",
+      "start": "    public static StopStrategy stopAfterAttempt(int attemptNumber) {",
+      "end": "        return new StopAfterAttemptStrategy(attemptNumber);",
+      "sha256": "13e98888b716b10911680458d0e6a82d87bd36d322206e8d697d867cf179ab30"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/StopStrategies.java",
+      "start": "    private static final class NeverStopStrategy implements StopStrategy {",
+      "end": "            return failedAttempt.getDelaySinceFirstAttempt() >= maxDelay;",
+      "sha256": "564397b4ea2b5abd4bfa1b67e1995818eb1c0ef195c010262eddc80364901dec"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-19.md",
+      "path": "spec/persistent-findings/evidence/CR-D-19/spec/finding-confirmation/CR-D-19.md",
+      "sha256": "7adb60ad73a821d4c89e82434c6b3d796b073dbc0f542fe6d2dd4f5d90581d77"
+    },
+    {
+      "original": "confirmation/CR-D-19/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-19/confirmation/CR-D-19/investigation.md",
+      "sha256": "83d03f944196ffe5b90ac5aa6fcf40d4be6188ea25f1b62bd25a9ec48b564cf4"
+    },
+    {
+      "original": "repro/test_bugCR-D-19_attempt_counter_int_wrap.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-19/repro/test_bugCR-D-19_attempt_counter_int_wrap.sh",
+      "sha256": "c27f884aaf7fb78e56eee6ee61d8a50f7d11263f8cf7da835a40d93bf83733ff"
+    },
+    {
+      "original": "repro/CR-D-19.log",
+      "path": "spec/persistent-findings/evidence/CR-D-19/repro/CR-D-19.log",
+      "sha256": "6ed42899fa73cfa5fd0e63a80f7754e51eeb5a61cef5628e5e151fbc684b689f"
+    }
+  ]
+}

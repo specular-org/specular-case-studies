@@ -1,0 +1,3 @@
+run 1: violated NoRetryAfterObservedInterrupt (trace 11 states, distinct 111)
+run 2: violated InterruptPreserved (trace 17 states, distinct 138)
+run 3: no error, distinct 145

@@ -1,0 +1,3 @@
+first.call -> ok
+listener configured for 'first' notified 3x; listener added later (for 'second') notified by first.call 2x
+exit=0

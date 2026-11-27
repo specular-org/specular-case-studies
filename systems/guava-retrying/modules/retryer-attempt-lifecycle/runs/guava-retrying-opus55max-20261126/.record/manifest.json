@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "record_id": "guava-retrying-opus55max-20261126:guava-retrying-opus55max-20261126",
+  "source_id": "guava-retrying-opus55max-20261126",
+  "identity": {
+    "system": "guava-retrying",
+    "module": "retryer-attempt-lifecycle",
+    "variant": "full-pipeline-jpf-harness",
+    "confidence": "high"
+  },
+  "run": {
+    "id": "guava-retrying-opus55max-20261126",
+    "id_status": "stable",
+    "role": "curated-run-output",
+    "status": "report-present",
+    "created": "2026-11-26T04:23:29+00:00"
+  },
+  "origin": {
+    "repository": "local-specular-run",
+    "relative": "guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126",
+    "source_id": "guava-retrying-opus55max-20261126"
+  },
+  "layout": {
+    "payload": "run-root",
+    "metadata": ".record",
+    "file_manifest": ".record/files.tsv"
+  },
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "retained_counts": {
+    "MC": 10,
+    "CR": 9,
+    "total": 19
+  },
+  "ambiguities": [
+    "curated_subset_not_complete_run_archive",
+    "bounded_model_checking_not_a_proof",
+    "runtime_transcripts_and_build_scratch_excluded",
+    "historical_workspace_paths_preserved",
+    "controlled_fault_and_timing_reproductions",
+    "phase1_probes_reproduced_mc_routed_defects_before_modeling",
+    "pipeline_resumed_after_report_parser_failure"
+  ],
+  "counts": {
+    "copied_files": 1843,
+    "copied_bytes": 20953289,
+    "curated_files": 1,
+    "curated_bytes": 4387,
+    "payload_files": 1844,
+    "payload_bytes": 20957676
+  },
+  "metadata_files": {
+    ".record/files.tsv": {
+      "bytes": 591750,
+      "sha256": "b90fd37dd8ef603b2bb6d3a508dc644548ed50c3c901a7fddee0496ec5136798"
+    },
+    "README.md": {
+      "bytes": 4387,
+      "sha256": "3e4347bbe903fe5a00fec942e64328b9a52bb4f322d25daf2a26b799062a6cbb"
+    }
+  }
+}

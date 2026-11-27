@@ -1,0 +1,53 @@
+{
+  "run_id": "guava-retrying-opus55max-20261126",
+  "created": "2026-11-26T04:23:29+00:00",
+  "argv": [
+    "--run-id=guava-retrying-opus55max-20261126",
+    "--model=claude-opus-5-5",
+    "--effort=max",
+    "--artifact=/home/ubuntu/scratch/guava-retrying-src/guava-retrying",
+    "--guidance=/home/ubuntu/guava-retrying-20261126/guidance.md",
+    "guava-retrying|rholder/guava-retrying|Java|Retry library for Callables"
+  ],
+  "targets": [
+    "guava-retrying|rholder/guava-retrying|Java|Retry library for Callables"
+  ],
+  "agent": "claude-code",
+  "model": "claude-opus-5-5",
+  "effort": "max",
+  "policy_retries": 20,
+  "transient_resumes": 20,
+  "claude_alias": "claude",
+  "artifact": "/home/ubuntu/scratch/guava-retrying-src/guava-retrying",
+  "artifact_git_sha": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "byom": null,
+  "guidance": "/home/ubuntu/guava-retrying-20261126/guidance.md",
+  "tlc_memory_limit": "auto",
+  "tlc_worker_limit": null,
+  "resume_configuration": {
+    "version": 1,
+    "default": {
+      "agent": "claude-code",
+      "model": "claude-opus-5-5",
+      "effort": "max"
+    },
+    "routes": null,
+    "agent_config": null,
+    "claude_alias": "claude",
+    "policy_retries": 20,
+    "transient_resumes": 20,
+    "max_parallel": null,
+    "max_turns": "0",
+    "confirm_legacy": false,
+    "confirm_debate": false,
+    "max_repair_rounds": "10",
+    "skip_reviews": true,
+    "targets": [
+      "guava-retrying|rholder/guava-retrying|Java|Retry library for Callables"
+    ],
+    "artifact": "/home/ubuntu/scratch/guava-retrying-src/guava-retrying",
+    "findings_from": null,
+    "byom": null,
+    "guidance": "/home/ubuntu/guava-retrying-20261126/guidance.md"
+  }
+}

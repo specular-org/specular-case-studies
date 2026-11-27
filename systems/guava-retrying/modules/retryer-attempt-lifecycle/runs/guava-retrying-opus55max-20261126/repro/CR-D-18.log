@@ -1,0 +1,60 @@
+# CR-D-18 reproduction log
+# command: timeout 5m bash /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/test_bugCR-D-18_exceptionwait_null_npe.sh
+# date: 2026-11-26T10:38:05Z
+
+== environment
+source repo : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-18/worktree
+source HEAD : 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+source dirty: 0 changed file(s) under src/
+guava jar   : /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar
+jsr305 jar  : /home/ubuntu/.m2/repository/com/google/code/findbugs/jsr305/2.0.2/jsr305-2.0.2.jar
+openjdk version "21.0.13.1" 2026-11-17
+Retryer.java:176        |                long sleepTime = waitStrategy.computeSleepTime(attempt);
+WaitStrategies.java:390 |                    return function.apply((T) cause);
+
+== build (library sources compiled unmodified from the target checkout, --release 8, Guava 22.0)
+compiled 13 library source files + CRD18Repro.java
+
+== run
+== Scenario 1a (control): HTTP 429 WITH Retry-After: 20 ms, then success
+  outcome=RETURNED value=OK | callable invocations=2 | listener saw [#1 threw CRD18Repro$HttpStatusException: HTTP 429, #2 returned OK]
+  [CONTROL-OK] same Retryer returns OK on attempt 2 when the function yields a non-null wait
+== Scenario 1b (bug): HTTP 503 WITHOUT Retry-After (function returns null), then success
+  outcome=ESCAPED java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null | callable invocations=1 | listener saw [#1 threw CRD18Repro$HttpStatusException: HTTP 503]
+    escaped type   : java.lang.NullPointerException
+    message        : Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null
+    getCause()     : null
+    at com.github.rholder.retry.WaitStrategies$ExceptionWaitStrategy.computeSleepTime(WaitStrategies.java:390)
+    at com.github.rholder.retry.Retryer.call(Retryer.java:176)
+    at CRD18Repro.documentedContractCaller(CRD18Repro.java:84)
+    at CRD18Repro.main(CRD18Repro.java:168)
+  [BUG-CONFIRMED] call() let an exception escape the documented handlers (not a value / ExecutionException / RetryException)
+  [BUG-CONFIRMED] escaped exception is the unboxing NPE raised in ExceptionWaitStrategy.computeSleepTime under Retryer.call
+  [BUG-CONFIRMED] attempt #1 had already run and been reported to the listener before the NPE
+  [BUG-CONFIRMED] retrying was abandoned after 1 attempt although stopAfterAttempt(3) allowed more and attempt #2 would succeed
+  [BUG-CONFIRMED] the attempt's real failure (HttpStatusException: HTTP 503) is not attached to the escaped exception
+== Scenario 2a (control): join(fixedWait, exceptionWait(map lookup hit)), neverStop
+  outcome=RETURNED value=OK | callable invocations=2
+  [CONTROL-OK] joined strategy returns OK on attempt 2 when the lookup hits
+== Scenario 2b (bug): same Retryer, IOException("connection reset") -> lookup miss -> null
+  outcome=ESCAPED java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null | callable invocations=1
+    escaped type   : java.lang.NullPointerException
+    message        : Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null
+    getCause()     : null
+    at com.github.rholder.retry.WaitStrategies$ExceptionWaitStrategy.computeSleepTime(WaitStrategies.java:390)
+    at com.github.rholder.retry.WaitStrategies$CompositeWaitStrategy.computeSleepTime(WaitStrategies.java:368)
+    at com.github.rholder.retry.Retryer.call(Retryer.java:176)
+    at CRD18Repro.documentedContractCaller(CRD18Repro.java:84)
+  [BUG-CONFIRMED] NPE escapes call() through CompositeWaitStrategy; a neverStop() retryer gave up after 1 attempt
+== Scenario 3 (bug): retryer1.wrap(callable) on an ExecutorService, HTTP 503 without Retry-After
+  future value=null | future failure cause=java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null | callable invocations=1
+  [BUG-CONFIRMED] Future fails with the unboxing NPE instead of a RetryException / the callable's exception
+
+RESULT: BUG REPRODUCED -- exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException after the attempt ran, abandoning the retry and dropping the failure cause
+exit code: 0
+# script exit code: 0
+
+# determinism: 3 further runs
+# repeat 1: RESULT: BUG REPRODUCED -- exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException after the attempt ran, abandoning the retry and dropping the failure cause | exit code: 0
+# repeat 2: RESULT: BUG REPRODUCED -- exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException after the attempt ran, abandoning the retry and dropping the failure cause | exit code: 0
+# repeat 3: RESULT: BUG REPRODUCED -- exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException after the attempt ran, abandoning the retry and dropping the failure cause | exit code: 0

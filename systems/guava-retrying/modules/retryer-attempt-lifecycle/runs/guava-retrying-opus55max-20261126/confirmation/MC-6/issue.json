@@ -1,0 +1,93 @@
+{
+  "id": "MC-6",
+  "title": "Retryer.wrap() task cancelled via Future.cancel(true)/shutdownNow() keeps retrying (or returns normally) and never releases its executor worker",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "RetryerCallable.call() only runs Retryer.call() on the executor worker, so Future.cancel(true) and ExecutorService.shutdownNow() reach it solely as a thread interrupt. The interrupt is consumed during the attempt (Future.get inside Guava SimpleTimeLimiter.callWithTimeout(..., true) under fixedTimeLimit, or the callable's own interruptible wait); the resulting InterruptedException is caught by catch (Throwable) at Retryer.java:162 and treated as an ordinary failed attempt, and with the flag cleared the only interrupt check (block() at Retryer.java:177-182) never fires.",
+  "trigger": "Submit retryer.wrap(callable) built with retryIfException() (builder defaults neverStop and noWait; with or without fixedTimeLimit) to an ExecutorService while the callable keeps failing, then call future.cancel(true) or executor.shutdownNow() while an attempt is in flight.",
+  "consequence": "The cancelled task keeps invoking the user callable indefinitely (496 attempts within 10 s after cancel(true)); the executor worker is never released, awaitTermination never returns true even after repeated shutdownNow(), and a JVM using a default non-daemon executor never exits. If a later attempt succeeds, the cancelled task commits that attempt's side effects and RetryerCallable.call() returns normally with the interrupt status clear, contrary to the Retryer.call Javadoc (RetryException with the interrupt status set).",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:Retryer.call",
+    "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call"
+  ],
+  "actions": [
+    "MCCancelOuter",
+    "MCGetInterrupted",
+    "MCCancelCASWon",
+    "MCListenersBegin",
+    "MCWaitStrategyComputes",
+    "MCBlockZero",
+    "MCSubmitNewWorker",
+    "MCSubmitHandoff",
+    "MCBodyThrows",
+    "MCGetReturn",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptedCallEventuallyExits",
+    "NoRetryAfterObservedInterrupt",
+    "InterruptPreserved"
+  ],
+  "premises": [
+    "The rejection predicate accepts InterruptedException (retryIfException(), retryIfExceptionOfType(Exception.class) or an equivalent Predicate<Throwable>); with retryIfExceptionOfType(IOException.class) the call exits after the cancellation.",
+    "The interrupt is consumed before block(): by Future.get in Guava 22 SimpleTimeLimiter.callWithTimeout(..., true) under fixedTimeLimit, or by the callable's own interruptible wait; an interrupt still pending when block() runs is handled correctly at Retryer.java:179-181.",
+    "Endless retrying additionally needs a stop strategy that never stops (neverStop, the builder default) and a callable that keeps failing; otherwise post-cancel attempts continue until the stop strategy fires or an attempt succeeds and call() returns normally.",
+    "Library built from unmodified sources against Guava 22.0 (last version with the SimpleTimeLimiter API it calls) on JDK 21 with --release 8.",
+    "The live counterexample hunt_s2_live_bfs.out predates the repair-round-1 edit of spec/base.tla and was not regenerated. The post-repair S2 control run (spec/output/repair-r1/repair1_ctl_s2_wrap_cancel_ndc.out) still reaches MCCancelOuter -> MCGetInterrupted. The REPRODUCED classification rests on the Level 0 run against the unmodified source, which was re-executed after the repair."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "        return new RetryerCallable<V>(this, callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class FixedAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "        rejectionPredicate = Predicates.or(rejectionPredicate, new ExceptionClassPredicate<V>(Exception.class));"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_live.cfg"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC.tla"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-6/investigation.md",
+    "repro/test_bugMC-6_wrap_cancel_endless_retry.sh",
+    "repro/MC-6.log",
+    "spec/output/hunt_s2_live_bfs.out",
+    "spec/output/hunt_s2_wrap_cancel_bfs3.out",
+    "spec/output/hunt_s2_wrap_cancel_bfs6.out"
+  ]
+}

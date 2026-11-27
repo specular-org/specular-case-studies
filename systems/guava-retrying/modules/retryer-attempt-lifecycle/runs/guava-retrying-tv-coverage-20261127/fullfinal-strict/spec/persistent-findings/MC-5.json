@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "id": "MC-5",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "Retryer.call retries an InterruptedException thrown by the callable (noTimeLimit) and returns with the interrupt status cleared",
+  "cause": "With noTimeLimit the callable runs on the caller thread (AttemptTimeLimiters.NoAttemptTimeLimit.call). When that thread is interrupted while the callable is in an interruptible blocking call, the JDK clears the interrupt status and the callable throws InterruptedException; Retryer.call's catch (Throwable t) records it as an ordinary ExceptionAttempt and never restores the status. The only interrupt guard (Retryer.call's catch around blockStrategy.block) does not fire because Thread.sleep sees a clear status.",
+  "trigger": "Retryer built with retryIfException() (matches InterruptedException) and any stop strategy allowing a second attempt (default neverStop), default noTimeLimit/noWait; the caller thread (or a pool worker running retryer.wrap(callable)) is interrupted via Thread.interrupt, Future.cancel(true) or ExecutorService.shutdownNow while the callable is blocked in queue.take()/sleep/wait.",
+  "consequence": "The interrupted attempt is retried; call() returns the next attempt's value normally with the interrupt status clear instead of throwing RetryException with the status set (Retryer.call Javadoc). Interrupt-responsive tasks wrapped in a Retryer become non-cancellable: ExecutorService.shutdownNow() cannot stop the task (awaitTermination(2s)=false), the worker blocks in a new attempt, and the task later completes normally. With a predicate that does not match InterruptedException the call ends with ExecutionException(InterruptedException) and the status is still lost.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:NoAttemptTimeLimit.call",
+    "src/main/java/com/github/rholder/retry/Retryer.java:RetryerCallable.call"
+  ],
+  "actions": [
+    "MCCallerBodyStart",
+    "MCInterrupt",
+    "MCCallerBodyThrows",
+    "MCWaitStrategyComputes",
+    "MCBlockZero",
+    "MCCallerBodyReturns",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptPreserved",
+    "NoRetryAfterObservedInterrupt"
+  ],
+  "premises": [
+    "No attempt time limiter is configured (RetryerBuilder.build defaults to AttemptTimeLimiters.noTimeLimit()), so the callable runs on the interrupted thread.",
+    "The callable blocks in an interruptible JDK call and propagates the resulting InterruptedException (allowed by Callable.call() throws Exception); the JDK clears the interrupt status when throwing it.",
+    "For the retry consequence, the rejection predicate matches InterruptedException (retryIfException(), retryIfExceptionOfType(InterruptedException.class or a supertype), or a matching retryIfException(Predicate)) and the stop strategy allows another attempt; otherwise call() ends with ExecutionException or RetryException but the interrupt status is still clear.",
+    "The documented contract (Retryer.call Javadoc and constructor rejectionPredicate Javadoc) is that an interrupted thread gets RetryException with its interrupt status set and is not retried.",
+    "Reproduced with Guava 22.0 on JDK 21.0.13.1 and JDK 11.0.33.1; the mechanism does not depend on the Guava version on this path (no Guava code between Retryer.call and the callable).",
+    "Reported against the inherited code only in the hard fork rhuffman/re-retrying (issues #32, #36; fixed there by PR #37); unfixed in rholder/guava-retrying 2.0.0 and master 177b6c9."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "fb7054c09a3b82725a0c4396ebade5a5ab978bd26ff149fffd462139ae3898cd"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "be8b629fbd06f55946249accc973fdccefb6a2529c3798db27dec244211db09e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class NoAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return callable.call();",
+      "sha256": "432bf4043cad785bde8ad11804960eea93c16662ad52cc8f1937f2ee24ba64f8"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public RetryerBuilder<V> retryIfException() {",
+      "end": "            return exceptionClass.isAssignableFrom(attempt.getExceptionCause().getClass());",
+      "sha256": "2a65edc9a50a9815fcdce1ae008423489bfcb3068bff1a8da33ce0a0fb55a183"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s2_interrupt_nolimit.cfg",
+      "sha256": "8c1929cd51e25129d8990de3b395919f5d33970e89948e8cb937e282213322ff"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-5.md",
+      "path": "spec/persistent-findings/evidence/MC-5/spec/finding-confirmation/MC-5.md",
+      "sha256": "6f16eb95e0dd0a85d3fb3959b8908894e38cef4f9977b54181b7d0be9bd81100"
+    },
+    {
+      "original": "confirmation/MC-5/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-5/confirmation/MC-5/investigation.md",
+      "sha256": "c6e1bbd7b8dafbb196402aa810eea560d3776a08c3ae3accba44363ec5f40c91"
+    },
+    {
+      "original": "repro/test_bugMC-5_callable_interrupt_retried.sh",
+      "path": "spec/persistent-findings/evidence/MC-5/repro/test_bugMC-5_callable_interrupt_retried.sh",
+      "sha256": "931e9f43195598bcc6fa0877572c41737420ef7e3619fe4f57e1828facb0b994"
+    },
+    {
+      "original": "repro/MC-5.log",
+      "path": "spec/persistent-findings/evidence/MC-5/repro/MC-5.log",
+      "sha256": "91ba3c7069e3f943d5647eee511f6c7c92ddcc9b3a23b7444336cedc3d95d96e"
+    },
+    {
+      "original": "spec/output/hunt_s2_interrupt_nolimit_bfs1.out",
+      "path": "spec/persistent-findings/evidence/MC-5/spec/output/hunt_s2_interrupt_nolimit_bfs1.out",
+      "sha256": "6f055fba169b279d66e85cc7eac820d776a2eab92566b367ea480cb308d71de2"
+    },
+    {
+      "original": "spec/output/hunt_s2_interrupt_nolimit_bfs2.out",
+      "path": "spec/persistent-findings/evidence/MC-5/spec/output/hunt_s2_interrupt_nolimit_bfs2.out",
+      "sha256": "f88fd1f69e1eb4fb2273b6e0bc16d0fc8735337dd330eaacd81ff108a980cad9"
+    }
+  ]
+}

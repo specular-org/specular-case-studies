@@ -1,0 +1,42 @@
+== source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-20/worktree
+== source HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f  dirty-files: 0
+== javac 21.0.13.1  guava: guava-22.0.jar  jsr305: jsr305-2.0.2.jar
+TimeUnit.DAYS.toMillis(Long.MAX_VALUE) = 9223372036854775807  (saturates)
+
+[A] Retryer.call with DEFAULT block strategy (Thread.sleep), incrementingWait(1000, MILLISECONDS, Long.MAX_VALUE, MILLISECONDS), stopAfterAttempt(6)
+    finished=true outcome=RetryException(numberOfFailedAttempts=6) attempts=6 wall=3016ms
+    gap attempt 1 -> 2: observed 1000 ms   documented sleep: 1000 ms
+    gap attempt 2 -> 3: observed 0 ms   documented sleep: 9223372036854776807 (> Long.MAX_VALUE; saturated: 9223372036854775807) ms
+    gap attempt 3 -> 4: observed 998 ms   documented sleep: 18446744073709552614 (> Long.MAX_VALUE; saturated: 9223372036854775807) ms
+    gap attempt 4 -> 5: observed 0 ms   documented sleep: 27670116110564328421 (> Long.MAX_VALUE; saturated: 9223372036854775807) ms
+    gap attempt 5 -> 6: observed 996 ms   documented sleep: 36893488147419104228 (> Long.MAX_VALUE; saturated: 9223372036854775807) ms
+    A: BUG -> attempt 3 ran 0 ms after attempt 2 (immediate retry) although the first wait was 1000 ms; waits are not incrementing
+
+[B] Retryer.call, incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS), stopAfterAttempt(6), recording BlockStrategy delegating to BlockStrategies.threadSleepStrategy()
+    finished=true outcome=RetryException(numberOfFailedAttempts=6) attempts=6
+    sleeps requested by Retryer.call : [1000, 0, 998, 0, 996]
+    observed gaps between attempts   : [1000, 0, 998, 0, 996] ms
+    B: BUG -> requested sleeps decrease and include 0 ms (immediate retries)
+
+[C] control: incrementingWait(100, MILLISECONDS, 100, MILLISECONDS), stopAfterAttempt(6)
+    finished=true outcome=RetryException(numberOfFailedAttempts=6)
+    sleeps requested by Retryer.call : [100, 200, 300, 400, 500]
+    observed gaps between attempts   : [100, 200, 300, 400, 500] ms
+    C: OK (incrementing as documented)
+
+[D] public WaitStrategy.computeSleepTime(Attempt) for incrementingWait(1000 ms, +Long.MAX_VALUE ms)
+    attempt 1: computeSleepTime=1000   documented=1000
+    attempt 2: computeSleepTime=0   documented=9223372036854776807 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 3: computeSleepTime=998   documented=18446744073709552614 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 4: computeSleepTime=0   documented=27670116110564328421 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 5: computeSleepTime=996   documented=36893488147419104228 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 6: computeSleepTime=0   documented=46116860184273880035 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 7: computeSleepTime=994   documented=55340232221128655842 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 999: computeSleepTime=2   documented=9204925292781066256386 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1000: computeSleepTime=0   documented=9214148664817921032193 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1001: computeSleepTime=0   documented=9223372036854775808000 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1002: computeSleepTime=9223372036854775807   documented=9232595408891630583807 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+    attempt 1003: computeSleepTime=0   documented=9241818780928485359614 (> Long.MAX_VALUE; saturated: 9223372036854775807)
+
+RESULT: BUG REPRODUCED (CR-D-20) - incrementingWait yields decreasing sleeps alternating with 0 ms immediate retries for an increment near Long.MAX_VALUE
+== exit status: 0

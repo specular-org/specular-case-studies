@@ -1,0 +1,3 @@
+java.version=21.0.13.1
+H2.8 interrupt at t=320ms; call() RETURNED ok flagAtExit=false at t=322ms; attempt-1 callable finished at t=1526ms; invocations=2 maxConcurrentAttempts=2
+exit=0

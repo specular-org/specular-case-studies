@@ -1,0 +1,246 @@
+== MC-4 repro: worktree=/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-4/worktree
+== library HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f  dirty-files: 0
+== guava: /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+
+################ openjdk version "21.0.13.1" 2026-11-17
+java.version=21.0.13.1  vm=OpenJDK 64-Bit Server VM
+
+=== A: retryIfException() (stop=never, wait=none); caller interrupted while attempt 1 runs   [bfs5, bfs3]
+  expected: RetryException with interrupt status set (Retryer.java:151-153); no further attempt after the interrupt
+  [fixedTimeLimit] returned normally {value=result-of-invocation-2}, interruptStatusAfterCall=false, callableInvocations=2, attemptsSeenByListener=[#1 InterruptedException, #2 result(result-of-invocation-2)], elapsed=7ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+  >> BUG: interrupt swallowed; Retryer started attempt #2 after the interrupt and returned normally
+
+=== B: retryIfExceptionOfType(IOException); thread already interrupted when call() starts   [narrow_bfs1, bfs1]
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] ExecutionException {cause=java.lang.InterruptedException}, interruptStatusAfterCall=false, callableInvocations=0, attemptsSeenByListener=[#1 InterruptedException], elapsed=0ms
+  [fixedTimeLimit] 200 runs: {ExecutionException / status=clear / invocations=0=190, ExecutionException / status=clear / invocations=1=10}
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=0ms
+  >> BUG: ExecutionException(InterruptedException), status clear, in 200/200 runs; attempt #1 counted with 0 callable invocations in 190 runs
+
+=== B2: retryIfExceptionOfType(IOException); caller interrupted while attempt 1 runs
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] ExecutionException {cause=java.lang.InterruptedException}, interruptStatusAfterCall=false, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedException], elapsed=4ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+  >> BUG: ExecutionException(InterruptedException) and the interrupt status is clear
+
+=== C: retryIfException() + stopAfterAttempt(1); caller interrupted while attempt 1 runs   [ledger D-5 RetryException exit]
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] RetryException {failedAttempts=1, last=#1 InterruptedException}, interruptStatusAfterCall=false, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedException], elapsed=4ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at MC4Repro$1.run(MC4Repro.java:99)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+  >> BUG: RetryException, but the caller's interrupt status is clear
+
+=== D: real consumer -- ExecutorService.submit(retryer.wrap(svc)); shutdownNow(); awaitTermination(2 s)
+  (retryIfException(), fixedWait(10 ms), stop=never; shutdownNow() interrupts the pool thread while an attempt is in flight)
+  expected: the interrupted RetryerCallable ends with RetryException, the pool terminates, no further invocations
+  [fixedTimeLimit] invocations at shutdownNow=2, awaitTermination(2s)=false after 2000ms, invocations started after shutdownNow=18, terminated after service recovered=true, task outcome: returned ok (invocation 21)
+      pool thread stack at shutdownNow:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+        at java.base/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:497)
+        at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+  [control       ] invocations at shutdownNow=2, awaitTermination(2s)=true after 0ms, invocations started after shutdownNow=0, terminated after service recovered=true, task outcome: ExecutionException(com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 2 attempts.)
+      pool thread stack at shutdownNow:
+        at java.base/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+        at MC4Repro$FlakyService.call(MC4Repro.java:233)
+        at MC4Repro$FlakyService.call(MC4Repro.java:223)
+        at com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+  >> BUG: shutdownNow() could not stop the retrying task; it kept calling the service and finally returned normally
+
+=== F: retryIfException() + stopAfterAttempt(3); attempt 1 returns at t0+offset, caller interrupted at t0   [bfs2]
+  (user-supplied executor = newCachedThreadPool equivalent that keeps the FutureTasks for inspection; offset random in [-40,160] us)
+  [fixedTimeLimit] 3000 trials: attempt 1 result returned (benign)=902, attempt cancelled+retried with status cleared=1986, COMPLETED attempt discarded+retried with status cleared=112, other=0
+      example: attempt-1 FutureTask state: done, NOT cancelled, value=r1; attempt-1 body: returned r1; listener: [#1 InterruptedException, #2 result(r2)]; call() returned r2; interrupt status after call: false; callable invocations: 2
+  >> BUG: a completed attempt's result was discarded and the work repeated (bfs2)
+
+=== SUMMARY (21.0.13.1)
+  BUG  A: interrupted call() retried, then RETURNED NORMALLY with interrupt status CLEAR (value=result-of-invocation-2)
+  BUG  B: 200/200 runs threw ExecutionException(InterruptedException) with interrupt status CLEAR; 190 of them counted attempt #1 although the callable was invoked 0 times
+  BUG  B2: ExecutionException(InterruptedException) with interrupt status CLEAR
+  BUG  C: RetryException thrown but interrupt status CLEAR
+  BUG  D: after ExecutorService.shutdownNow() the retry loop kept invoking the service, awaitTermination(2s) returned false, and the task later returned normally
+  BUG  F: 1986/3000 random-timing trials retried after the interrupt and returned with status clear
+  BUG  F: 112/3000 trials discarded an attempt whose FutureTask had COMPLETED (value r1) and re-ran the callable
+  controls (no time limiter) violating the contract: 0
+RESULT: BUG REPRODUCED
+== exit code: 0
+
+################ openjdk version "11.0.33.1" 2026-11-17
+java.version=11.0.33.1  vm=OpenJDK 64-Bit Server VM
+
+=== A: retryIfException() (stop=never, wait=none); caller interrupted while attempt 1 runs   [bfs5, bfs3]
+  expected: RetryException with interrupt status set (Retryer.java:151-153); no further attempt after the interrupt
+  [fixedTimeLimit] returned normally {value=result-of-invocation-2}, interruptStatusAfterCall=false, callableInvocations=2, attemptsSeenByListener=[#1 InterruptedException, #2 result(result-of-invocation-2)], elapsed=7ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:234)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:444)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at app//com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:357)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+        at java.base@11.0.33.1/java.lang.Thread.run(Thread.java:829)
+  >> BUG: interrupt swallowed; Retryer started attempt #2 after the interrupt and returned normally
+
+=== B: retryIfExceptionOfType(IOException); thread already interrupted when call() starts   [narrow_bfs1, bfs1]
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] ExecutionException {cause=java.lang.InterruptedException}, interruptStatusAfterCall=false, callableInvocations=0, attemptsSeenByListener=[#1 InterruptedException], elapsed=0ms
+  [fixedTimeLimit] 200 runs: {ExecutionException / status=clear / invocations=0=191, ExecutionException / status=clear / invocations=1=9}
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=0ms
+  >> BUG: ExecutionException(InterruptedException), status clear, in 200/200 runs; attempt #1 counted with 0 callable invocations in 191 runs
+
+=== B2: retryIfExceptionOfType(IOException); caller interrupted while attempt 1 runs
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] ExecutionException {cause=java.lang.InterruptedException}, interruptStatusAfterCall=false, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedException], elapsed=5ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:234)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:444)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at app//com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:357)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+        at java.base@11.0.33.1/java.lang.Thread.run(Thread.java:829)
+  >> BUG: ExecutionException(InterruptedException) and the interrupt status is clear
+
+=== C: retryIfException() + stopAfterAttempt(1); caller interrupted while attempt 1 runs   [ledger D-5 RetryException exit]
+  expected: RetryException with interrupt status set (Retryer.java:151-153)
+  [fixedTimeLimit] RetryException {failedAttempts=1, last=#1 InterruptedException}, interruptStatusAfterCall=false, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedException], elapsed=5ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:234)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:444)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at app//com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+  [control       ] RetryException {failedAttempts=1, last=#1 InterruptedIOException}, interruptStatusAfterCall=true, callableInvocations=1, attemptsSeenByListener=[#1 InterruptedIOException [interrupt pending]], elapsed=4ms
+      caller stack when interrupted:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:357)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:31)
+        at app//MC4Repro$RemoteCall.call(MC4Repro.java:17)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+        at app//MC4Repro$1.run(MC4Repro.java:99)
+        at java.base@11.0.33.1/java.lang.Thread.run(Thread.java:829)
+  >> BUG: RetryException, but the caller's interrupt status is clear
+
+=== D: real consumer -- ExecutorService.submit(retryer.wrap(svc)); shutdownNow(); awaitTermination(2 s)
+  (retryIfException(), fixedWait(10 ms), stop=never; shutdownNow() interrupts the pool thread while an attempt is in flight)
+  expected: the interrupted RetryerCallable ends with RetryException, the pool terminates, no further invocations
+  [fixedTimeLimit] invocations at shutdownNow=2, awaitTermination(2s)=false after 2000ms, invocations started after shutdownNow=18, terminated after service recovered=true, task outcome: returned ok (invocation 20)
+      pool thread stack at shutdownNow:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:234)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.awaitDone(FutureTask.java:444)
+        at java.base@11.0.33.1/java.util.concurrent.FutureTask.get(FutureTask.java:203)
+        at app//com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+  [control       ] invocations at shutdownNow=2, awaitTermination(2s)=true after 0ms, invocations started after shutdownNow=0, terminated after service recovered=true, task outcome: ExecutionException(com.github.rholder.retry.RetryException: Retrying failed to complete successfully after 2 attempts.)
+      pool thread stack at shutdownNow:
+        at java.base@11.0.33.1/jdk.internal.misc.Unsafe.park(Native Method)
+        at java.base@11.0.33.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:357)
+        at app//MC4Repro$FlakyService.call(MC4Repro.java:233)
+        at app//MC4Repro$FlakyService.call(MC4Repro.java:223)
+        at app//com.github.rholder.retry.AttemptTimeLimiters$NoAttemptTimeLimit.call(AttemptTimeLimiters.java:78)
+        at app//com.github.rholder.retry.Retryer.call(Retryer.java:160)
+  >> BUG: shutdownNow() could not stop the retrying task; it kept calling the service and finally returned normally
+
+=== F: retryIfException() + stopAfterAttempt(3); attempt 1 returns at t0+offset, caller interrupted at t0   [bfs2]
+  (user-supplied executor = newCachedThreadPool equivalent that keeps the FutureTasks for inspection; offset random in [-40,160] us)
+  [fixedTimeLimit] 3000 trials: attempt 1 result returned (benign)=919, attempt cancelled+retried with status cleared=1992, COMPLETED attempt discarded+retried with status cleared=89, other=0
+      example: attempt-1 FutureTask state: done, NOT cancelled, value=r1; attempt-1 body: returned r1; listener: [#1 InterruptedException, #2 result(r2)]; call() returned r2; interrupt status after call: false; callable invocations: 2
+  >> BUG: a completed attempt's result was discarded and the work repeated (bfs2)
+
+=== SUMMARY (11.0.33.1)
+  BUG  A: interrupted call() retried, then RETURNED NORMALLY with interrupt status CLEAR (value=result-of-invocation-2)
+  BUG  B: 200/200 runs threw ExecutionException(InterruptedException) with interrupt status CLEAR; 191 of them counted attempt #1 although the callable was invoked 0 times
+  BUG  B2: ExecutionException(InterruptedException) with interrupt status CLEAR
+  BUG  C: RetryException thrown but interrupt status CLEAR
+  BUG  D: after ExecutorService.shutdownNow() the retry loop kept invoking the service, awaitTermination(2s) returned false, and the task later returned normally
+  BUG  F: 1992/3000 random-timing trials retried after the interrupt and returned with status clear
+  BUG  F: 89/3000 trials discarded an attempt whose FutureTask had COMPLETED (value r1) and re-ran the callable
+  controls (no time limiter) violating the contract: 0
+RESULT: BUG REPRODUCED
+== exit code: 0
+wall=10.87s

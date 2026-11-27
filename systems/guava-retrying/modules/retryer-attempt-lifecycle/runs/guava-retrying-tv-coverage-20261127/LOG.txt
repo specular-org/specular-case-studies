@@ -1,0 +1,85 @@
+guava-retrying TV high-coverage experiment (2026-11-27)
+=========================================================
+Target run: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126 (opus 5.5 max, 19 REPRODUCED).
+Workspace copies only: orig/ = run's spec/harness/traces (pristine), work/ = edited copy, phase2/ = Phase-2 spec,
+tools/jpf-core = copy of ~/tools/jpf-core-mku-spurious (unchanged), src-clean = guava-retrying 177b6c9.
+
+Phase-2 spec: no snapshot in the run; rebuilt from the Phase-3 session transcript
+(~/.claude/projects/-home-ubuntu-guava-retrying-20261126-Specular/1ffe8f20-...jsonl), whose first three Reads of
+spec/base.tla (lines 1-1452) and Trace.tla happen before any Phase-3 edit. Check: original 379 traces -> 321 pass,
+58 fail at GAP-1/GAP-2, exactly the changelog's Round-1 baseline.
+
+Strict baseline (rules of the TV high-coverage experiment)
+-----------------------------------------------------------
+Denominator: base.tla actions minus DelayElapses (wall clock) = 52 (Full-final spec); 53 after F1 (WorkerUnlock).
+Original harness: 379 JPF traces, 13 workloads, all 51 traced actions occur, 379/379 pass on the Full-final spec.
+Strict: 42/52 = 80.8%. Not counted:
+  - BlockNegative, BlockInterrupted, BlockZero, BlockSleepStart, SleepReturns, SleepInterrupted: commit points are inside
+    the harness's own JPF Thread.sleep model (jpf-core patch 0003, written by the Phase 2.5 agent) = model, not code.
+  - WorkerPollCancel: never an event; inferred by Trace.tla's SilentPollCancel.
+  - Interrupt, CancelOuter, ExecutorShutdown: no read-back of the state they write (intr / outer state / idle-worker interrupts).
+Self-claim of the harness: 51/51 traced actions.
+
+Changes (all in work/ or rt/)
+-----------------------------
+JPF recorder (work/harness/src/recorder/grtrace/GrTraceRecorder.java, 79 changed lines vs orig):
+  - targetIntr read-back for Interrupt / CancelDoInterrupt / CancelOuter: the target's flag read in instructionExecuted
+    right after the FIRST execution of the native Thread.interrupt() (before JPF's interrupt CG re-executes it).
+  - CancelOuter: outer FutureTask.state read at the commit point.
+  - ExecutorShutdown: runState read from ctl at advanceRunState's return; idleIntr = workers interrupted by
+    shutdown()'s interruptIdleWorkers (closed at shutdown() exit).
+  - WorkerPollCancel explicit event: Thread.interrupted() returning true in SynchronousQueue.poll (JDK11 :940).
+  - WorkerUnlock event (after F1): runWorker's post-task w.unlock() (JDK11 TPE.java:1137).
+Trace.tla: checks for the read-backs, TWorkerPollCancel (SilentPollCancel removed), TWorkerUnlock;
+  Trace_rt.cfg = interval existence check (INVARIANT TraceNotFullyConsumed).
+5 new JPF workloads for configurations no Phase-2.5 trace had: fixed_delay (stopAfterDelay under fixedTimeLimit,
+  RetBad through FutureTask), wrap_never (StopKind Never = MC_hunt_s2_live / s2_wrap_cancel), interrupt_narrow
+  (RetryOn {CallableExc} = s2_interrupt_narrow), bounded_mixed (MC.cfg config + interrupter + builder thread),
+  fixed_pool_err (RetBad/Err bodies on limiter workers).
+Real-HotSpot harness rt/ (library unmodified; recording callable + listener, thin wrappers around the BUILT-IN
+  stop / wait / block strategies, reflection read of the listener ArrayList modCount/size; events carry nanoTime
+  intervals; flag read before the end stamp): scenarios basic, interrupt, isleep, ipre, decision; JDK 11 and JDK 21.
+  Sleep events come from the real Thread.sleep (JVM_Sleep); an IE from sleep(positive) with the flag clear before the
+  call and < 20 ms elapsed is ambiguous (before vs during the sleep) -> the run is dropped (none occurred).
+  Negative controls (attemptNo / mode / missing Interrupt mutated): all 3 rejected.
+
+TV results
+----------
+Run 1 (new recorder + new workloads, Full-final base.tla, strict Trace.tla): 568/579 pass; all 11 rejections at
+  ExecutorShutdown: a worker that just finished a task (SetFinish/RunFinallyExit) is in GetTask/Idle in the model and
+  gets interrupted by the model's ExecutorShutdown, but the real worker still holds its Worker lock until runWorker's
+  w.unlock() (TPE.java:1133-1137), so interruptIdleWorkers' tryLock (TPE.java:789) skips it.
+  = spec error F1 ("wrong effect": the model interrupts lock-holding workers).
+F1 fix (fix/F1-base.diff): worker PC "Release" after a task (NextAfterTask), new action WorkerUnlock -> GetTask/Idle;
+  ExecutorShutdown still interrupts only GetTask/Idle. MC.tla: MCWorkerUnlock added to MCNext.
+  MC.cfg on the fixed spec: exhaustive, no violation, 7,035,861 distinct states, depth 64 (Full-final: 5,867,867 / 61).
+Run 2 (fixed spec): JPF 577/577; HotSpot 766/766 (JDK 11 + 21).
+Full-final spec with the strict Trace.tla (WorkerUnlock = stutter): JPF 564/577 (13 rejected, all ExecutorShutdown = F1),
+  HotSpot 766/766. Phase-2 spec: 321/379 on the original corpus (GAP-1 / GAP-2, already fixed by Full's Phase 3).
+Final real coverage (fixed spec): 53/53 = 100% (1343 accepted traces: 577 JPF + 766 HotSpot).
+  Block*/Sleep* now from real HotSpot sleeps (BlockNegative 66 = real IAE, BlockInterrupted 140, SleepInterrupted 140,
+  BlockZero, BlockSleepStart/SleepReturns with real time); WorkerPollCancel 402 explicit events.
+
+TV-as-oracle: wrap_never real (JPF) executions show MC-6: after cancel(true) 20/30 traces submit >= 2 more attempts
+  (wrap_never-013: 7) until a body happens to return a result. Known (MC-6), not new.
+Spurious wakeups (mku-spurious SpuriousWakeupSyncPolicy): not applicable - it covers monitor Object.wait() only; the
+  library, Guava's SimpleTimeLimiter and the JDK executor path use LockSupport.park; the only monitor wait is the
+  workload's own IntrBlock body.
+
+MC (hunt chains, tools/hunt_chain.py: on a violation disable that property and continue; <= 30 min per cfg,
+3 TLC workers; mc/summary.txt, outputs mc/out-{final,fixed}/):
+  MC.cfg + 13 MC_hunt_*.cfg on the Full-final spec and on the F1-fixed spec: the chains of violated properties are
+  IDENTICAL in all 14 cfgs (12 end CLEAN, MC.cfg CLEAN 5,867,867 vs 7,035,861 distinct; sharing hits the same 9
+  properties then reaches the 30-min budget at ~5M distinct on both). F1 changes no MC finding (no new, none lost).
+
+FINAL STATE (08:30 UTC)
+  Strict coverage 42/52 (80.8%) -> 53/53 (100%) on the fixed spec, 1343 accepted real traces (577 JPF + 766 HotSpot).
+  TV-found spec error: F1 (shutdown does not interrupt a worker still holding its Worker lock) - found only because
+  of the new ExecutorShutdown read-back; Full-final rejects 13/577 new JPF traces, all there. No MC delta.
+  New bugs: none. TV-as-oracle re-observed MC-6 (wrap_never). The JPF Thread.sleep model (patch 0003) agrees with real
+  HotSpot sleeps on JDK 11 and 21 (all 766 HotSpot traces pass the same spec).
+  Cost: wall ~07:15-08:30 UTC (~1.3 h); JPF ~6 CPU-h (2 x 18 workloads), TLC ~6 CPU-h (validation + 28 hunt chains);
+  workspace 104 MB. New code: recorder +79 changed lines, 5 workloads (262 lines), HotSpot harness (464 lines),
+  tools (226 lines), Trace.tla checks + F1 (19-line base.tla diff, MC.tla 2 lines).
+  Example package: packages/P1-F1-shutdown-lock/ (spec diff, a Full-final-rejected trace fixed_cached-013, validation
+  logs before/after, MC.cfg output, hunt-chain summary).

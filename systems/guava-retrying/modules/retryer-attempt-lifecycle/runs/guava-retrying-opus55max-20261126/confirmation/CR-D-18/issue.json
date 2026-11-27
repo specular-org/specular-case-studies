@@ -1,0 +1,68 @@
+{
+  "id": "CR-D-18",
+  "title": "exceptionWait function returning null makes Retryer.call() throw an undocumented NullPointerException (Long auto-unboxing) and abandon retrying",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "ExceptionWaitStrategy.computeSleepTime returns function.apply((T) cause), a Long, as a primitive long (WaitStrategies.java:390), so a null result from the user Function (allowed: Guava 22 Function.apply is @Nullable) is auto-unboxed and throws NullPointerException. Retryer.call evaluates waitStrategy.computeSleepTime(attempt) at Retryer.java:176, outside the attempt's try/catch; the only surrounding try wraps blockStrategy.block and catches InterruptedException, so the NPE propagates out of call().",
+  "trigger": "A Retryer built with withWaitStrategy(WaitStrategies.exceptionWait(E.class, fn)), directly or inside WaitStrategies.join(...), where fn returns null for some E instance (e.g. an optional Retry-After hint that is absent, or a Map.get miss); the callable throws such an E, the rejection predicate retries on it and the stop strategy has not stopped yet.",
+  "consequence": "Retryer.call() (and RetryerCallable.call() / Future.get() via wrap()) throws a raw NullPointerException instead of returning, throwing ExecutionException or RetryException as documented; retrying is abandoned after the first matching failure even though the stop strategy allows more attempts (reproduced with stopAfterAttempt(3) and neverStop(), where attempt 2 would succeed), and the attempt's real exception is not attached as the NPE's cause.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:ExceptionWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/Retryer.java:call"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Built against Guava 22.0 (the target build), where com.google.common.base.Function.apply carries @javax.annotation.Nullable on its return value, so a null result honors the user function's interface contract.",
+    "Neither the exceptionWait Javadoc nor the WaitStrategy and Retryer.call Javadoc forbids a null function result or documents a NullPointerException; call() documents only a result, ExecutionException and RetryException.",
+    "Level 0 reproduction through public API only (RetryerBuilder, WaitStrategies.exceptionWait/join/fixedWait, StopStrategies, RetryListener, Retryer.call, Retryer.wrap) on unmodified source 177b6c9; deterministic, no timing or concurrency involved.",
+    "No guard between the site and the caller: Retryer.call has no catch around computeSleepTime, CompositeWaitStrategy sums members without a guard, and RetryerCallable.call only delegates."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "     * Returns a strategy which sleeps for an amount of time based on the Exception that occurred. The",
+      "end": "        return new ExceptionWaitStrategy<T>(exceptionClass, function);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "end": "                waitTime += waitStrategy.computeSleepTime(failedAttempt);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class ExceptionWaitStrategy<T extends Throwable> implements WaitStrategy {",
+      "end": "            return 0L;"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategy.java"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "                    Thread.currentThread().interrupt();"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    }
+  ],
+  "evidence": [
+    "confirmation/CR-D-18/investigation.md",
+    "repro/test_bugCR-D-18_exceptionwait_null_npe.sh",
+    "repro/CR-D-18.log"
+  ]
+}

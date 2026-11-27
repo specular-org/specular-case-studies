@@ -1,0 +1,66 @@
+{
+  "id": "CR-D-12",
+  "title": "fixedTimeLimit appends the caller's stack to the callable's exception on every attempt, so a reused exception grows without bound (heap, CPU, logs, OOM)",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call (AttemptTimeLimiters.java:107) calls Guava's deprecated four-argument SimpleTimeLimiter.callWithTimeout(..., true); its failure path throwCause(e, true) (SimpleTimeLimiter.java:162-163, 256-259) calls setStackTrace on the exception object the callable threw, concatenating the caller thread's stack, and Retryer.call stores and rethrows that same object.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit(...) runs a callable that fails more than once with the same exception object (a preallocated sentinel, a cheap exception that only overrides fillInStackTrace, or a memoised failed CompletableFuture whose join() rethrows the same CompletionException).",
+  "consequence": "The reused exception gains one caller stack (caller depth + ~5 frames) per failed attempt and is never reset: RetryListener log entries and printed RetryExceptions grow linearly (129 -> 445,629 chars after 900 attempts), per-call CPU grows, and retained heap grows until OutOfMemoryError (under -Xmx32m call #1604 ends with ExecutionException(OutOfMemoryError) instead of RetryException); noTimeLimit leaves the exception unchanged.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "src/main/java/com/github/rholder/retry/Retryer.java:160-174",
+    "src/main/java/com/github/rholder/retry/RetryException.java:57",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:162-163,251-260"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "The Guava on the classpath is one guava-retrying 2.0.0 links against (10.x-22.0); in each, the four-argument SimpleTimeLimiter.callWithTimeout unwraps failures with throwCause(e, true), which calls cause.setStackTrace(concat(cause, caller stack)) (javap-checked for 10.0.1, 14.0.1, 16.0.1, 19.0, 22.0).",
+    "The callable throws the same exception object on more than one failed attempt, and that object's stack trace is writable (not built with writableStackTrace=false).",
+    "Nothing in the application resets the reused exception's stack trace between attempts."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            return e.getCause();"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "        public X call() throws ExecutionException, RetryException {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "start": "    public RetryException(int numberOfFailedAttempts, @Nonnull Attempt<?> lastFailedAttempt) {",
+      "end": "        this.lastFailedAttempt = lastFailedAttempt;"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    }
+  ],
+  "evidence": [
+    "confirmation/CR-D-12/investigation.md",
+    "confirmation/CR-D-12/confirmation.md",
+    "repro/test_bugCR-D-12_reused_exception_stack_growth.sh",
+    "repro/CR-D-12.log"
+  ]
+}

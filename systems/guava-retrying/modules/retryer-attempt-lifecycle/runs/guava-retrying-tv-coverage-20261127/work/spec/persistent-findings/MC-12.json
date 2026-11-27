@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "id": "MC-12",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "(Known #29) First per-attempt timeout ends Retryer.call with ExecutionException(UncheckedTimeoutException) unless the predicate matches Guava's exception",
+  "cause": "Retryer.call records any Throwable from attemptTimeLimiter.call, including the UncheckedTimeoutException that Guava's SimpleTimeLimiter throws after future.cancel(true), as an ordinary ExceptionAttempt (Retryer.java:162-163). The attempt then goes to the user's rejection predicate. When the predicate does not match UncheckedTimeoutException, Retryer.java:170-171 returns attempt.get(), which throws ExecutionException(UncheckedTimeoutException) before the stop and wait strategies run.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit and a predicate that does not cover UncheckedTimeoutException (e.g. retryIfExceptionOfType(IOException) with stopAfterAttempt(5), or no retryIf with fixedWait + stopAfterDelay as in upstream #29). The first attempt exceeds the limit, either while running or before its worker starts (CE hunt_s4_shutdown_k29).",
+  "consequence": "The caller of Retryer.call (or RetryerCallable.call) receives ExecutionException(UncheckedTimeoutException) after one attempt. The configured stop strategy, wait strategy, and remaining attempts are skipped, even when the next attempt would succeed. In the before-start case the callable never ran, so the exception wraps nothing the callable threw.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:call",
+    "src/main/java/com/github/rholder/retry/Retryer.java:ExceptionAttempt",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:FixedAttemptTimeLimit.call",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:ExceptionClassPredicate.apply",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:callWithTimeout"
+  ],
+  "actions": [
+    "MCCallStart",
+    "MCSubmitNewWorker",
+    "MCGetTimeout",
+    "MCCancelCASWon",
+    "MCCancelReadRunner",
+    "MCCancelFinish",
+    "MCListenersBegin",
+    "MCListenerNotify",
+    "MCListenersEnd",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "TimeoutDoesNotEndCallWithExecutionException"
+  ],
+  "premises": [
+    "Built against Guava 22.0 (jar SHA1 3564ef3803de51fb0530a8377ec6100b33b0d073). SimpleTimeLimiter.callWithTimeout(callable, d, unit, true) handles TimeoutException with future.cancel(true) and then throws UncheckedTimeoutException (SimpleTimeLimiter.java:164-166).",
+    "The user's rejection predicate does not match UncheckedTimeoutException. retryIfException(), retryIfRuntimeException(), and retryIfExceptionOfType(UncheckedTimeoutException.class) avoid the abort (control C2).",
+    "Known upstream issue https://github.com/rholder/guava-retrying/issues/29 is open, labeled bug, and acknowledged by the maintainer on 2015-05-02. Upstream master is still 177b6c9 and no merged PR fixes it (checked 2026-11-26).",
+    "Existing AttemptTimeLimiterTest asserts ExecutionException(UncheckedTimeoutException) for a retryer with no retryIf. The REPRODUCED verdict rests on the explicit retry-predicate plus stop-strategy configuration (S1, S2) and the maintainer's #29 classification; S3 reproduces the #29 reporter configuration."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * Executes the given callable. If the rejection predicate",
+      "end": "                long sleepTime = waitStrategy.computeSleepTime(attempt);",
+      "sha256": "f886feeb79b1c9a02b49f41b61ab93eca88d11ec284a9cedbf2ea7e8447f74e0"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            throw e;",
+      "sha256": "7b5f9669805bfbd6e614ea3e7b8e5a6965ccfc36d9ca5995bbd643aee74786ae"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    private static final class FixedAttemptTimeLimit<V> implements AttemptTimeLimiter<V> {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "9cecb8803bf76a701388b1ecf422542bd3cf4f595124139a5055e249f0c6314d"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private Predicate<Attempt<V>> rejectionPredicate = Predicates.alwaysFalse();",
+      "end": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();",
+      "sha256": "24885e58a029b27e3ba930585e442b9de42b2dc4a6f1308b8b74cc5eaae44061"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "     * Configures the retryer to limit the duration of any particular attempt by the given duration.",
+      "end": "        this.attemptTimeLimiter = attemptTimeLimiter;",
+      "sha256": "853a2e75d54667683dfff6bcddff5761864c3c6def6bbe0f16b3a8513b17e198"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private static final class ExceptionClassPredicate<V> implements Predicate<Attempt<V>> {",
+      "end": "            return exceptionClass.isAssignableFrom(attempt.getExceptionCause().getClass());",
+      "sha256": "c9b479668d26e6684f440896dd585a62d62b42e77bbb69d0a1529a8f0166767b"
+    },
+    {
+      "root": "work",
+      "path": "spec/MCHunt.tla",
+      "sha256": "a5dfe894d870e42c33a5ac2ff74f6b90a5761e9383b5e50af15144f2780cbe34"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s4_shutdown.cfg",
+      "sha256": "4145450daf1606bceec275a55f7678844ed84eea94a8274e6b84101aaaeb896e"
+    },
+    {
+      "root": "work",
+      "path": "spec/hunt/s4_shutdown-k29.cfg",
+      "sha256": "15fd5492dc342fb7f4c727d6d1ef23aea3ee0c4cbbf8956c91e62fba7be0804b"
+    },
+    {
+      "root": "work",
+      "path": "spec/output/hunt_s4_shutdown_k29.out",
+      "sha256": "ed65b46254134ca822dac83b3fdaa58ccfc6c4491855d6599038352208fa3c90"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/MC-12.md",
+      "path": "spec/persistent-findings/evidence/MC-12/spec/finding-confirmation/MC-12.md",
+      "sha256": "4294718c3ec4f46e32f96be6f7a251281b24fad8bd3107a928b1e3aa6243c245"
+    },
+    {
+      "original": "confirmation/MC-12/investigation.md",
+      "path": "spec/persistent-findings/evidence/MC-12/confirmation/MC-12/investigation.md",
+      "sha256": "93320ca2db382a909c83a388e819cd714931496de982037d0f0b3336dd5e0ab4"
+    },
+    {
+      "original": "repro/test_bugMC-12_timeout_ends_call_execution_exception.sh",
+      "path": "spec/persistent-findings/evidence/MC-12/repro/test_bugMC-12_timeout_ends_call_execution_exception.sh",
+      "sha256": "6d7fd74ef858ad69f443aecf68ddf12f644d642ae8dfc8b4f3f93573b8be3c5c"
+    },
+    {
+      "original": "repro/MC-12.log",
+      "path": "spec/persistent-findings/evidence/MC-12/repro/MC-12.log",
+      "sha256": "cc40a7b0c1eb5084557d0e9561cc855c9bc9aa60a9f98e007ea4c14e3b56960e"
+    },
+    {
+      "original": "spec/output/hunt_s4_shutdown_k29.out",
+      "path": "spec/persistent-findings/evidence/MC-12/spec/output/hunt_s4_shutdown_k29.out",
+      "sha256": "ed65b46254134ca822dac83b3fdaa58ccfc6c4491855d6599038352208fa3c90"
+    }
+  ]
+}

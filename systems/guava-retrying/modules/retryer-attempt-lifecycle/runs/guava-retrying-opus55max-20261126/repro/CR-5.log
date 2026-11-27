@@ -1,0 +1,104 @@
+== CR-5 decision-step sweep
+source:  /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/CR-5/worktree  (git 177b6c9, status: 0 changed files)
+guava:   /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar sha1=3564ef3803de51fb0530a8377ec6100b33b0d073
+run JDK: /usr/lib/jvm/java-21-openjdk-amd64
+Note: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/repro/../confirmation/CR-5/worktree/src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+java.version=21.0.13.1 (OpenJDK 64-Bit Server VM)
+
+---- Part A: Level 0, real Retryer.call() (default ThreadSleepStrategy), documented-contract oracle
+[OK]            W01  noWait() -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.446ms
+[OK]            W02  fixedWait(0ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.080ms
+[OK]            W03  fixedWait(3ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[3,3,3] elapsed=9.225ms
+[OK]            W04  fixedWait(999us) [ms resolution per WaitStrategy Javadoc] -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.084ms
+[OK]            W05  randomWait(1ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.058ms
+[OK]            W06  randomWait(5ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[2,2,1] elapsed=5.226ms
+[OK]            W07  randomWait(2ms,6ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[5,5,3] elapsed=13.261ms
+[OK]            W08  incrementingWait(1ms,+2ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[1,3,5] elapsed=9.340ms
+[OK]            W09  incrementingWait(5ms,-2ms) [negative increment] -> RETURN(ok#4) calls=4 flag=false sleeps=[5,3,1] elapsed=9.272ms
+[OK]            W10  incrementingWait(1ms,-5ms) [clamped at 0] -> RETURN(ok#4) calls=4 flag=false sleeps=[1,0,0] elapsed=1.148ms
+[OK]            W11  exponentialWait() -> RETURN(ok#4) calls=4 flag=false sleeps=[2,4,8] elapsed=14.243ms
+[OK]            W12  exponentialWait(20ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[2,4,8] elapsed=14.253ms
+[OK]            W13  exponentialWait(3,20ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[6,12,20] elapsed=38.300ms
+[OK]            W14  fibonacciWait() -> RETURN(ok#4) calls=4 flag=false sleeps=[1,1,2] elapsed=4.238ms
+[OK]            W15  fibonacciWait(5ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[1,1,2] elapsed=4.215ms
+[OK]            W16  fibonacciWait(3,10ms) -> RETURN(ok#4) calls=4 flag=false sleeps=[3,3,6] elapsed=12.246ms
+[OK]            W17  exceptionWait(IOException, ->4) -> RETURN(ok#4) calls=4 flag=false sleeps=[4,4,4] elapsed=12.245ms
+[OK]            W18  exceptionWait(RuntimeException, ->4) on IOException [no match -> 0] -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.073ms
+[OK]            W19  exceptionWait(IOException, ->0) -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.104ms
+[OK]            W20  join(fixed 1ms, random 2ms, exponential(4ms)) -> RETURN(ok#4) calls=4 flag=false sleeps=[3,6,5] elapsed=14.298ms
+[OK]            W21  join(noWait()) -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.035ms
+[OK]            W22  exponentialWait(Long.MAX_VALUE DAYS) [saturating cap] -> RETURN(ok#4) calls=4 flag=false sleeps=[2,4,8] elapsed=14.224ms
+[OK]            W23  fibonacciWait(7, Long.MAX_VALUE DAYS) -> RETURN(ok#4) calls=4 flag=false sleeps=[7,7,14] elapsed=28.241ms
+[OK]            W24  fixedWait(Long.MAX_VALUE DAYS) [saturates], neverStop, interrupt after 300ms -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[9223372036854775807] elapsed=300.223ms watchdog-interrupt@300ms
+[OK]            W25  join(fixedWait(Long.MAX_VALUE DAYS), noWait()), interrupt after 300ms -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[9223372036854775807] elapsed=300.061ms watchdog-interrupt@300ms
+[OK]            W26  randomWait(0, Long.MAX_VALUE DAYS), interrupt after 300ms -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[2122224669464872863] elapsed=300.104ms watchdog-interrupt@300ms
+[OK]            W27  incrementingWait(Long.MAX_VALUE DAYS, 0), interrupt after 300ms -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[9223372036854775807] elapsed=300.027ms watchdog-interrupt@300ms
+[OK]            S01  stopAfterAttempt(1), always failing -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.039ms
+[OK]            S02  stopAfterAttempt(3) + fixedWait(1ms), always failing -> RETRY(count=3,last#=3,cause=IOException:fail#3) calls=3 flag=false sleeps=[1,1] elapsed=2.154ms
+[OK]            S03  stopAfterAttempt(Integer.MAX_VALUE), success at #4 -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.101ms
+[OK]            S04  stopAfterDelay(0ms), always failing -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.046ms
+[OK]            S05  stopAfterDelay(30ms) + fixedWait(5ms), always failing -> RETRY(count=7,last#=7,cause=IOException:fail#7) calls=7 flag=false sleeps=[5,5,5,5,5,5] elapsed=30.478ms
+[OK]            S06  stopAfterDelay(30ms) + noWait, always failing -> RETRY(count=6334,last#=6334,cause=IOException:fail#6334) calls=6334 flag=false sleeps=[0,0,0,0,0,0,...(+6327)] elapsed=30.023ms
+[OK]            S07  stopAfterDelay(Long.MAX_VALUE DAYS) [saturates], success at #4 -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.130ms
+[OK]            S08  stopAfterDelay(20) [deprecated ms overload] + fixedWait(3ms) -> RETRY(count=8,last#=8,cause=IOException:fail#8) calls=8 flag=false sleeps=[3,3,3,3,3,3,...(+1)] elapsed=21.632ms
+[OK]            S09  neverStop, success at #6 -> RETURN(ok#6) calls=6 flag=false sleeps=[0,0,0,0,0] elapsed=0.085ms
+[OK]            S10  stopAfterDelay(25ms) + exponentialWait(3,20ms) -> RETRY(count=4,last#=4,cause=IOException:fail#4) calls=4 flag=false sleeps=[6,12,20] elapsed=38.342ms
+[OK]            S11  stopAfterAttempt(5) + fibonacciWait(2,8ms) -> RETRY(count=5,last#=5,cause=IOException:fail#5) calls=5 flag=false sleeps=[2,2,4,6] elapsed=14.362ms
+[OK]            P01  retryIfRuntimeException + IOException -> not rejected -> EXEC(cause=IOException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.043ms
+[OK]            P02  retryIfRuntimeException + IllegalStateException x3 -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.194ms
+[OK]            P03  retryIfExceptionOfType(IOException) + RuntimeException -> EXEC(cause=RuntimeException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.029ms
+[OK]            P04  retryIfException(Predicate instanceof IOException) x3 -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.089ms
+[OK]            P05  retryIfResult(isNull) always null + stopAfterAttempt(2) -> RETRY(count=2,last#=2,cause=null) calls=2 flag=false sleeps=[0] elapsed=0.028ms
+[OK]            P06  no retryIf (alwaysFalse) + IOException -> EXEC(cause=IOException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.023ms
+[OK]            P07  retryIfResult(isNull) null x3 -> RETURN(ok#4) calls=4 flag=false sleeps=[0,0,0] elapsed=0.014ms
+[OK]            I01  pre-interrupted + noWait + neverStop -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[0] elapsed=0.039ms
+[OK]            I02  pre-interrupted + fixedWait(5ms) + stopAfterAttempt(5) -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[5] elapsed=0.017ms
+[OK]            I03  interrupt during fixedWait(10s) sleep -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[10000] elapsed=150.203ms watchdog-interrupt@150ms
+[OK]            I04  interrupt while listeners run (attempt 2) + noWait -> RETRY(count=2,last#=2,cause=IOException:fail#2) calls=2 flag=true sleeps=[0,0] elapsed=0.117ms
+[OK]            I05  interrupt while the wait is computed (attempt 2) + fixedWait(1ms) -> RETRY(count=2,last#=2,cause=IOException:fail#2) calls=2 flag=true sleeps=[1,1] elapsed=1.119ms
+[OK]            I06  pre-interrupted + stopAfterAttempt(1) [stop exit] -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[] elapsed=0.044ms
+[OK]            I07  pre-interrupted + first attempt succeeds -> RETURN(ok#1) calls=1 flag=true sleeps=[] elapsed=0.005ms
+[OK]            I08  pre-interrupted + retryIfRuntimeException + IOException -> EXEC(cause=IOException:fail#1) calls=1 flag=true sleeps=[] elapsed=0.024ms
+[OK]            I09  pre-interrupted + exponentialWait() -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[2] elapsed=0.041ms
+[OK]            I10  pre-interrupted + randomWait(1ms) [always 0] -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=true sleeps=[0] elapsed=0.035ms
+[SEPARATE D-16]   K16a  join(fixedWait(Long.MAX_VALUE ms), fixedWait(1s)) -> OTHER(java.lang.IllegalArgumentException: timeout value is negative) calls=1 flag=false sleeps=[-9223372036854774809] elapsed=0.055ms
+[SEPARATE D-16]   K16b  join(fixedWait(Long.MAX_VALUE DAYS), fixedWait(1ms)) -> OTHER(java.lang.IllegalArgumentException: timeout value is negative) calls=1 flag=false sleeps=[-9223372036854775808] elapsed=0.022ms
+[SEPARATE D-17]   K17  exceptionWait(IOException, ->-5) -> OTHER(java.lang.IllegalArgumentException: timeout value is negative) calls=1 flag=false sleeps=[-5] elapsed=0.023ms
+[SEPARATE D-18]   K18  exceptionWait(IOException, ->null) -> OTHER(java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null) calls=1 flag=false sleeps=[] elapsed=0.056ms
+[SEPARATE D-20]   K20  incrementingWait(20ms, +Long.MAX_VALUE ms) + stopAfterAttempt(4) -> RETRY(count=4,last#=4,cause=IOException:fail#4) calls=4 flag=false sleeps=[20,0,18] elapsed=38.186ms
+[SEPARATE D-22]   K22  stopAfterDelay(500us) + noWait -> RETRY(count=1,last#=1,cause=IOException:fail#1) calls=1 flag=false sleeps=[] elapsed=0.030ms
+[SEPARATE MC-10/D-17]   K10  pre-interrupted + exceptionWait(->-5) -> OTHER(java.lang.IllegalArgumentException: timeout value is negative) calls=1 flag=true sleeps=[-5] elapsed=0.020ms
+
+---- Part B: Level 2, public strategy API over reachable attempt numbers (1..Integer.MAX_VALUE) and delays
+[OK]            B1  ExponentialWait: >=0, <=cap, non-decreasing, = min(cap, m*2^n) (double rel.err <= 1e-12): 54 configs, 7182 evaluations, unattributed=0
+[SEPARATE [D-21]]  B2  FibonacciWait: >=0, <=cap, = min(cap, m*fib(n)), non-decreasing; overflow-caused deviations -> D-21: 28 configs, 5254 evaluations, unattributed=0, known {D-21=459} e.g. [fibonacciWait(1,4611686018427387903) n=94 -> 1293530146158671551 (documented 4611686018427387903), fibonacciWait(1,4611686018427387903) n=100 -> 3736710778780434371 (documented 4611686018427387903), fibonacciWait(1,4611686018427387903) n=101 -> 1298777728820984005 (documented 4611686018427387903)]
+[SEPARATE [D-20]]  B3  IncrementingWait: = clamp(initial + increment*(n-1)) without overflow; overflow-caused deviations -> D-20: 60 configs, 60180 evaluations, unattributed=0, known {D-20=13271} e.g. [incrementingWait(0,1099511627776) n=1000000000 -> 0 (documented 9223372036854775807), incrementingWait(0,1099511627776) n=2147483647 -> 0 (documented 9223372036854775807), incrementingWait(0,4611686018427387903) n=4 -> 0 (documented 9223372036854775807)]
+[VARIANT D-20]  incrementingWait(500ms, Long.MIN_VALUE/2 ms) sleeps for attempts 1..5: 500, 0, 0, 4611686018427388404, 500  (documented: 500 then clamped 0s)
+[VARIANT D-19]  incrementingWait(5s, -1s) by attempt number, incl. the numbers Retryer passes after its int counter wraps (Integer.MIN_VALUE...): #1->5000 #2->4000 #6->0 #7->0 #2147483647->0 #-2147483648->2147483654000 #-2147483647->2147483653000
+[OK]            B4  RandomWait: min <= s < max over 200k samples per range: 9 configs, 1800000 evaluations, unattributed=0
+[OK]            B4-LCG  of the 65536 LCG states that yield hi=0x80000000, none yields lo=0 after 0..2000 intervening next() calls -> Math.abs(Long.MIN_VALUE) unreachable without >2000 concurrent draws inside one nextLong()
+[OK]            B5  FixedWait: constant = unit.toMillis(v) (saturating), never negative: 25 configs, 100 evaluations, unattributed=0
+[SEPARATE [D-16, D-17]]  B6  join: = exact sum when it fits; overflow -> D-16; negative exceptionWait component -> D-17: 42 configs, 1042 evaluations, unattributed=0, known {D-16=15, D-17=2} e.g. [join(fixed 1, fixed 9223372036854775807) -> -9223372036854775808, join(fixed 1000, fixed 9223372036854775806) -> -9223372036854774810, join(fixed 1000, fixed 9223372036854775807) -> -9223372036854774809]
+[SEPARATE [D-17, D-18]]  B7  exceptionWait: pass-through of the function value; negative -> D-17, null -> D-18: 7 configs, 7 evaluations, unattributed=0, known {D-17=2, D-18=1} e.g. [exceptionWait(->-1) -> -1, exceptionWait(->-9223372036854775807) -> -9223372036854775807, exceptionWait(->null) -> NPE]
+[OK]            B8  stopAfterAttempt(N): stops exactly when attempt >= N, for N up to Integer.MAX_VALUE: 6 configs, 28 evaluations, unattributed=0
+[SEPARATE [D-22]]  B9  stopAfterDelay: never stops before the requested duration except via sub-ms truncation (D-22); 4 configs saturate beyond 2^63 ms (unreachable): 63 configs, 3021 evaluations, unattributed=0, known {D-22=15} e.g. [stopAfterDelay(1 NANOSECONDS) can stop at 0 ns < requested 1 ns, stopAfterDelay(499 NANOSECONDS) can stop at 0 ns < requested 499 ns, stopAfterDelay(500 NANOSECONDS) can stop at 0 ns < requested 500 ns]
+[OK]            B10  neverStop: never stops: 1 configs, 4 evaluations, unattributed=0
+
+---- Part C: FibonacciWait O(n) cost (performance note, not a value check)
+[MEASURE]       fib(n) for n=1,000,000: 0.272 ms per computeSleepTime (0.272 ns/iteration)
+[MEASURE]       fib(n) for n=10,000,000: 2.730 ms per computeSleepTime (0.273 ns/iteration)
+[MEASURE]       fib(n) for n=100,000,000: 27.290 ms per computeSleepTime (0.273 ns/iteration)
+[PROJECTION]    cap=2 ms: fib cost reaches the cap at attempt ~7.33e+06, i.e. after ~4.1 h (0.2 days) of uninterrupted retrying in one call()
+[PROJECTION]    cap=10 ms: fib cost reaches the cap at attempt ~3.66e+07, i.e. after ~101.8 h (4.2 days) of uninterrupted retrying in one call()
+[PROJECTION]    cap=100 ms: fib cost reaches the cap at attempt ~3.66e+08, i.e. after ~10178.9 h (424.1 days) of uninterrupted retrying in one call()
+[PROJECTION]    cap=1,000 ms: fib cost reaches the cap at attempt ~3.66e+09, i.e. after ~1017886.5 h (42411.9 days) of uninterrupted retrying in one call()
+[PROJECTION]    cap=120,000 ms: fib cost reaches the cap at attempt ~4.40e+11, i.e. after ~14657565198.1 h (610731883.3 days) of uninterrupted retrying in one call()
+
+==== SUMMARY ====
+Part A runs / Part B families: OK=61 SEPARATE-CANDIDATE signatures=12 NOTE=0 UNATTRIBUTED=0
+Part B strategy evaluations: 133014354
+Separate-candidate signatures observed (D-16..D-22, MC-10; not CR-5 defects): {D-16=17, D-17=5, D-18=2, D-20=13272, D-21=459, D-22=16, MC-10/D-17=1}
+UNATTRIBUTED anomalies (candidate other defects): 0
+RESULT: NO_OTHER_DEFECT_FOUND
+exit code: 0

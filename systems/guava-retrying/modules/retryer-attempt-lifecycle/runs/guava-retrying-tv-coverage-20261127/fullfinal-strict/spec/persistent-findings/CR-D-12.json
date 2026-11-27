@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "id": "CR-D-12",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "fixedTimeLimit appends the caller's stack to the callable's exception on every attempt, so a reused exception grows without bound (heap, CPU, logs, OOM)",
+  "cause": "AttemptTimeLimiters.FixedAttemptTimeLimit.call (AttemptTimeLimiters.java:107) calls Guava's deprecated four-argument SimpleTimeLimiter.callWithTimeout(..., true); its failure path throwCause(e, true) (SimpleTimeLimiter.java:162-163, 256-259) calls setStackTrace on the exception object the callable threw, concatenating the caller thread's stack, and Retryer.call stores and rethrows that same object.",
+  "trigger": "A Retryer built with AttemptTimeLimiters.fixedTimeLimit(...) runs a callable that fails more than once with the same exception object (a preallocated sentinel, a cheap exception that only overrides fillInStackTrace, or a memoised failed CompletableFuture whose join() rethrows the same CompletionException).",
+  "consequence": "The reused exception gains one caller stack (caller depth + ~5 frames) per failed attempt and is never reset: RetryListener log entries and printed RetryExceptions grow linearly (129 -> 445,629 chars after 900 attempts), per-call CPU grows, and retained heap grows until OutOfMemoryError (under -Xmx32m call #1604 ends with ExecutionException(OutOfMemoryError) instead of RetryException); noTimeLimit leaves the exception unchanged.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "src/main/java/com/github/rholder/retry/Retryer.java:160-174",
+    "src/main/java/com/github/rholder/retry/RetryException.java:57",
+    "guava-22.0 com/google/common/util/concurrent/SimpleTimeLimiter.java:162-163,251-260"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "The Guava on the classpath is one guava-retrying 2.0.0 links against (10.x-22.0); in each, the four-argument SimpleTimeLimiter.callWithTimeout unwraps failures with throwCause(e, true), which calls cause.setStackTrace(concat(cause, caller stack)) (javap-checked for 10.0.1, 14.0.1, 16.0.1, 19.0, 22.0).",
+    "The callable throws the same exception object on more than one failed attempt, and that object's stack trace is writable (not built with writableStackTrace=false).",
+    "Nothing in the application resets the reused exception's stack trace between attempts."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java",
+      "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {",
+      "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);",
+      "sha256": "2f1b0885aa8b259df8c3cf80b98dcb75cac4dc00f801b4182ac1760f7d76f599"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {",
+      "sha256": "371fc5e5be192e39952ab85a991f364e4992fb1425948fa53219fd27387562d3"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {",
+      "end": "            return e.getCause();",
+      "sha256": "5811aa14bcb31c8fcd6351b208d7389960750eec1121ab0f3f21c895611684df"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "        public X call() throws ExecutionException, RetryException {",
+      "end": "            return retryer.call(callable);",
+      "sha256": "e3e7bd9d01d5731c2170d6e624bb746fbec1272aabc471b5d40d3b6ecf2d20cb"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryException.java",
+      "start": "    public RetryException(int numberOfFailedAttempts, @Nonnull Attempt<?> lastFailedAttempt) {",
+      "end": "        this.lastFailedAttempt = lastFailedAttempt;",
+      "sha256": "2d97332b65ac9ace35c41904cda0dbe3947b46f98292da8c202c834230c9de09"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-12.md",
+      "path": "spec/persistent-findings/evidence/CR-D-12/spec/finding-confirmation/CR-D-12.md",
+      "sha256": "7f23088651ceb06327cb12d45e6b4a0ab828c34c28cbcab3f2879c810b229e14"
+    },
+    {
+      "original": "confirmation/CR-D-12/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-12/confirmation/CR-D-12/investigation.md",
+      "sha256": "86b42d0da2869bf972946909fd83bc2f718c110b9e77ecd0ccfaa0c7a86e2920"
+    },
+    {
+      "original": "confirmation/CR-D-12/confirmation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-12/confirmation/CR-D-12/confirmation.md",
+      "sha256": "2c26854de3851636b9d4d25667bf282750252ab31e53a204e330696fc5efedd7"
+    },
+    {
+      "original": "repro/test_bugCR-D-12_reused_exception_stack_growth.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-12/repro/test_bugCR-D-12_reused_exception_stack_growth.sh",
+      "sha256": "b3b939ca563cf6da679d7cc74fa5ca6a93808670a24a5aae747c09f91b319ca4"
+    },
+    {
+      "original": "repro/CR-D-12.log",
+      "path": "spec/persistent-findings/evidence/CR-D-12/repro/CR-D-12.log",
+      "sha256": "42e65f441e3648d937cfbc35b73366e0382662346602d62712426fd37f8873a0"
+    }
+  ]
+}

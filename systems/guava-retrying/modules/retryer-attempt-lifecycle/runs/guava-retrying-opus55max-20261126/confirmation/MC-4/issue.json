@@ -1,0 +1,75 @@
+{
+  "id": "MC-4",
+  "title": "Retryer with fixedTimeLimit swallows a caller interrupt: Future.get clears it, then call() retries and returns or throws with the interrupt status clear",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "With AttemptTimeLimiters.fixedTimeLimit the calling thread waits in Guava SimpleTimeLimiter.callWithTimeout's future.get (amInterruptible=true, AttemptTimeLimiters.java:107). An interrupt makes JDK FutureTask.awaitDone clear the interrupt status and throw InterruptedException; Guava cancels the attempt and rethrows it (SimpleTimeLimiter.java:155-157, even when cancel fails because the attempt already completed). Retryer.call's catch (Throwable) (Retryer.java:162-163) records it as an ordinary failed attempt and lets the rejection predicate / stop strategy decide; the interrupt status is restored only when blockStrategy.block throws (Retryer.java:179-181), which no longer happens because the status is already clear.",
+  "trigger": "The thread running Retryer.call is interrupted while a fixedTimeLimit attempt is in flight, or enters call() with its interrupt status already set. The interrupt can come from Thread.interrupt, from Future.cancel(true) on an executor task that runs a RetryerCallable from Retryer.wrap, or from ExecutorService.shutdownNow. The same holds when one Retryer and one time-limiter executor are shared by several threads.",
+  "consequence": "Retrying continues after the interrupt, and the interrupt status is clear whichever way call() ends: it returns normally (retryIfException), throws ExecutionException(InterruptedException) (predicates that do not reject InterruptedException), or throws RetryException (stop strategy). This contradicts Retryer.java:151-153. An attempt is counted although its callable never ran. A completed attempt's result or exception can be discarded and the callable run again. A wrapped RetryerCallable cannot be stopped: after Future.cancel(true) returned true it called the service 18 more times and held the pool thread for 2 s before returning normally; after ExecutorService.shutdownNow, awaitTermination(2s) returned false.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/Retryer.java:162",
+    "src/main/java/com/github/rholder/retry/Retryer.java:170",
+    "src/main/java/com/github/rholder/retry/Retryer.java:173",
+    "src/main/java/com/github/rholder/retry/Retryer.java:179",
+    "src/main/java/com/github/rholder/retry/Retryer.java:318",
+    "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java:107",
+    "guava-22.0/com/google/common/util/concurrent/SimpleTimeLimiter.java:155"
+  ],
+  "actions": [
+    "MCInterrupt",
+    "MCCancelOuter",
+    "MCGetInterrupted",
+    "MCCancelCASWon",
+    "MCCancelFinish",
+    "MCSetCASWon",
+    "MCSetFinish",
+    "MCBlockZero",
+    "MCSubmitNewWorker",
+    "MCPredicateAccepts"
+  ],
+  "invariants": [
+    "InterruptPreserved",
+    "NoRetryAfterObservedInterrupt",
+    "ExecutionExceptionMeansCallableThrew",
+    "CountedImpliesInvoked",
+    "CountedImpliesInvokedNoStartRace",
+    "NoDiscardedCompletion"
+  ],
+  "premises": [
+    "Library built from unmodified guava-retrying 177b6c9 (2.0.0) against Guava 22.0, the newest Guava that still has the SimpleTimeLimiter constructors and 4-argument callWithTimeout that AttemptTimeLimiters uses.",
+    "Guava 22.0 SimpleTimeLimiter.callWithTimeout(callable, d, unit, true) runs the callable on its executor, and on InterruptedException from future.get cancels the future and rethrows without checking the cancel result (SimpleTimeLimiter.java:149-158).",
+    "JDK FutureTask.get(timeout) clears the caller's interrupt status when it throws InterruptedException (JDK 11 FutureTask.java:416-418, JDK 21 FutureTask.java:469-471); observed on OpenJDK 11.0.33.1 and 21.0.13.1.",
+    "JDK FutureTask.cancel(true) interrupts the thread running the task, so cancelling the Future of a submitted Retryer.wrap() task interrupts the thread inside Retryer.call.",
+    "Retryer.call has no interrupt handling around attemptTimeLimiter.call; the only restore is the blockStrategy.block catch at Retryer.java:179-181, which needs a still-pending interrupt.",
+    "Callers interrupt once (Thread.interrupt, Future.cancel(true), ExecutorService.shutdownNow); nothing re-delivers the lost interrupt.",
+    "The interrupt path of NoDiscardedCompletion is kept by RR-001 (only the timeout-path counterpart, former MC-3, was withdrawn); every cited trace and every reproduced discard here is interrupt-path (10 s limit, no timeout fires).",
+    "In repair1_ctl_sharing_ndc.out and repair1_ctl_sharing_cir.out the second caller never takes a step; sharing adds no cross-caller mechanism, and a concurrently active non-interrupted sharer saw no anomaly in the repro."
+  ],
+  "dependencies": [
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "     * Executes the given callable. If the rejection predicate", "end": "    public RetryerCallable<V> wrap(Callable<V> callable) {"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    static final class ExceptionAttempt<R> implements Attempt<R> {", "end": "            throw e;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/Retryer.java", "start": "    public static class RetryerCallable<X> implements Callable<X> {", "end": "            return retryer.call(callable);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java", "start": "    public static <V> AttemptTimeLimiter<V> fixedTimeLimit(long duration, @Nonnull TimeUnit timeUnit) {", "end": "            return timeLimiter.callWithTimeout(callable, duration, timeUnit, true);"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java", "start": "    public RetryerBuilder<V> retryIfException() {", "end": "        BlockStrategy theBlockStrategy = blockStrategy == null ? BlockStrategies.threadSleepStrategy() : blockStrategy;"},
+    {"root": "source", "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java", "start": "    private static class ThreadSleepStrategy implements BlockStrategy {", "end": "            Thread.sleep(sleepTime);"},
+    {"root": "work", "path": "spec/MC_hunt_s2_interrupt_fixed.cfg"},
+    {"root": "work", "path": "spec/MC_hunt_s2_interrupt_narrow.cfg"},
+    {"root": "work", "path": "spec/output/hunt_s2_interrupt_fixed_bfs5.out"},
+    {"root": "work", "path": "spec/output/hunt_s2_interrupt_fixed_bfs3.out"},
+    {"root": "work", "path": "spec/output/hunt_s2_interrupt_fixed_bfs2.out"},
+    {"root": "work", "path": "spec/output/hunt_s2_interrupt_fixed_bfs1.out"},
+    {"root": "work", "path": "spec/output/hunt_s2_interrupt_narrow_bfs1.out"},
+    {"root": "work", "path": "spec/output/repair-r1/repair1_ctl_s2_wrap_cancel_ndc.out"},
+    {"root": "work", "path": "spec/output/repair-r1/repair1_ctl_sharing_ndc.out"},
+    {"root": "work", "path": "spec/output/repair-r1/repair1_ctl_sharing_cir.out"}
+  ],
+  "evidence": [
+    "confirmation/MC-4/investigation.md",
+    "repro/test_bugMC-4_interrupt_swallowed.sh",
+    "confirmation/MC-4/repro-run1.log",
+    "confirmation/MC-4/repro-run2.log",
+    "confirmation/MC-4/repro-run3.log",
+    "repro/test_bugMC-4_wrap_cancel_sharing.sh",
+    "confirmation/MC-4/repro-r1-run1.log"
+  ]
+}

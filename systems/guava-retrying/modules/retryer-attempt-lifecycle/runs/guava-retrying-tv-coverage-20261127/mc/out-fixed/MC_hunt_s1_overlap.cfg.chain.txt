@@ -1,0 +1,3 @@
+run 1: violated SequentialAttempts (trace 20 states, distinct 1501)
+run 2: violated NoActivityAfterOutcome (trace 28 states, distinct 19540)
+run 3: no error, distinct 520608

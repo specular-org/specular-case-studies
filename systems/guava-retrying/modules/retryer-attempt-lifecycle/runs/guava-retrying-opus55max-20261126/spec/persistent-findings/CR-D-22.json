@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "id": "CR-D-22",
+  "status": "REPRODUCED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "stopAfterDelay(d, unit) truncates sub-millisecond limits with toMillis, so Retryer.call stops before the delay elapses (sub-ms limit: one attempt only)",
+  "cause": "StopStrategies.stopAfterDelay(long, TimeUnit) converts the limit with timeUnit.toMillis(duration), which truncates toward zero, and StopAfterDelayStrategy.shouldStop returns getDelaySinceFirstAttempt() >= maxDelay; the effective stop condition is elapsed >= floor(limit in ms), so any sub-millisecond part of the limit is dropped and a limit below 1 ms becomes 0.",
+  "trigger": "A Retryer built through public API with StopStrategies.stopAfterDelay(d, MICROSECONDS or NANOSECONDS) where d has a sub-millisecond part (e.g. 500 us, 999_999 ns, 1900 us), and an attempt that is rejected (exception or rejected result) before the configured delay has elapsed.",
+  "consequence": "Retryer.call (and RetryerCallable/Future.get) throws RetryException before the configured delay has elapsed: for a sub-ms limit after the first failed attempt (about 2 us elapsed; the attempt that would have returned a value never runs), in general up to 0.999 ms early, contrary to the Javadoc 'has exceeded the given delay amount'.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/StopStrategies.java:87",
+    "src/main/java/com/github/rholder/retry/StopStrategies.java:124",
+    "src/main/java/com/github/rholder/retry/Retryer.java:173"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "stopAfterDelay(long, TimeUnit) accepts every TimeUnit; no precondition rejects or rounds sub-millisecond values (only maxDelay >= 0 is checked after conversion).",
+    "Retryer.call computes the delay as NANOSECONDS.toMillis(nanoTime - startTime) and throws RetryException as soon as shouldStop returns true; no library mechanism re-attempts or recovers afterwards.",
+    "Reproduced at Level 0 (public API only) against guava-retrying 2.0.0 (177b6c9) compiled unmodified with Guava 22.0 and jsr305 2.0.2 on JDK 21 with --release 8."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/StopStrategies.java",
+      "start": "    @Deprecated",
+      "end": "        return new StopAfterDelayStrategy(timeUnit.toMillis(duration));",
+      "sha256": "c31d0174554358e1a87fb7ab709fe430bcc2b0535cd026c1528598a4f6d9ddad"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/StopStrategies.java",
+      "start": "    private static final class StopAfterDelayStrategy implements StopStrategy {",
+      "end": "            return failedAttempt.getDelaySinceFirstAttempt() >= maxDelay;",
+      "sha256": "37bccd8756c0aafa8d0cfddfb65f2bf920592d893b11b0b192adeba0148cd89d"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "                long sleepTime = waitStrategy.computeSleepTime(attempt);",
+      "sha256": "54435e33c98804b46360152b2f5287ffe2b9fe4989c883792028363bb3c9b6f7"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Attempt.java",
+      "start": "     * The delay since the start of the first attempt, in milliseconds.",
+      "end": "    public long getDelaySinceFirstAttempt();",
+      "sha256": "b913c0d46c4439a0a1b8608a9a206a2801faf09fb87a8441b63179676569ce57"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);",
+      "sha256": "e71a7db6affbea8b8d8fde3c0543bf9a6b5bced402d0742c44d8f61eb9786cb1"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-22.md",
+      "path": "spec/persistent-findings/evidence/CR-D-22/spec/finding-confirmation/CR-D-22.md",
+      "sha256": "ad25283ff9683da0139b418bf47eb35ce5c63b378933c6f3f3ab3d8fc3a3c84d"
+    },
+    {
+      "original": "confirmation/CR-D-22/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-22/confirmation/CR-D-22/investigation.md",
+      "sha256": "89cc9424aaaae06640936b497aa65e76e61c6dda8307fa4b08d9f379861bc0d1"
+    },
+    {
+      "original": "repro/test_bugCR-D-22_subms_stop_after_delay.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-22/repro/test_bugCR-D-22_subms_stop_after_delay.sh",
+      "sha256": "c0b57349e0ed38f7786c8c527ec44b68ee088c1dea2fa6258a9e131c524150ae"
+    },
+    {
+      "original": "repro/CR-D-22.log",
+      "path": "spec/persistent-findings/evidence/CR-D-22/repro/CR-D-22.log",
+      "sha256": "a6cca9ffda1675d8793cfc683ca27a1769ba4f0bd9adaa4a38ad94df15e41a2f"
+    },
+    {
+      "original": "repro/CR-D-22.run2.log",
+      "path": "spec/persistent-findings/evidence/CR-D-22/repro/CR-D-22.run2.log",
+      "sha256": "458357390c0877ccde4ced6932629ccecaea71e406abfc30b726cf9d3a5a5c7e"
+    }
+  ]
+}

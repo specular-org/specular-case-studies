@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "record_id": "guava-retrying-tv-coverage-20261127:guava-retrying-tv-coverage-20261127",
+  "source_id": "guava-retrying-tv-coverage-20261127",
+  "identity": {
+    "system": "guava-retrying",
+    "module": "retryer-attempt-lifecycle",
+    "variant": "trace-validation-coverage-followup",
+    "confidence": "high"
+  },
+  "run": {
+    "id": "guava-retrying-tv-coverage-20261127",
+    "id_status": "stable",
+    "role": "curated-run-output",
+    "status": "report-present",
+    "created": "2026-11-27"
+  },
+  "origin": {
+    "repository": "local-tv-coverage-experiment",
+    "relative": "tv-coverage-20261120/guava-retrying",
+    "source_id": "guava-retrying-tv-coverage-20261127"
+  },
+  "layout": {
+    "payload": "run-root",
+    "metadata": ".record",
+    "file_manifest": ".record/files.tsv"
+  },
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "retained_counts": {
+    "MC": 0,
+    "CR": 0,
+    "total": 0
+  },
+  "ambiguities": [
+    "curated_subset_not_complete_run_archive",
+    "bounded_model_checking_not_a_proof",
+    "runtime_transcripts_and_build_scratch_excluded",
+    "historical_workspace_paths_preserved",
+    "follow_up_on_copies_of_core_run_artifacts",
+    "no_new_bugs"
+  ],
+  "counts": {
+    "copied_files": 2352,
+    "copied_bytes": 22758709,
+    "curated_files": 1,
+    "curated_bytes": 4480,
+    "payload_files": 2353,
+    "payload_bytes": 22763189
+  },
+  "metadata_files": {
+    ".record/files.tsv": {
+      "bytes": 585171,
+      "sha256": "6be958d94ad36aaa81b9d18358d02f83c755fc95488a99a1c9de967954230c1e"
+    },
+    "README.md": {
+      "bytes": 4480,
+      "sha256": "5cb422eb70b6b1a8db5cb2a1a9764906e7b843573dac6a4ee0f6281dc1ff4b9f"
+    }
+  }
+}

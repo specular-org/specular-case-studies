@@ -1,0 +1,4 @@
+incrementingWait(1000 ms, 9223372036854775807 ms): requested sleeps after attempts 1..6 = [1000, 0, 998, 0, 996, 0]
+incrementingWait(0 ms, 9223372036854775807 ms): requested sleeps after attempts 1..6 = [0, 9223372036854775807, 0, 9223372036854775805, 0, 9223372036854775803]
+incrementingWait(1, SECONDS, Long.MAX_VALUE, DAYS) increment toMillis = 9223372036854775807
+exit=0

@@ -1,0 +1,65 @@
+==> jpf-core model fixes (/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/jpf-core)
+    present: 0001-Add-no-op-native-peer-for-Reference.reachabilityFenc.patch
+    present: 0002-Model-weakCompareAndSet-and-setRelease-on-JPFFieldVa.patch
+    present: 0003-Model-JDK-11-Thread.sleep-argument-and-interrupt-che.patch
+    present: 0004-Set-the-interrupt-flag-of-a-sleeping-thread.patch
+    present: 0005-Throw-InterruptedException-from-wait-without-a-wait-.patch
+==> guava-retrying classes from /home/ubuntu/tv-coverage-20261120/guava-retrying/src-clean
+==> recorder and workloads
+==> apply.sh done
+==> running workloads under JPF (18 in parallel)
+   wrap_never: 30 traces
+   sharing: 40 traces
+   wrap_cancel: 40 traces
+   wrap_samepool: 2 traces
+   nolimit_basic: 5 traces
+   default_limiter: 25 traces
+   nolimit_decision: 7 traces
+   interrupt_narrow: 40 traces
+   shutdown_race: 30 traces
+   listeners_add: 24 traces
+   nolimit_interrupt: 16 traces
+   fixed_pool_err: 40 traces
+   bounded_mixed: 50 traces
+   bounded_shared: 40 traces
+   fixed_cached_interrupt: 50 traces
+   fixed_delay: 40 traces
+   fixed_pool: 40 traces
+   fixed_cached: 60 traces
+
+==> traces in /home/ubuntu/tv-coverage-20261120/guava-retrying/work/traces
+workload                 traces prefix events min/med/max  thread switches  threads paths (JPF)
+bounded_mixed                50      0           14/38/54          6/12/20      5-5 122
+bounded_shared               40      0           33/37/51          8/15/30      4-4 51
+default_limiter              25      0           14/29/34          2/10/12      2-3 166
+fixed_cached                 60      0           15/48/57          4/16/24      3-5 1145
+fixed_cached_interrupt       50      0           18/33/39          6/14/20      4-5 153
+fixed_delay                  40      0           15/32/43          3/11/18      3-4 286
+fixed_pool                   40      0           15/48/56          3/16/26      3-3 512
+fixed_pool_err               40      0           15/37/54          4/11/25      3-4 822
+interrupt_narrow             40      0           14/19/25          4/10/14      4-4 107
+listeners_add                24      0            7/16/18            1/3/4      2-2 1500
+nolimit_basic                 5      0            7/21/21            0/0/0      1-1 600
+nolimit_decision              7      0            7/15/23            0/0/0      1-1 600
+nolimit_interrupt            16      0             8/9/23            1/2/2      2-2 1500
+sharing                      40      0           37/52/73         18/28/41      6-6 44
+shutdown_race                30      0            7/16/21           1/6/11      2-3 926
+wrap_cancel                  40      0            2/43/52          0/15/20      1-3 102
+wrap_never                   30      0           2/41/109          0/15/42      1-4 54
+wrap_samepool                 2      0           39/39/39            2/2/3      3-3 200
+TOTAL: 579 traces, 20113 events
+
+event coverage (number of traces containing the event):
+  CallStart=577  CallerBodyStart=52  CallerBodyReturns=30  CallerBodyThrows=35  SubmitRejected=45  SubmitHandoff=231
+  SubmitNewWorker=520  SubmitQueued=144  GetReturn=376  GetInterrupted=195  GetTimeout=282  CancelCASWon=363
+  CancelCASLost=122  CancelReadRunner=363  CancelDoInterrupt=240  CancelFinish=363  ListenersBegin=577  ListenerNotify=573
+  ListenerCME=5  ListenersEnd=572  PredicateAccepts=342  StopStrategyStops=243  WaitStrategyComputes=455  BlockNegative=1
+  BlockInterrupted=11  BlockZero=434  BlockSleepStart=22  SleepReturns=21  SleepInterrupted=1  WorkerPollBlock=315
+  WorkerTake=116  WorkerRunTaskSkip=102  WorkerRunTaskStart=506  WorkerRunnerCAS=506  BodyStart=489  BodySkip=85
+  BodyReturns=319  BodyThrows=281  SetCASWon=417  SetCASLost=145  SetFinish=417  RunFinallySpin=56
+  RunFinallyExit=176  SpinExit=56  WorkerExit=446  OuterWorkerRelease=2  Interrupt=156  CancelOuter=70
+  AddListenerBegin=114  AddListenerEnd=114  ExecutorShutdown=502
+UNKNOWN event names: ['WorkerPollCancel']
+never observed: none
+   trace.ndjson (Trace.tla's default input) = fixed_cached-001.ndjson
+EXIT=0

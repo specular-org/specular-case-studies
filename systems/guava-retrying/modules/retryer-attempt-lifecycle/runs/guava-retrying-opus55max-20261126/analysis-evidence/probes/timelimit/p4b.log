@@ -1,0 +1,12 @@
+java=21.0.13.1 common run0: call() ExecutionException(UncheckedTimeoutException) after 54ms; attempt ran on ForkJoinPool.commonPool-worker-1, interrupted=false, completedNormally=true at +504ms
+java=21.0.13.1 common run1: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool.commonPool-worker-1, interrupted=false, completedNormally=true at +500ms
+java=21.0.13.1 common run2: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool.commonPool-worker-1, interrupted=false, completedNormally=true at +500ms
+java=11.0.33.1 common run0: call() returned 'done' after 504ms; attempt ran on main, interrupted=false, completedNormally=true at +503ms
+java=11.0.33.1 common run1: call() returned 'done' after 500ms; attempt ran on main, interrupted=false, completedNormally=true at +500ms
+java=11.0.33.1 common run2: call() returned 'done' after 500ms; attempt ran on main, interrupted=false, completedNormally=true at +500ms
+java=21.0.13.1 own run0: call() ExecutionException(UncheckedTimeoutException) after 54ms; attempt ran on ForkJoinPool-1-worker-1, interrupted=false, completedNormally=true at +504ms
+java=21.0.13.1 own run1: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool-1-worker-1, interrupted=false, completedNormally=true at +500ms
+java=21.0.13.1 own run2: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool-1-worker-1, interrupted=false, completedNormally=true at +500ms
+java=11.0.33.1 own run0: call() ExecutionException(UncheckedTimeoutException) after 53ms; attempt ran on ForkJoinPool-1-worker-3, interrupted=false, completedNormally=true at +503ms
+java=11.0.33.1 own run1: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool-1-worker-3, interrupted=false, completedNormally=true at +500ms
+java=11.0.33.1 own run2: call() ExecutionException(UncheckedTimeoutException) after 50ms; attempt ran on ForkJoinPool-1-worker-3, interrupted=false, completedNormally=true at +500ms

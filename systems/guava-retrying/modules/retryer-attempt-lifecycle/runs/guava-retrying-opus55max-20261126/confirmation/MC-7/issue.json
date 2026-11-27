@@ -1,0 +1,88 @@
+{
+  "id": "MC-7",
+  "title": "RetryerBuilder.withRetryListener during a running Retryer.call() makes call() throw ConcurrentModificationException after the attempt ran; outcome lost",
+  "status": "REPRODUCED",
+  "source": "model-checking",
+  "cause": "RetryerBuilder.build() passes the builder's own mutable ArrayList of listeners to the Retryer, which stores it without copying and iterates it with a fail-fast iterator in call(), outside the attempt's try/catch. A later builder.withRetryListener() (ArrayList.add: modCount++) is a structural modification of the list a running call() is iterating.",
+  "trigger": "Thread A runs retryer.call(c) or retryer.wrap(c) on an executor, for a retryer built by builder B. While A is in its listener loop (after the attempt executed), thread B calls builder.withRetryListener(L2) through the public API, for example to build a second retryer variant from the same builder. The race window is the listener loop and widens with listener work. A pure black-box stress (no sleeps, no hooks) triggers it in about 34-81% of trials (673/2000 and 876/2000 on JDK 21, 813/1000 on JDK 11); a user listener that blocks on a latch makes it deterministic.",
+  "consequence": "call() ends with an undocumented java.util.ConcurrentModificationException thrown from Retryer.call(Retryer.java:166). Through wrap() on an executor, Future.get() throws ExecutionException(cause=CME). The attempt has already completed: for a returned value or a thrown exception the callable ran and its side effects happened, and for a fixedTimeLimit timeout the timed-out attempt was already charged. Its return value, its exception, or the retry that should follow it (IOException or fixedTimeLimit timeout) is lost. The rejection predicate and stop strategy are never consulted.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:40",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:63",
+    "src/main/java/com/github/rholder/retry/RetryerBuilder.java:196",
+    "src/main/java/com/github/rholder/retry/Retryer.java:137",
+    "src/main/java/com/github/rholder/retry/Retryer.java:166"
+  ],
+  "actions": [
+    "MCCallerBodyReturns",
+    "MCListenersBegin",
+    "MCAddListenerBegin",
+    "MCListenerCME",
+    "MCGetTimeout"
+  ],
+  "invariants": [
+    "DocumentedOutcomesOnly",
+    "NoLostAttemptOutcome"
+  ],
+  "premises": [
+    "A RetryerBuilder is still used (withRetryListener) after build() while a Retryer built from it runs call() on another thread. The builder Javadoc does not forbid reuse after build(), and upstream #48 shows this usage.",
+    "Retryer instances are documented thread-safe (Retryer.java:39-40) and the maintainer endorses sharing them across threads (upstream #35). The user passes only thread-safe listeners and strategies; build() supplies the ArrayList.",
+    "java.util.ArrayList iterators are fail-fast (modCount check in Itr.next) on every JDK; reproduced on OpenJDK 21.0.13.1 and 11.0.33.1 with Guava 22.0.",
+    "Novelty: upstream #48 (open, unfixed) reports only the sequential aliasing consequence (extra listener notified). No upstream issue or PR reports the concurrent CME or lost-outcome consequence."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    private List<RetryListener> listeners = new ArrayList<RetryListener>();",
+      "end": "        listeners.add(listener);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryerBuilder.java",
+      "start": "    public Retryer<V> build() {",
+      "end": "        return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": " * is thread-safe, provided the arguments passed to its constructor are thread-safe.",
+      "end": "    private final Collection<RetryListener> listeners;"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "                   @Nonnull Collection<RetryListener> listeners) {",
+      "end": "        this.listeners = listeners;"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "     * @return the computed result of the given callable",
+      "end": "        return new RetryerCallable<V>(this, callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public static class RetryerCallable<X> implements Callable<X> {",
+      "end": "            return retryer.call(callable);"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/RetryListener.java"
+    },
+    {
+      "root": "work",
+      "path": "spec/MC_hunt_s3_listeners.cfg"
+    }
+  ],
+  "evidence": [
+    "confirmation/MC-7/investigation.md",
+    "repro/test_bugMC-7_builder_listener_cme.sh",
+    "confirmation/MC-7/repro-output.log",
+    "confirmation/MC-7/repro-output-jdk11.log",
+    "confirmation/MC-7/repro-output-repair1.log",
+    "spec/output/hunt_s3_listeners_bfs1.out",
+    "spec/output/hunt_sharing_bfs1.out"
+  ]
+}

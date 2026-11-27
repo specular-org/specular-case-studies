@@ -1,0 +1,128 @@
+== provenance
+source root : /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-7/worktree
+source HEAD : 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f  dirty-files=0
+sha256 RetryerBuilder.java a6de5ad2b07f90c2  Retryer.java 62e792c48a5fc9d5
+cited lines (unmodified source):
+  RetryerBuilder:     private List<RetryListener> listeners = new ArrayList<RetryListener>();
+  RetryerBuilder:         listeners.add(listener);
+  RetryerBuilder:         return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, listeners);
+  Retryer      :         this.listeners = listeners;
+  Retryer      :             for (RetryListener listener : listeners) {
+  Retryer      :                 listener.onRetry(attempt);
+  Retryer      :             }
+openjdk version "11.0.33.1" 2026-11-17
+== build (javac --release 8, Guava 22.0, jsr305 2.0.2)
+negative-control build only (temp copy): 196: return new Retryer<V>(theAttemptTimeLimiter, theStopStrategy, theWaitStrategy, theBlockStrategy, rejectionPredicate, com.google.common.collect.ImmutableList.copyOf(listeners));
+
+== run 1: UNMODIFIED guava-retrying 2.0.0
+mode=buggy java.version=11.0.33.1 cpus=96 library=file:/home/ubuntu/tmp/mc7-repro.03aaGl/lib-orig/
+---- Level 0: pure black box (public API only, no sleeps, no hooks)
+[L0-a] pure black box, 1 caller thread looping retryer.call() + 1 uncoordinated builder.withRetryListener() per trial
+    trials=1000 (626 ms): call() threw ConcurrentModificationException in 813 trials (2 before the first listener ran = exact TLC interleaving, 811 after it ran); other failures=0
+    of the CME trials, attempt executed (callable ran once) with predicate never consulted: 813
+        java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+    => BUG TRIGGERED at Level 0
+[L0-b] pure black box, one Retryer shared by 2 pool threads via wrap(); main adds 1 listener per trial
+    trials=100: trials with a CME-failed Future=96; futures ok=39836, failed with ExecutionException(cause=CME)=164, other=0
+        java.util.concurrent.ExecutionException: java.util.ConcurrentModificationException
+          at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+          at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+          at ReproMC7.level0SharedViaWrap(ReproMC7.java:343)
+          at ReproMC7.main(ReproMC7.java:378)
+        Caused by: java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+---- Level 1: timing help only (a user-supplied listener blocks on a latch during attempt 1)
+[L1-a] retryer.call(c) | attempt 1 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() returns 42 after 1 attempt
+    observed           : threw java.util.ConcurrentModificationException; value delivered to caller = none
+    probes             : callable executions=1, rejection-predicate invocations=0, stop-strategy invocations=0, late listener notified=0
+        java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+    => BUG TRIGGERED: attempt executed, call() ended with ConcurrentModificationException, outcome lost, predicate/stop strategy never consulted
+[L1-b] retryer.call(c) | attempt 1 throws IOException (retryable), attempt 2 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() retries and returns 42 after 2 attempts
+    observed           : threw java.util.ConcurrentModificationException; value delivered to caller = none
+    probes             : callable executions=1, rejection-predicate invocations=0, stop-strategy invocations=0, late listener notified=0
+        java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+    => BUG TRIGGERED: attempt executed, call() ended with ConcurrentModificationException, outcome lost, predicate/stop strategy never consulted
+[L1-c] retryer.call(c) | attempt 1 exceeds fixedTimeLimit(200ms) (retryable), attempt 2 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() retries and returns 42 after 2 attempts
+    observed           : threw java.util.ConcurrentModificationException; value delivered to caller = none
+    probes             : callable executions=1, rejection-predicate invocations=0, stop-strategy invocations=0, late listener notified=0
+        java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+    => BUG TRIGGERED: attempt executed, call() ended with ConcurrentModificationException, outcome lost, predicate/stop strategy never consulted
+[L1-d] executor.submit(retryer.wrap(c)).get() | attempt 1 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() returns 42 after 1 attempt
+    observed           : threw java.util.concurrent.ExecutionException (cause: java.util.ConcurrentModificationException); value delivered to caller = none
+    probes             : callable executions=1, rejection-predicate invocations=0, stop-strategy invocations=0, late listener notified=0
+        java.util.concurrent.ExecutionException: java.util.ConcurrentModificationException
+          at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+          at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+          at ReproMC7.runGated(ReproMC7.java:176)
+          at ReproMC7.level1Case(ReproMC7.java:189)
+        Caused by: java.util.ConcurrentModificationException
+          at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+          at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+          at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+    => BUG TRIGGERED: attempt executed, call() ended with ConcurrentModificationException, outcome lost, predicate/stop strategy never consulted
+---- controls on the same unmodified build (no concurrent builder modification)
+[C-a] control, same as above but NO concurrent withRetryListener | attempt 1 returns 42
+    observed           : returned 42 | callable executions=1, rejection-predicate invocations=1, stop-strategy invocations=0, late listener notified=0  => documented outcome
+[C-b] control, same as above but NO concurrent withRetryListener | attempt 1 throws IOException (retryable), attempt 2 returns 42
+    observed           : returned 42 | callable executions=2, rejection-predicate invocations=2, stop-strategy invocations=1, late listener notified=0  => documented outcome
+[C-c] control, same as above but NO concurrent withRetryListener | attempt 1 exceeds fixedTimeLimit(200ms) (retryable), attempt 2 returns 42
+    observed           : returned 42 | callable executions=2, rejection-predicate invocations=2, stop-strategy invocations=1, late listener notified=0  => documented outcome
+SUMMARY(unmodified 2.0.0): Level0 single-caller CME trials=813/1000, Level0 shared-wrap trials with CME=96, Level1 reproduced=true, controls documented=true
+
+== run 2: negative control (temp copy; build() copies the listener list)
+mode=fixed java.version=11.0.33.1 cpus=96 library=file:/home/ubuntu/tmp/mc7-repro.03aaGl/lib-fixed/
+---- negative control: RetryerBuilder.build() copies the listener list (fix proposed in #48)
+[F-a] retryer.call(c) | attempt 1 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() returns 42 after 1 attempt
+    observed           : returned 42; value delivered to caller = 42
+    probes             : callable executions=1, rejection-predicate invocations=1, stop-strategy invocations=0, late listener notified=0
+    => documented outcome (no CME)
+[F-b] retryer.call(c) | attempt 1 throws IOException (retryable), attempt 2 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() retries and returns 42 after 2 attempts
+    observed           : returned 42; value delivered to caller = 42
+    probes             : callable executions=2, rejection-predicate invocations=2, stop-strategy invocations=1, late listener notified=0
+    => documented outcome (no CME)
+[F-c] retryer.call(c) | attempt 1 exceeds fixedTimeLimit(200ms) (retryable), attempt 2 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() retries and returns 42 after 2 attempts
+    observed           : returned 42; value delivered to caller = 42
+    probes             : callable executions=2, rejection-predicate invocations=2, stop-strategy invocations=1, late listener notified=0
+    => documented outcome (no CME)
+[F-d] executor.submit(retryer.wrap(c)).get() | attempt 1 returns 42
+    concurrent step    : main thread calls builder.withRetryListener(late) while the caller is inside its listener loop
+    documented outcome : call() returns 42 after 1 attempt
+    observed           : returned 42; value delivered to caller = 42
+    probes             : callable executions=1, rejection-predicate invocations=1, stop-strategy invocations=0, late listener notified=0
+    => documented outcome (no CME)
+[L0-a] pure black box, 1 caller thread looping retryer.call() + 1 uncoordinated builder.withRetryListener() per trial
+    trials=1000 (528 ms): call() threw ConcurrentModificationException in 0 trials (0 before the first listener ran = exact TLC interleaving, 0 after it ran); other failures=0
+    of the CME trials, attempt executed (callable ran once) with predicate never consulted: 0
+    => no CME (negative control)
+SUMMARY(negative control): documented outcomes=true, Level0 CME trials=0
+
+exit codes: unmodified=0 (0 = bug reproduced)  negative-control=0 (0 = symptom absent)
+RESULT: BUG REPRODUCED on unmodified guava-retrying 2.0.0; symptom absent when build() copies the listener list

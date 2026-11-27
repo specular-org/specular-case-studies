@@ -1,0 +1,10 @@
+mode=succeeding-callable
+first.call outcome: java.util.ConcurrentModificationException: null
+   at java.base/java.util.ArrayList$Itr.checkForComodification(ArrayList.java:1043)
+   at java.base/java.util.ArrayList$Itr.next(ArrayList.java:997)
+   at com.github.rholder.retry.Retryer.call(Retryer.java:166)
+   at SharedListenerCME$6.run(SharedListenerCME.java:56)
+callable side effects executed: 1
+rejection-predicate result calls: 0, stop-strategy calls: 0
+l1 calls=1 l2 calls=0
+exit=0

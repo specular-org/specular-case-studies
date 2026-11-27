@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/ubuntu/guava-retrying-20261126/Specular/src/specular/stop_gate.py claude",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

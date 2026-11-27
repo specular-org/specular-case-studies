@@ -1,0 +1,4 @@
+run 1: violated DocumentedOutcomesOnly (trace 7 states, distinct 44)
+run 2: violated NoLostAttemptOutcome (trace 7 states, distinct 45)
+run 3: violated ListenersFixedAtBuild (trace 9 states, distinct 126)
+run 4: no error, distinct 152

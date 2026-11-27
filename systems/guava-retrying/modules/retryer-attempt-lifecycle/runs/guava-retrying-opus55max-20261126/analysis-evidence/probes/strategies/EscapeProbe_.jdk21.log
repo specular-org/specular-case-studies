@@ -1,0 +1,6 @@
+(a) join(exceptionWait(e -> Long.MAX_VALUE), randomWait(1s)): ESCAPED java.lang.IllegalArgumentException: timeout value is negative after callable ran 1 time(s); interrupted=false
+(b) exceptionWait(e -> retryAt - now) with retryAt in the past: ESCAPED java.lang.IllegalArgumentException: timeout value is negative after callable ran 1 time(s); interrupted=false
+(c) exceptionWait(e -> null): ESCAPED java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null after callable ran 1 time(s); interrupted=false
+(d) join(fixedWait(Long.MAX_VALUE, MILLISECONDS), fixedWait(1, SECONDS)): ESCAPED java.lang.IllegalArgumentException: timeout value is negative after callable ran 1 time(s); interrupted=false
+(e) as (b) but caller thread already interrupted: ESCAPED java.lang.IllegalArgumentException: timeout value is negative after callable ran 1 time(s); interrupted=true
+exit=0

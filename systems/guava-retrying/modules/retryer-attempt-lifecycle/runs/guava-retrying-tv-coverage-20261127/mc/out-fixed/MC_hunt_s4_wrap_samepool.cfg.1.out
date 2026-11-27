@@ -1,0 +1,31 @@
+TLC2 Version 2026.11.26.020825 (rev: 1138302)
+Running breadth-first search Model-Checking with fp 60 and seed -3212843375574827092 with 3 workers on 96 cores with 7282MB heap and 64MB offheap memory [pid: 2754269] (Linux 6.8.0-1044-azure amd64, Ubuntu 21.0.13.1 64bit, MSBDiskFPSet, DiskStateQueue).
+Parsing file /home/ubuntu/tv-coverage-20261120/guava-retrying/mc/fixed-spec/MC.tla
+Parsing file /home/ubuntu/tv-coverage-20261120/guava-retrying/mc/fixed-spec/base.tla
+Parsing file /tmp/tlc-12279190196492567815/TLC.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/TLC.tla)
+Parsing file /tmp/tlc-12279190196492567815/Integers.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Integers.tla)
+Parsing file /tmp/tlc-12279190196492567815/Sequences.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Sequences.tla)
+Parsing file /tmp/tlc-12279190196492567815/FiniteSets.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/FiniteSets.tla)
+Parsing file /tmp/tlc-12279190196492567815/Naturals.tla (jar:file:/home/ubuntu/tv-coverage-20261120/guava-retrying/tools/tla2tools.jar!/tla2sany/StandardModules/Naturals.tla)
+Semantic processing of module Naturals
+Semantic processing of module Integers
+Semantic processing of module Sequences
+Semantic processing of module FiniteSets
+Semantic processing of module TLC
+Semantic processing of module base
+Semantic processing of module MC
+Linting of module base
+Linting of module MC
+Starting... (2026-11-27 07:59:35)
+Warning: The set Workers has been defined to be a symmetry set but contains less than two elements.
+(Use the -nowarning option to disable this warning.)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-27 07:59:36.
+Model checking completed. No error has been found.
+  Estimates of the probability that TLC did not check all reachable states
+  because two distinct states had the same fingerprint:
+  calculated (optimistic):  val = 6.8E-18
+45 states generated, 42 distinct states found, 0 states left on queue.
+The depth of the complete state graph search is 42.
+The average outdegree of the complete state graph is 1 (minimum is 0, the maximum 1 and the 95th percentile is 1).
+Finished in 01s at (2026-11-27 07:59:36)

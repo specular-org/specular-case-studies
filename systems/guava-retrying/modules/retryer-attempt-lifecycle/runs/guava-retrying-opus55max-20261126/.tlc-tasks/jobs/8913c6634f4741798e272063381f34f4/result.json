@@ -1,0 +1,9 @@
+{
+  "task_id": "8913c6634f4741798e272063381f34f4",
+  "status": "exited",
+  "exit_code": 0,
+  "log_path": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/jobs/8913c6634f4741798e272063381f34f4/tlc.log",
+  "launcher_log_path": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/jobs/8913c6634f4741798e272063381f34f4/launcher.log",
+  "result_path": "/home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/.tlc-tasks/jobs/8913c6634f4741798e272063381f34f4/result.json",
+  "finished_at": 1795680787.0944548
+}

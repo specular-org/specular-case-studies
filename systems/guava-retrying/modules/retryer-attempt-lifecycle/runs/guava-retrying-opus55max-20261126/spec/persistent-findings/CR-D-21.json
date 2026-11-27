@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "id": "CR-D-21",
+  "status": "MASKED",
+  "source": "code-review",
+  "origin_run": "guava-retrying-opus55max-20261126",
+  "source_revision": "177b6c9b9f3e7957f404f0bdb8e23374cb1de43f",
+  "reusable": true,
+  "title": "fibonacciWait overflow wraps to a positive below-cap wait that the guard misses (uncapped: attempt >= 94; x1000: attempt >= 80)",
+  "cause": "FibonacciWaitStrategy computes fib(attemptNumber) and multiplier * fib in unchecked long arithmetic and treats only a negative or above-cap product as overflow (WaitStrategies.java:326-352, guard at :330); a wrap that lands positive and below maximumWait is returned as the sleep.",
+  "trigger": "A Retryer using WaitStrategies.fibonacciWait() (or fibonacciWait(1000, Long.MAX_VALUE, MILLISECONDS)) keeps failing past attempt 93 (79): attempt 94 (80) yields 1293530146158671551 ms (4969984274758133384 ms) right after Long.MAX_VALUE. Reached in practice only with a BlockStrategy that does not block for the designated time, or by evaluating the strategy directly through the public WaitStrategy/Attempt interfaces.",
+  "consequence": "The wait handed to BlockStrategy.block (Retryer.java:176-178) becomes non-monotone and drops below the cap, violating the documented growth 'up to maximumTime'. No real sleep is shortened in any admissible deployment: >= 2^63-1 ms of designated sleep (about 9,300 years of real JDK 21 Thread.sleep) precede the first below-cap value; JDK 21 sleeps the attempt-94/80 values exactly as long as the cap; caps up to 1 day never escape the guard over the whole int attempt domain.",
+  "sites": [
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:FibonacciWaitStrategy.computeSleepTime",
+    "src/main/java/com/github/rholder/retry/WaitStrategies.java:FibonacciWaitStrategy.fib"
+  ],
+  "actions": [],
+  "invariants": [],
+  "premises": [
+    "Retryer's attempt counter is an int (Retryer.java:157); only attempt numbers 1..Integer.MAX_VALUE are considered, the counter wrap beyond that is a different mechanism.",
+    "User BlockStrategy implementations honor BlockStrategy.block's Javadoc (block for the designated time); the default ThreadSleepStrategy calls Thread.sleep(sleepTime).",
+    "On JDK 21 Thread.sleep(ms) sleeps MILLISECONDS.toNanos(ms), which saturates at Long.MAX_VALUE ns (about 292 years); on JDK 8/11 Thread.sleep(long) is native and sleeps the full designated time, so the time barrier is even larger there.",
+    "The guard mask (M2) is proven for caps up to 1 day; a 365-day cap does escape, first at attempt 818,715,960, after about 8.2e8 years of sleep."
+  ],
+  "dependencies": [
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "     * and in Fibonacci increments after each failed attempt up to {@link Long#MAX_VALUE}.",
+      "end": "        return new FibonacciWaitStrategy(multiplier, maximumTimeUnit.toMillis(maximumTime));",
+      "sha256": "3d81ed13e47a72dca0202985c0d2a6a7b969c47b93f98a2f31faa0de749d1dc6"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/WaitStrategies.java",
+      "start": "    private static final class FibonacciWaitStrategy implements WaitStrategy {",
+      "end": "    private static final class CompositeWaitStrategy implements WaitStrategy {",
+      "sha256": "584369d406e73e8cb3fa8c98ecbea3ce0580b9595c32831190911dc15d319b7d"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/Retryer.java",
+      "start": "    public V call(Callable<V> callable) throws ExecutionException, RetryException {",
+      "end": "                    blockStrategy.block(sleepTime);",
+      "sha256": "d1c3a4d44114b73f8c0c4c47aee6d4d16fafa34f41611c07890e25754585a9ac"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategies.java",
+      "start": "    private static class ThreadSleepStrategy implements BlockStrategy {",
+      "end": "            Thread.sleep(sleepTime);",
+      "sha256": "bd394383d4182a7c0d5f259d2326dd44d93082ed4d7447e5c9d43c09ccc6091e"
+    },
+    {
+      "root": "source",
+      "path": "src/main/java/com/github/rholder/retry/BlockStrategy.java",
+      "sha256": "f3bf92a2df3b291822b0508dbb641d872f06e697330e756598c39917b18ec726"
+    },
+    {
+      "root": "source",
+      "path": "src/test/java/com/github/rholder/retry/WaitStrategiesTest.java",
+      "start": "    public void testFibonacci() {",
+      "end": "        assertTrue(fibonacciWait.computeSleepTime(failedAttempt(Integer.MAX_VALUE, 0L)) == 50000L);",
+      "sha256": "9940b2e70f21677ab8d2a77a0ebb1ab2d4747920ee3802e1d326f82cc6d2df8d"
+    }
+  ],
+  "evidence": [
+    {
+      "original": "spec/finding-confirmation/CR-D-21.md",
+      "path": "spec/persistent-findings/evidence/CR-D-21/spec/finding-confirmation/CR-D-21.md",
+      "sha256": "b670dd80c72f33097b84446e2fa1aa16853607a6241902b2f5493e8a4e47bf50"
+    },
+    {
+      "original": "confirmation/CR-D-21/investigation.md",
+      "path": "spec/persistent-findings/evidence/CR-D-21/confirmation/CR-D-21/investigation.md",
+      "sha256": "4b8a76c667507cccef16fcdd411d84cea6edb9b2bb25ab71d338395f036c0873"
+    },
+    {
+      "original": "repro/test_bugCR-D-21_fibonacci_overflow_wrap.sh",
+      "path": "spec/persistent-findings/evidence/CR-D-21/repro/test_bugCR-D-21_fibonacci_overflow_wrap.sh",
+      "sha256": "ed26b502c4347405deba41e4f157fd222ddc2b7694ed37f5e46a109db73bcab4"
+    },
+    {
+      "original": "repro/CR-D-21.log",
+      "path": "spec/persistent-findings/evidence/CR-D-21/repro/CR-D-21.log",
+      "sha256": "82156cad3a95a1a6dffc227de5693c138417f57e2d2f053694e9f2e2e4790e3a"
+    }
+  ]
+}

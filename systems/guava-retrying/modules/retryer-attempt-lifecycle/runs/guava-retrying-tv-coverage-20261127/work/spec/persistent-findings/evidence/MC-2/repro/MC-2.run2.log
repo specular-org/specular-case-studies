@@ -1,0 +1,123 @@
+== MC-2 repro  2026-11-26T09:45:28Z
+source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-2/worktree  (git HEAD: 177b6c9, dirty files: 0)
+guava:  /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (3564ef3803de)
+java21: openjdk version "21.0.13.1" 2026-11-17
+java11: openjdk version "11.0.33.1" 2026-11-17
+Note: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/MC-2/worktree/src/main/java/com/github/rholder/retry/AttemptTimeLimiters.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+== A  d3b (StuckBodiesPerCallAtMostOne)  JDK 21  body=socket  [fixedTimeLimit(500ms), stopAfterAttempt(2), noWait, retryIfRuntimeException]
+  call() threw RetryException after 2 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+  after call(): stuck attempt bodies holding pool threads = 2, live pool-* threads = 2
+  BUG[d3b/socket]: one call() left 2 stuck attempt bodies pinning 2 distinct pool threads (StuckBodiesPerCallAtMostOne requires <= 1)
+  => OBSERVED: A d3b JDK21 socket
+
+== A  d3b (StuckBodiesPerCallAtMostOne)  JDK 21  body=monitor  [fixedTimeLimit(500ms), stopAfterAttempt(2), noWait, retryIfRuntimeException]
+  call() threw RetryException after 2 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=BLOCKED  bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: MC2Driver.body <- MC2Driver.lambda$callable$2 ... MC2Driver.body:53
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=true  state=BLOCKED  bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: MC2Driver.body <- MC2Driver.lambda$callable$2 ... MC2Driver.body:53
+  after call(): stuck attempt bodies holding pool threads = 2, live pool-* threads = 2
+  BUG[d3b/monitor]: one call() left 2 stuck attempt bodies pinning 2 distinct pool threads (StuckBodiesPerCallAtMostOne requires <= 1)
+  => OBSERVED: A d3b JDK21 monitor
+
+== A  d3b (StuckBodiesPerCallAtMostOne)  JDK 11  body=socket  [fixedTimeLimit(500ms), stopAfterAttempt(2), noWait, retryIfRuntimeException]
+  call() threw RetryException after 2 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: java.net.SocketInputStream.socketRead0 <- java.net.SocketInputStream.socketRead ... MC2Driver.body:51
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: java.net.SocketInputStream.socketRead0 <- java.net.SocketInputStream.socketRead ... MC2Driver.body:51
+  after call(): stuck attempt bodies holding pool threads = 2, live pool-* threads = 2
+  BUG[d3b/socket]: one call() left 2 stuck attempt bodies pinning 2 distinct pool threads (StuckBodiesPerCallAtMostOne requires <= 1)
+  => OBSERVED: A d3b JDK11 socket
+
+== A  d3b (StuckBodiesPerCallAtMostOne)  JDK 11  body=monitor  [fixedTimeLimit(500ms), stopAfterAttempt(2), noWait, retryIfRuntimeException]
+  call() threw RetryException after 2 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=BLOCKED  bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: MC2Driver.body <- MC2Driver.lambda$callable$2 ... MC2Driver.body:53
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=true  state=BLOCKED  bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: MC2Driver.body <- MC2Driver.lambda$callable$2 ... MC2Driver.body:53
+  after call(): stuck attempt bodies holding pool threads = 2, live pool-* threads = 2
+  BUG[d3b/monitor]: one call() left 2 stuck attempt bodies pinning 2 distinct pool threads (StuckBodiesPerCallAtMostOne requires <= 1)
+  => OBSERVED: A d3b JDK11 monitor
+
+== B  d3a (StuckBodiesEndWithCall)  JDK 21  body=socket  [attempt 1 hangs, attempt 2 returns 42]
+  call() returned 42
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=false state=TIMED_WAITING bodyFinished=true  earlierAttemptsStillRunningAtStart=1 (returned 42)
+  immediately after call() returned: stuck attempt bodies holding pool threads = 1, live pool-* threads = 2
+  BUG[d3a/socket]: call() returned 42 while 1 stuck body still holds pool thread pool-1-thread-1 (StuckBodiesEndWithCall)
+  => OBSERVED: B d3a JDK21
+
+== B  d3a (StuckBodiesEndWithCall)  JDK 11  body=socket  [attempt 1 hangs, attempt 2 returns 42]
+  call() returned 42
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: java.net.SocketInputStream.socketRead0 <- java.net.SocketInputStream.socketRead ... MC2Driver.body:51
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=false state=TIMED_WAITING bodyFinished=true  earlierAttemptsStillRunningAtStart=1 (returned 42)
+  immediately after call() returned: stuck attempt bodies holding pool threads = 1, live pool-* threads = 2
+  BUG[d3a/socket]: call() returned 42 while 1 stuck body still holds pool thread pool-1-thread-1 (StuckBodiesEndWithCall)
+  => OBSERVED: B d3a JDK11
+
+== C  JVM exit after main() returns normally (watch each child JVM for up to 95s after main() returned)
+
+-- C/stuck-private  (the finding: 2-arg fixedTimeLimit, body ignores interrupts)
+  call() threw RetryException after 3 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 2 on pool-1-thread-2  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 3 on pool-1-thread-3  alive=true  daemon=false interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=2 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+  after call(): stuck attempt bodies holding pool threads = 3, live pool-* threads = 3
+  MAIN_RETURNING (main() returns normally, no System.exit)
+  [+15s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  [+30s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  [+45s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  [+60s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  [+75s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  [+90s after main() returned] stuck bodies=3, live pool-* threads=3, non-daemon threads=[pool-1-thread-1/RUNNABLE, pool-1-thread-3/RUNNABLE, pool-1-thread-2/RUNNABLE]
+  JVM STILL ALIVE 95s after main() returned -> killed by harness
+
+-- C/sleep-private  (control C1: 2-arg fixedTimeLimit, interruptible body (known #92 delay))
+  call() threw RetryException after 3 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-1-thread-1  alive=true  daemon=false interrupted=false state=TIMED_WAITING bodyFinished=true  earlierAttemptsStillRunningAtStart=0 (threw java.lang.InterruptedException: sleep interrupted)
+    attempt 2 on pool-1-thread-1  alive=true  daemon=false interrupted=false state=TIMED_WAITING bodyFinished=true  earlierAttemptsStillRunningAtStart=0 (threw java.lang.InterruptedException: sleep interrupted)
+    attempt 3 on pool-1-thread-2  alive=true  daemon=false interrupted=false state=TIMED_WAITING bodyFinished=true  earlierAttemptsStillRunningAtStart=0 (threw java.lang.InterruptedException: sleep interrupted)
+  after call(): stuck attempt bodies holding pool threads = 0, live pool-* threads = 2
+  MAIN_RETURNING (main() returns normally, no System.exit)
+  [+15s after main() returned] stuck bodies=0, live pool-* threads=2, non-daemon threads=[pool-1-thread-1/TIMED_WAITING, pool-1-thread-2/TIMED_WAITING]
+  [+30s after main() returned] stuck bodies=0, live pool-* threads=2, non-daemon threads=[pool-1-thread-1/TIMED_WAITING, pool-1-thread-2/TIMED_WAITING]
+  [+45s after main() returned] stuck bodies=0, live pool-* threads=2, non-daemon threads=[pool-1-thread-1/TIMED_WAITING, pool-1-thread-2/TIMED_WAITING]
+  JVM EXITED 60s after main() returned
+
+-- C/stuck-daemonpool  (control C2: 3-arg fixedTimeLimit with user daemon pool, body ignores interrupts)
+  call() threw RetryException after 3 attempts, last cause = com.google.common.util.concurrent.UncheckedTimeoutException: java.util.concurrent.TimeoutException
+    attempt 1 on pool-user-daemon alive=true  daemon=true  interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=0 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 2 on pool-user-daemon alive=true  daemon=true  interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=1 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+    attempt 3 on pool-user-daemon alive=true  daemon=true  interrupted=true  state=RUNNABLE bodyFinished=false earlierAttemptsStillRunningAtStart=2 stack: sun.nio.ch.SocketDispatcher.read0 <- sun.nio.ch.SocketDispatcher.read ... MC2Driver.body:51
+  after call(): stuck attempt bodies holding pool threads = 3, live pool-* threads = 3
+  MAIN_RETURNING (main() returns normally, no System.exit)
+  JVM EXITED 1s after main() returned
+  => OBSERVED: C JVM with stuck bodies never exits (>= 95s after main returned)
+  control C1 exited: yes
+  control C2 exited: yes
+
+== D  growth under default neverStop  [fixedTimeLimit(50ms), noWait, retryIfRuntimeException]  JDK 21
+  t= 1.0s attempts=  20 stuck bodies=  20 live pool-* threads=  20 JVM threads=  29
+  t= 2.0s attempts=  41 stuck bodies=  41 live pool-* threads=  41 JVM threads=  49
+  t= 3.0s attempts=  60 stuck bodies=  60 live pool-* threads=  60 JVM threads=  68
+  t= 4.0s attempts=  80 stuck bodies=  80 live pool-* threads=  80 JVM threads=  88
+  t= 5.0s attempts= 100 stuck bodies= 100 live pool-* threads= 100 JVM threads= 108
+  caller: still retrying (neverStop)
+  => OBSERVED: D stuck bodies grow with attempts (100 pinned threads after 5 s)
+
+== E  same workload in a cgroup with pids.max=200 (container-style task limit)  JDK 21
+  t= 1.0s attempts=  20 stuck bodies=  20 live pool-* threads=  20 JVM threads=  29
+  t= 2.0s attempts=  41 stuck bodies=  41 live pool-* threads=  41 JVM threads=  49
+  t= 3.0s attempts=  60 stuck bodies=  60 live pool-* threads=  60 JVM threads=  68
+  t= 4.0s attempts=  80 stuck bodies=  80 live pool-* threads=  80 JVM threads=  88
+  t= 5.0s attempts= 100 stuck bodies= 100 live pool-* threads= 100 JVM threads= 108
+  t= 6.0s attempts= 120 stuck bodies= 120 live pool-* threads= 120 JVM threads= 128
+  t= 7.0s attempts= 140 stuck bodies= 140 live pool-* threads= 140 JVM threads= 148
+  t= 8.0s attempts= 159 stuck bodies= 159 live pool-* threads= 159 JVM threads= 167
+  t= 9.0s attempts= 179 stuck bodies= 179 live pool-* threads= 179 JVM threads= 187
+[9.501s][warning][os,thread] Failed to start thread "Unknown thread" - pthread_create failed (EAGAIN) for attributes: stacksize: 1024k, guardsize: 4k, detached.
+[9.501s][warning][os,thread] Failed to start the native thread for java.lang.Thread "pool-1-thread-187"
+  t= 9.5s attempts= 186 stuck bodies= 186 live pool-* threads= 186 JVM threads= 193  <- caller finished
+  caller: call() threw ExecutionException, cause = java.lang.OutOfMemoryError: unable to create native thread: possibly out of memory or process/resource limits reached
+  => OBSERVED: E call() fails with OutOfMemoryError: unable to create native thread
+
+MC-2 RESULT: BUG REPRODUCED (all checks observed)

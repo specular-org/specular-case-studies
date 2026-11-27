@@ -1,0 +1,128 @@
+== CR-D-13 reproduction (Level 0, public API only)
+source:  /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-13/worktree (177b6c9; dirty files: 0)
+guava:   /home/ubuntu/.m2/repository/com/google/guava/guava/22.0/guava-22.0.jar (sha256 1158e94c7de4da48...)
+lang3:   /home/ubuntu/.m2/repository/org/apache/commons/commons-lang3/3.8.1/commons-lang3-3.8.1.jar
+
+=================== run: guava-22.0 on openjdk version "21.0.13.1" 2026-11-17
+$ timeout 120 /usr/lib/jvm/java-21-openjdk-amd64/bin/java -cp <lib>:<guava>:<jsr305>:<lang3>:<driver> CRD13Repro
+java.version=21.0.13.1  guava=guava-22.0.jar  retrying=/home/ubuntu/tmp/crd13.qpHZBa/lib-guava-22.0/
+
+[A1] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=3 elapsed=2ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=2ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[A2] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T2 Class.newInstance()
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[A3] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T3 generic sneaky throw
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[B1] retryIfException(t -> t instanceof TransientFailure), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[C1] retryIfException(), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure, #2 java.util.concurrent.ExecutionException <- TransientFailure, #3 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=1 thrown=java.util.concurrent.ExecutionException <- TransientFailure  vs  invocations=3 thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure, #2 java.util.concurrent.ExecutionException <- TransientFailure, #3 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=1 thrown=java.util.concurrent.ExecutionException <- TransientFailure  vs  invocations=3 thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[D1] retryIfExceptionOfType(TransientIOException.class), stopAfterAttempt(3), control: throw TransientIOException
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   => CONTROL OK: identical to noTimeLimit()
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   => CONTROL OK: identical to noTimeLimit()
+
+[E1] retryIfExceptionOfType(TransientError.class), stopAfterAttempt(3), control: throw TransientError
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   => CONTROL OK: identical to noTimeLimit()
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   => CONTROL OK: identical to noTimeLimit()
+
+[ROOT-CAUSE] fixedTimeLimit outcome: outer=java.util.concurrent.ExecutionException (created by Retryer.ExceptionAttempt), inner=java.util.concurrent.ExecutionException, inner.getCause()=TransientFailure, inner.getCause() is Exception? false, is Error? false
+   inner ExecutionException creation frames:
+     at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+     at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+     at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+     at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+     at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+
+SUMMARY java.version=21.0.13.1: divergences=8 controlFailures=0 baselineFailures=0
+RESULT: BUG REPRODUCED - with fixedTimeLimit the callable's non-Exception/non-Error Throwable reaches the predicates as java.util.concurrent.ExecutionException; retryIfExceptionOfType/retryIfException(Predicate) stop retrying (1 invocation, ExecutionException(ExecutionException(t))) and retryIfException() starts retrying.
+(exit 0)
+
+=================== run: guava-22.0 on openjdk version "11.0.33.1" 2026-11-17
+$ timeout 120 /usr/lib/jvm/java-11-openjdk-amd64/bin/java -cp <lib>:<guava>:<jsr305>:<lang3>:<driver> CRD13Repro
+java.version=11.0.33.1  guava=guava-22.0.jar  retrying=/home/ubuntu/tmp/crd13.qpHZBa/lib-guava-22.0/
+
+[A1] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=3 elapsed=2ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=1ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[A2] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T2 Class.newInstance()
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[A3] retryIfExceptionOfType(TransientFailure.class), stopAfterAttempt(3), T3 generic sneaky throw
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[B1] retryIfException(t -> t instanceof TransientFailure), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure, #2 TransientFailure, #3 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=3 thrown=com.github.rholder.retry.RetryException <- TransientFailure  vs  invocations=1 thrown=java.util.concurrent.ExecutionException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[C1] retryIfException(), stopAfterAttempt(3), T1 commons-lang3 ExceptionUtils.rethrow
+   noTimeLimit()                  -> invocations=1 elapsed=0ms thrown=java.util.concurrent.ExecutionException <- TransientFailure | thrown.getCause() instanceof TransientFailure=true | listener saw getExceptionCause(): [#1 TransientFailure]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure, #2 java.util.concurrent.ExecutionException <- TransientFailure, #3 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=1 thrown=java.util.concurrent.ExecutionException <- TransientFailure  vs  invocations=3 thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 java.util.concurrent.ExecutionException <- TransientFailure, #2 java.util.concurrent.ExecutionException <- TransientFailure, #3 java.util.concurrent.ExecutionException <- TransientFailure]
+   => DIVERGES from noTimeLimit(): invocations=1 thrown=java.util.concurrent.ExecutionException <- TransientFailure  vs  invocations=3 thrown=com.github.rholder.retry.RetryException <- java.util.concurrent.ExecutionException <- TransientFailure
+
+[D1] retryIfExceptionOfType(TransientIOException.class), stopAfterAttempt(3), control: throw TransientIOException
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   => CONTROL OK: identical to noTimeLimit()
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientIOException (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientIOException, #2 TransientIOException, #3 TransientIOException]
+   => CONTROL OK: identical to noTimeLimit()
+
+[E1] retryIfExceptionOfType(TransientError.class), stopAfterAttempt(3), control: throw TransientError
+   noTimeLimit()                  -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   fixedTimeLimit(5,SECONDS,pool) -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   => CONTROL OK: identical to noTimeLimit()
+   fixedTimeLimit(5,SECONDS)      -> invocations=3 elapsed=0ms thrown=com.github.rholder.retry.RetryException <- TransientError (getNumberOfFailedAttempts=3) | thrown.getCause() instanceof TransientFailure=false | listener saw getExceptionCause(): [#1 TransientError, #2 TransientError, #3 TransientError]
+   => CONTROL OK: identical to noTimeLimit()
+
+[ROOT-CAUSE] fixedTimeLimit outcome: outer=java.util.concurrent.ExecutionException (created by Retryer.ExceptionAttempt), inner=java.util.concurrent.ExecutionException, inner.getCause()=TransientFailure, inner.getCause() is Exception? false, is Error? false
+   inner ExecutionException creation frames:
+     at java.base/java.util.concurrent.FutureTask.report(FutureTask.java:122)
+     at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:205)
+     at com.google.common.util.concurrent.SimpleTimeLimiter.callWithTimeout(SimpleTimeLimiter.java:154)
+     at com.github.rholder.retry.AttemptTimeLimiters$FixedAttemptTimeLimit.call(AttemptTimeLimiters.java:107)
+     at com.github.rholder.retry.Retryer.call(Retryer.java:160)
+
+SUMMARY java.version=11.0.33.1: divergences=8 controlFailures=0 baselineFailures=0
+RESULT: BUG REPRODUCED - with fixedTimeLimit the callable's non-Exception/non-Error Throwable reaches the predicates as java.util.concurrent.ExecutionException; retryIfExceptionOfType/retryIfException(Predicate) stop retrying (1 invocation, ExecutionException(ExecutionException(t))) and retryIfException() starts retrying.
+(exit 0)
+
+FINAL: BUG REPRODUCED on every primary run (Guava 22.0; JDKs: /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-11-openjdk-amd64)

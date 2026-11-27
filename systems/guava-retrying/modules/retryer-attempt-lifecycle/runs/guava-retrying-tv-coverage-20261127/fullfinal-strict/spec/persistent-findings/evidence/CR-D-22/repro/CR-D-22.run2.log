@@ -1,0 +1,61 @@
+== CR-D-22 repro  2026-11-26T10:49:28Z
+== source: /home/ubuntu/guava-retrying-20261126/Specular/runs/guava-retrying-opus55max-20261126/guava-retrying/.specular-output/confirmation/CR-D-22/worktree
+== source HEAD: 177b6c9b9f3e7957f404f0bdb8e23374cb1de43f
+== source local modifications (git status --porcelain, empty = unmodified):
+== cited lines:
+       public static StopStrategy stopAfterDelay(long duration, @Nonnull TimeUnit timeUnit) {
+           Preconditions.checkNotNull(timeUnit, "The time unit may not be null");
+           return new StopAfterDelayStrategy(timeUnit.toMillis(duration));
+       }
+           @Override
+           public boolean shouldStop(Attempt failedAttempt) {
+               return failedAttempt.getDelaySinceFirstAttempt() >= maxDelay;
+           }
+== openjdk version "21.0.13.1" 2026-11-17; guava=guava-22.0.jar; jsr305=jsr305-2.0.2.jar
+== library compiled: 36 classes
+== upstream StopStrategiesTest (only MILLISECONDS / SECONDS limits are tested):
+   OK (4 tests)
+== running: java -cp <repro>:<unmodified lib>:guava-22.0:jsr305-2.0.2 ReproCRD22
+
+JDK TimeUnit.toMillis (used by StopStrategies.java:87): MICROSECONDS.toMillis(500)=0  NANOSECONDS.toMillis(999_999)=0  NANOSECONDS.toMillis(1_000_000)=1  MICROSECONDS.toMillis(1900)=1
+
+[A] transient failure: attempt 1 fails immediately, attempt 2 would return "ok" (default noWait)
+  built-in stopAfterDelay(500, MICROSECONDS)                 trials=1000  returned "ok"=0  RetryException after 1 attempt=1000  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (500.0 us): 1000/1000;  call() duration us min/p50/max=2.0/2.1/118.1;  lastFailedAttempt.getDelaySinceFirstAttempt()=0 ms
+  built-in stopAfterDelay(999_999, NANOSECONDS)              trials=1000  returned "ok"=0  RetryException after 1 attempt=1000  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1000.0 us): 1000/1000;  call() duration us min/p50/max=1.5/1.6/136.8;  lastFailedAttempt.getDelaySinceFirstAttempt()=0 ms
+  CONTROL built-in stopAfterDelay(1_000_000, NANOSECONDS)    trials=1000  returned "ok"=1000  RetryException after 1 attempt=0  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1000.0 us): 0/1000;  call() duration us min/p50/max=2.9/3.0/18.5;  lastFailedAttempt.getDelaySinceFirstAttempt()=n/a
+  CONTROL oracle (ceil) for 500 MICROSECONDS                 trials=1000  returned "ok"=1000  RetryException after 1 attempt=0  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (500.0 us): 0/1000;  call() duration us min/p50/max=3.8/4.0/191.1;  lastFailedAttempt.getDelaySinceFirstAttempt()=n/a
+
+[B] general shortening: attempt 1 works ~1200 us then fails, attempt 2 would return "ok"
+  built-in stopAfterDelay(1900, MICROSECONDS)                trials=300  returned "ok"=0  RetryException after 1 attempt=300  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1900.0 us): 300/300;  call() duration us min/p50/max=1202.5/1204.1/1337.8;  lastFailedAttempt.getDelaySinceFirstAttempt()=1 ms
+  CONTROL oracle (ceil) for 1900 MICROSECONDS                trials=300  returned "ok"=300  RetryException after 1 attempt=0  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1900.0 us): 0/300;  call() duration us min/p50/max=1204.4/1205.8/1261.0;  lastFailedAttempt.getDelaySinceFirstAttempt()=n/a
+
+[C] every attempt fails immediately: how long is retrying actually kept up?
+  built-in stopAfterDelay(500, MICROSECONDS)                 trials=200  gave up after 1 attempt=200 (with WHOLE call() < limit: 200)  after >1 attempts=0;  attempts min/p50/max=1/1/1;  call() duration us min/p50/max=1.6/1.8/39.7
+  CONTROL oracle (ceil) for 500 MICROSECONDS                 trials=200  gave up after 1 attempt=0 (with WHOLE call() < limit: 0)  after >1 attempts=200;  attempts min/p50/max=200/335/370;  call() duration us min/p50/max=1001.5/1003.4/10452.2
+
+[D] result-rejection path: retryIfResult(isNull()); attempt 1 returns null, attempt 2 would return "ok"
+  built-in stopAfterDelay(500, MICROSECONDS)                 trials=1000  returned "ok"=0  RetryException after 1 attempt=1000  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (500.0 us): 1000/1000;  call() duration us min/p50/max=1.9/2.4/111.9;  lastFailedAttempt.getDelaySinceFirstAttempt()=0 ms
+  CONTROL built-in stopAfterDelay(1_000_000, NANOSECONDS)    trials=1000  returned "ok"=1000  RetryException after 1 attempt=0  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1000.0 us): 0/1000;  call() duration us min/p50/max=3.3/3.8/43.2;  lastFailedAttempt.getDelaySinceFirstAttempt()=n/a
+
+[E] Retryer.wrap(callable) submitted to an ExecutorService (RetryerCallable path), scenario A workload
+  built-in stopAfterDelay(500, MICROSECONDS) via wrap()      trials=500  returned "ok"=0  RetryException after 1 attempt=500  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (500.0 us): 498/500;  call() duration us min/p50/max=21.7/33.3/1748.7;  lastFailedAttempt.getDelaySinceFirstAttempt()=0 ms
+  CONTROL built-in stopAfterDelay(1_000_000, NANOSECONDS) via wrap() trials=500  returned "ok"=500  RetryException after 1 attempt=0  other RetryException=0  other=0
+                                                               gave up after 1 attempt with WHOLE call() < limit (1000.0 us): 0/500;  call() duration us min/p50/max=18.2/33.2/84.4;  lastFailedAttempt.getDelaySinceFirstAttempt()=n/a
+
+RESULT A (sub-ms limit -> 0 ms): BUG TRIGGERED -- stopAfterDelay(500, MICROSECONDS): 1000/1000 calls threw RetryException after the 1st failed attempt although the whole call() took < 500 us; stopAfterDelay(999_999, NANOSECONDS): 1000/1000; 1 ns more (1_000_000 NANOSECONDS) returns "ok" in 1000/1000.
+RESULT B (limit shortened by up to 0.999 ms): BUG TRIGGERED -- stopAfterDelay(1900, MICROSECONDS) gave up after 1 attempt with the whole call() < 1900 us in 300/300 calls (oracle returns "ok" in 300/300).
+RESULT C (always failing): BUG TRIGGERED -- stopAfterDelay(500, MICROSECONDS) stopped after 1 attempt, before 500 us elapsed, in 200/200 calls; oracle kept retrying until >= 1 ms in 200/200.
+RESULT D (rejected-result path): BUG TRIGGERED -- 1000/1000 calls gave up after 1 attempt before 500 us; control returns "ok" in 1000/1000.
+RESULT E (wrap()/executor path): BUG TRIGGERED -- Future.get() threw ExecutionException(RetryException after 1 attempt) before 500 us in 498/500 submissions; control returns "ok" in 500/500.
+CONTROLS OK
+
+== exit code: 0 (0 = bug reproduced, 1 = not reproduced, 124 = timeout)

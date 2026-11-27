@@ -1,0 +1,49 @@
+== H4.1 CompositeWaitStrategy (join) overflow / negative
+fixedWait(Long.MAX_VALUE, DAYS) toMillis = 9223372036854775807
+join(fixedWait(Long.MAX_VALUE, ms), fixedWait(1, ms)) n=1 -> -9223372036854775808
+join(fixedWait(106751991167301L, DAYS)=sat, randomWait(1s)) n=1 -> -9223372036854775349
+join(exponentialWait(), fixedWait(1ms)) n=61 -> 2305843009213693953   (exponentialWait() alone = 2305843009213693952)
+join(exponentialWait(), fixedWait(1ms)) n=62 -> 4611686018427387905   (exponentialWait() alone = 4611686018427387904)
+join(exponentialWait(), fixedWait(1ms)) n=63 -> -9223372036854775808   (exponentialWait() alone = 9223372036854775807)
+join(exponentialWait(), fixedWait(1ms)) n=64 -> -9223372036854775808   (exponentialWait() alone = 9223372036854775807)
+join(fibonacciWait(), fibonacciWait()) n=90 -> 5760134388741632240   (fibonacciWait() alone = 2880067194370816120)
+join(fibonacciWait(), fibonacciWait()) n=91 -> -9126650852958490998   (fibonacciWait() alone = 4660046610375530309)
+join(fibonacciWait(), fibonacciWait()) n=92 -> -3366516464216858758   (fibonacciWait() alone = 7540113804746346429)
+join(fibonacciWait(), fibonacciWait()) n=93 -> -2   (fibonacciWait() alone = 9223372036854775807)
+join(exceptionWait(->Long.MAX_VALUE), fixedWait(500ms)) n=1 -> -9223372036854775309
+== H4.2 ExceptionWaitStrategy pass-through
+exceptionWait(-> -250) -> -250
+exceptionWait(-> null) -> THROWS java.lang.NullPointerException: Cannot invoke "java.lang.Long.longValue()" because the return value of "com.google.common.base.Function.apply(Object)" is null
+join(exceptionWait(-> -250), fixedWait(100ms)) -> -150
+== H4.4 IncrementingWaitStrategy
+incrementingWait(0, MAX) n=1 -> 0
+incrementingWait(0, MAX) n=2 -> 9223372036854775807
+incrementingWait(0, MAX) n=3 -> 0
+incrementingWait(0, MAX) n=4 -> 9223372036854775805
+incrementingWait(0, MAX) n=5 -> 0
+incrementingWait(0, MAX) n=6 -> 9223372036854775803
+smallest increment (initial=0) overflowing before int wrap (n=2^31-1): 4294967301 ms = 49.7102696875 days
+incrementingWait(0, 50 DAYS): first overflowing n = 2135039825 -> 0 (n-1 -> 9223372035360000000)
+incrementingWait(1000, -300) n=1..5 -> 1000,700,400,100,0  (negative increment accepted, clamped)
+== H4.6 ExponentialWaitStrategy
+exponentialWait() n=1..5000 monotone=true nonneg=true n=1->2 n=62->4611686018427387904 n=63->9223372036854775807 n=1024->9223372036854775807 n=Integer.MAX_VALUE->9223372036854775807
+exponentialWait(100, 5 MIN) (README) n=1..1e8: monotone=true <=cap=true cap reached at n=12 ; n=1 -> 200 (2*multiplier, not multiplier)
+== H4.7 waits after int wrap of attempt counter (Attempt numbers -2147483648, -1, 0)
+exponentialWait(100,5min): n=2147483647 -> 300000 ; n=-2147483648 -> 0 ; n=-1 -> 50 ; n=0 -> 100
+fibonacciWait(100,2min): n=2147483647 -> 120000 ; n=-2147483648 -> 0 ; n=-1 -> 0 ; n=0 -> 0
+incrementingWait(500,100): n=2147483647 -> 214748365100 ; n=-2147483648 -> 0 ; n=-1 -> 300 ; n=0 -> 400
+stopAfterAttempt(5).shouldStop(n=-2147483648) = false ; stopAfterAttempt(Integer.MAX_VALUE).shouldStop(2147483647) = true
+== H4.8 sub-millisecond truncation
+stopAfterDelay(500 us).shouldStop(delay=0ms) = true
+stopAfterDelay(1999 us) -> maxDelay=1 ms ; shouldStop(delay=1ms) = true
+fixedWait(999 us) -> 0
+randomWait(500 us) -> java.lang.IllegalArgumentException: maximum must be > minimum but maximum is %d and minimum is [0, 0]
+exponentialWait(500 us) -> java.lang.IllegalArgumentException: multiplier must be < maximumWait but is %d [1]
+exponentialWait(1 ms) -> java.lang.IllegalArgumentException: multiplier must be < maximumWait but is %d [1]
+== H4.10 stop boundaries
+stopAfterDelay(1000ms).shouldStop(delay=1000) = true (doc: 'has exceeded')
+stopAfterAttempt(3): n=2 -> false n=3 -> true
+== docs: fixedWait(-1) exception type
+fixedWait(-1s) -> java.lang.IllegalArgumentException (Javadoc says IllegalStateException)
+randomWait(0) -> java.lang.IllegalArgumentException: maximum must be > minimum but maximum is %d and minimum is [0, 0]
+exit=0

@@ -1,0 +1,380 @@
+PASS      bounded_shared-001.ndjson
+PASS      bounded_shared-002.ndjson
+PASS      bounded_shared-003.ndjson
+PASS      bounded_shared-004.ndjson
+PASS      bounded_shared-005.ndjson
+PASS      bounded_shared-006.ndjson
+PASS      bounded_shared-007.ndjson
+PASS      bounded_shared-008.ndjson
+PASS      bounded_shared-009.ndjson
+PASS      bounded_shared-010.ndjson
+PASS      bounded_shared-011.ndjson
+PASS      bounded_shared-012.ndjson
+PASS      bounded_shared-013.ndjson
+PASS      bounded_shared-014.ndjson
+PASS      bounded_shared-015.ndjson
+PASS      bounded_shared-016.ndjson
+PASS      bounded_shared-017.ndjson
+PASS      bounded_shared-018.ndjson
+PASS      bounded_shared-019.ndjson
+PASS      bounded_shared-020.ndjson
+PASS      bounded_shared-021.ndjson
+MISMATCH  bounded_shared-022.ndjson  stuck before event 22 of 51 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 40, "end": 40, "intr": false, "task": "t2", "ts": "749320412385376"}
+PASS      bounded_shared-023.ndjson
+PASS      bounded_shared-024.ndjson
+PASS      bounded_shared-025.ndjson
+PASS      bounded_shared-026.ndjson
+PASS      bounded_shared-027.ndjson
+PASS      bounded_shared-028.ndjson
+PASS      bounded_shared-029.ndjson
+PASS      bounded_shared-030.ndjson
+PASS      bounded_shared-031.ndjson
+PASS      bounded_shared-032.ndjson
+PASS      bounded_shared-033.ndjson
+PASS      bounded_shared-034.ndjson
+PASS      bounded_shared-035.ndjson
+PASS      bounded_shared-036.ndjson
+PASS      bounded_shared-037.ndjson
+PASS      bounded_shared-038.ndjson
+PASS      bounded_shared-039.ndjson
+PASS      bounded_shared-040.ndjson
+PASS      default_limiter-001.ndjson
+PASS      default_limiter-002.ndjson
+PASS      default_limiter-003.ndjson
+PASS      default_limiter-004.ndjson
+PASS      default_limiter-005.ndjson
+PASS      default_limiter-006.ndjson
+PASS      default_limiter-007.ndjson
+PASS      default_limiter-008.ndjson
+MISMATCH  default_limiter-009.ndjson  stuck before event 17 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749325812084856"}
+PASS      default_limiter-010.ndjson
+MISMATCH  default_limiter-011.ndjson  stuck before event 17 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749326104944200"}
+PASS      default_limiter-012.ndjson
+MISMATCH  default_limiter-013.ndjson  stuck before event 27 of 31 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 43, "end": 43, "intr": false, "ts": "749327096152080"}
+PASS      default_limiter-014.ndjson
+PASS      default_limiter-015.ndjson
+PASS      default_limiter-016.ndjson
+PASS      default_limiter-017.ndjson
+PASS      default_limiter-018.ndjson
+PASS      default_limiter-019.ndjson
+PASS      default_limiter-020.ndjson
+MISMATCH  default_limiter-021.ndjson  stuck before event 16 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 25, "end": 25, "intr": false, "ts": "749328688870121"}
+MISMATCH  default_limiter-022.ndjson  stuck before event 29 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 43, "end": 43, "intr": false, "ts": "749328708889205"}
+PASS      default_limiter-023.ndjson
+PASS      default_limiter-024.ndjson
+PASS      default_limiter-025.ndjson
+PASS      fixed_cached-001.ndjson
+PASS      fixed_cached-002.ndjson
+PASS      fixed_cached-003.ndjson
+PASS      fixed_cached-004.ndjson
+PASS      fixed_cached-005.ndjson
+PASS      fixed_cached-006.ndjson
+PASS      fixed_cached-007.ndjson
+PASS      fixed_cached-008.ndjson
+PASS      fixed_cached-009.ndjson
+MISMATCH  fixed_cached-010.ndjson  stuck before event 29 of 30 [GAP-2 (poll node pushed after shutdown)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w2", "start": 48, "end": 48, "intr": true, "ts": "749307382173143"}
+PASS      fixed_cached-011.ndjson
+PASS      fixed_cached-012.ndjson
+PASS      fixed_cached-013.ndjson
+PASS      fixed_cached-014.ndjson
+PASS      fixed_cached-015.ndjson
+PASS      fixed_cached-016.ndjson
+PASS      fixed_cached-017.ndjson
+PASS      fixed_cached-018.ndjson
+PASS      fixed_cached-019.ndjson
+PASS      fixed_cached-020.ndjson
+PASS      fixed_cached-021.ndjson
+PASS      fixed_cached-022.ndjson
+MISMATCH  fixed_cached-023.ndjson  stuck before event 16 of 53 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 25, "end": 25, "intr": false, "ts": "749313079377028"}
+PASS      fixed_cached-024.ndjson
+PASS      fixed_cached-025.ndjson
+PASS      fixed_cached-026.ndjson
+PASS      fixed_cached-027.ndjson
+PASS      fixed_cached-028.ndjson
+PASS      fixed_cached-029.ndjson
+PASS      fixed_cached-030.ndjson
+PASS      fixed_cached-031.ndjson
+PASS      fixed_cached-032.ndjson
+PASS      fixed_cached-033.ndjson
+PASS      fixed_cached-034.ndjson
+PASS      fixed_cached-035.ndjson
+MISMATCH  fixed_cached-036.ndjson  stuck before event 17 of 53 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749333635898499"}
+PASS      fixed_cached-037.ndjson
+PASS      fixed_cached-038.ndjson
+MISMATCH  fixed_cached-039.ndjson  stuck before event 17 of 35 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749342490389429"}
+MISMATCH  fixed_cached-040.ndjson  stuck before event 13 of 51 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 22, "end": 22, "intr": false, "ts": "749342593170059"}
+PASS      fixed_cached-041.ndjson
+PASS      fixed_cached-042.ndjson
+PASS      fixed_cached-043.ndjson
+PASS      fixed_cached-044.ndjson
+MISMATCH  fixed_cached-045.ndjson  stuck before event 47 of 51 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 72, "end": 72, "intr": false, "ts": "749349105979494"}
+PASS      fixed_cached-046.ndjson
+MISMATCH  fixed_cached-047.ndjson  stuck before event 34 of 49 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w2", "start": 52, "end": 52, "intr": false, "ts": "749362431683837"}
+PASS      fixed_cached-048.ndjson
+PASS      fixed_cached-049.ndjson
+PASS      fixed_cached-050.ndjson
+PASS      fixed_cached-051.ndjson
+PASS      fixed_cached-052.ndjson
+PASS      fixed_cached-053.ndjson
+MISMATCH  fixed_cached-054.ndjson  stuck before event 17 of 49 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749404127343197"}
+PASS      fixed_cached-055.ndjson
+PASS      fixed_cached-056.ndjson
+PASS      fixed_cached-057.ndjson
+MISMATCH  fixed_cached-058.ndjson  stuck before event 30 of 49 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 46, "end": 46, "intr": false, "ts": "749423882320487"}
+PASS      fixed_cached-059.ndjson
+MISMATCH  fixed_cached-060.ndjson  stuck before event 15 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 24, "end": 24, "intr": false, "ts": "749437240857098"}
+PASS      fixed_cached_interrupt-001.ndjson
+PASS      fixed_cached_interrupt-002.ndjson
+MISMATCH  fixed_cached_interrupt-003.ndjson  stuck before event 18 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 20, "end": 20, "intr": false, "ts": "749303325170311"}
+PASS      fixed_cached_interrupt-004.ndjson
+PASS      fixed_cached_interrupt-005.ndjson
+PASS      fixed_cached_interrupt-006.ndjson
+PASS      fixed_cached_interrupt-007.ndjson
+PASS      fixed_cached_interrupt-008.ndjson
+PASS      fixed_cached_interrupt-009.ndjson
+PASS      fixed_cached_interrupt-010.ndjson
+PASS      fixed_cached_interrupt-011.ndjson
+PASS      fixed_cached_interrupt-012.ndjson
+PASS      fixed_cached_interrupt-013.ndjson
+PASS      fixed_cached_interrupt-014.ndjson
+PASS      fixed_cached_interrupt-015.ndjson
+PASS      fixed_cached_interrupt-016.ndjson
+PASS      fixed_cached_interrupt-017.ndjson
+MISMATCH  fixed_cached_interrupt-018.ndjson  stuck before event 17 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749307408506390"}
+MISMATCH  fixed_cached_interrupt-019.ndjson  stuck before event 17 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749307424159872"}
+MISMATCH  fixed_cached_interrupt-020.ndjson  stuck before event 17 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749307450848538"}
+PASS      fixed_cached_interrupt-021.ndjson
+MISMATCH  fixed_cached_interrupt-022.ndjson  stuck before event 14 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 16, "end": 16, "intr": false, "ts": "749307895900944"}
+PASS      fixed_cached_interrupt-023.ndjson
+PASS      fixed_cached_interrupt-024.ndjson
+PASS      fixed_cached_interrupt-025.ndjson
+MISMATCH  fixed_cached_interrupt-026.ndjson  stuck before event 17 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749310725688177"}
+PASS      fixed_cached_interrupt-027.ndjson
+MISMATCH  fixed_cached_interrupt-028.ndjson  stuck before event 14 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 16, "end": 16, "intr": false, "ts": "749310769330304"}
+MISMATCH  fixed_cached_interrupt-029.ndjson  stuck before event 17 of 37 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749311301663223"}
+PASS      fixed_cached_interrupt-030.ndjson
+PASS      fixed_cached_interrupt-031.ndjson
+PASS      fixed_cached_interrupt-032.ndjson
+MISMATCH  fixed_cached_interrupt-033.ndjson  stuck before event 18 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 20, "end": 20, "intr": false, "ts": "749313165592720"}
+MISMATCH  fixed_cached_interrupt-034.ndjson  stuck before event 17 of 37 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749313909371299"}
+PASS      fixed_cached_interrupt-035.ndjson
+PASS      fixed_cached_interrupt-036.ndjson
+PASS      fixed_cached_interrupt-037.ndjson
+PASS      fixed_cached_interrupt-038.ndjson
+MISMATCH  fixed_cached_interrupt-039.ndjson  stuck before event 15 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 17, "end": 17, "intr": false, "ts": "749317907858216"}
+PASS      fixed_cached_interrupt-040.ndjson
+PASS      fixed_cached_interrupt-041.ndjson
+MISMATCH  fixed_cached_interrupt-042.ndjson  stuck before event 16 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749321477956555"}
+MISMATCH  fixed_cached_interrupt-043.ndjson  stuck before event 18 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 20, "end": 20, "intr": false, "ts": "749325943948559"}
+PASS      fixed_cached_interrupt-044.ndjson
+PASS      fixed_cached_interrupt-045.ndjson
+MISMATCH  fixed_cached_interrupt-046.ndjson  stuck before event 16 of 33 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749328252851680"}
+PASS      fixed_cached_interrupt-047.ndjson
+MISMATCH  fixed_cached_interrupt-048.ndjson  stuck before event 21 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 23, "end": 23, "intr": false, "ts": "749329039976077"}
+MISMATCH  fixed_cached_interrupt-049.ndjson  stuck before event 19 of 37 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 21, "end": 21, "intr": false, "ts": "749329889529297"}
+MISMATCH  fixed_cached_interrupt-050.ndjson  stuck before event 19 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 21, "end": 21, "intr": false, "ts": "749329901597445"}
+PASS      fixed_pool-001.ndjson
+PASS      fixed_pool-002.ndjson
+PASS      fixed_pool-003.ndjson
+PASS      fixed_pool-004.ndjson
+PASS      fixed_pool-005.ndjson
+PASS      fixed_pool-006.ndjson
+PASS      fixed_pool-007.ndjson
+PASS      fixed_pool-008.ndjson
+PASS      fixed_pool-009.ndjson
+PASS      fixed_pool-010.ndjson
+PASS      fixed_pool-011.ndjson
+PASS      fixed_pool-012.ndjson
+PASS      fixed_pool-013.ndjson
+PASS      fixed_pool-014.ndjson
+MISMATCH  fixed_pool-015.ndjson  stuck before event 18 of 53 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 32, "end": 32, "intr": false, "task": "t2", "ts": "749319353301871"}
+PASS      fixed_pool-016.ndjson
+PASS      fixed_pool-017.ndjson
+PASS      fixed_pool-018.ndjson
+PASS      fixed_pool-019.ndjson
+PASS      fixed_pool-020.ndjson
+PASS      fixed_pool-021.ndjson
+PASS      fixed_pool-022.ndjson
+MISMATCH  fixed_pool-023.ndjson  stuck before event 20 of 52 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 36, "end": 36, "intr": false, "task": "t2", "ts": "749327938642098"}
+PASS      fixed_pool-024.ndjson
+MISMATCH  fixed_pool-025.ndjson  stuck before event 34 of 51 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 59, "end": 59, "intr": false, "task": "t3", "ts": "749335208664258"}
+PASS      fixed_pool-026.ndjson
+PASS      fixed_pool-027.ndjson
+PASS      fixed_pool-028.ndjson
+PASS      fixed_pool-029.ndjson
+PASS      fixed_pool-030.ndjson
+MISMATCH  fixed_pool-031.ndjson  stuck before event 35 of 48 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 56, "end": 56, "intr": false, "task": "t3", "ts": "749347202527030"}
+PASS      fixed_pool-032.ndjson
+MISMATCH  fixed_pool-033.ndjson  stuck before event 34 of 51 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 55, "end": 55, "intr": false, "task": "t3", "ts": "749349434794527"}
+PASS      fixed_pool-034.ndjson
+MISMATCH  fixed_pool-035.ndjson  stuck before event 32 of 45 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 54, "end": 54, "intr": false, "task": "t3", "ts": "749354704938687"}
+PASS      fixed_pool-036.ndjson
+PASS      fixed_pool-037.ndjson
+MISMATCH  fixed_pool-038.ndjson  stuck before event 32 of 45 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 53, "end": 53, "intr": false, "task": "t3", "ts": "749361929031629"}
+MISMATCH  fixed_pool-039.ndjson  stuck before event 20 of 33 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 36, "end": 36, "intr": false, "task": "t2", "ts": "749372448434475"}
+MISMATCH  fixed_pool-040.ndjson  stuck before event 36 of 50 [GAP-1 (stale cancel interrupt consumed by the work queue's take)]: {"tag": "trace", "event": "WorkerTake", "tid": "w1", "start": 61, "end": 61, "intr": false, "task": "t3", "ts": "749386995051915"}
+PASS      listeners_add-001.ndjson
+PASS      listeners_add-002.ndjson
+PASS      listeners_add-003.ndjson
+PASS      listeners_add-004.ndjson
+PASS      listeners_add-005.ndjson
+PASS      listeners_add-006.ndjson
+PASS      listeners_add-007.ndjson
+PASS      listeners_add-008.ndjson
+PASS      listeners_add-009.ndjson
+PASS      listeners_add-010.ndjson
+PASS      listeners_add-011.ndjson
+PASS      listeners_add-012.ndjson
+PASS      listeners_add-013.ndjson
+PASS      listeners_add-014.ndjson
+PASS      listeners_add-015.ndjson
+PASS      listeners_add-016.ndjson
+PASS      listeners_add-017.ndjson
+PASS      listeners_add-018.ndjson
+PASS      listeners_add-019.ndjson
+PASS      listeners_add-020.ndjson
+PASS      listeners_add-021.ndjson
+PASS      listeners_add-022.ndjson
+PASS      listeners_add-023.ndjson
+PASS      listeners_add-024.ndjson
+PASS      nolimit_basic-001.ndjson
+PASS      nolimit_basic-002.ndjson
+PASS      nolimit_basic-003.ndjson
+PASS      nolimit_basic-004.ndjson
+PASS      nolimit_basic-005.ndjson
+PASS      nolimit_decision-001.ndjson
+PASS      nolimit_decision-002.ndjson
+PASS      nolimit_decision-003.ndjson
+PASS      nolimit_decision-004.ndjson
+PASS      nolimit_decision-005.ndjson
+PASS      nolimit_decision-006.ndjson
+PASS      nolimit_decision-007.ndjson
+PASS      nolimit_interrupt-001.ndjson
+PASS      nolimit_interrupt-002.ndjson
+PASS      nolimit_interrupt-003.ndjson
+PASS      nolimit_interrupt-004.ndjson
+PASS      nolimit_interrupt-005.ndjson
+PASS      nolimit_interrupt-006.ndjson
+PASS      nolimit_interrupt-007.ndjson
+PASS      nolimit_interrupt-008.ndjson
+PASS      nolimit_interrupt-009.ndjson
+PASS      nolimit_interrupt-010.ndjson
+PASS      nolimit_interrupt-011.ndjson
+PASS      nolimit_interrupt-012.ndjson
+PASS      nolimit_interrupt-013.ndjson
+PASS      nolimit_interrupt-014.ndjson
+PASS      nolimit_interrupt-015.ndjson
+PASS      nolimit_interrupt-016.ndjson
+PASS      sharing-001.ndjson
+PASS      sharing-002.ndjson
+PASS      sharing-003.ndjson
+PASS      sharing-004.ndjson
+PASS      sharing-005.ndjson
+PASS      sharing-006.ndjson
+PASS      sharing-007.ndjson
+PASS      sharing-008.ndjson
+MISMATCH  sharing-009.ndjson  stuck before event 19 of 70 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 28, "end": 28, "intr": false, "ts": "749324766162746"}
+PASS      sharing-010.ndjson
+PASS      sharing-011.ndjson
+PASS      sharing-012.ndjson
+PASS      sharing-013.ndjson
+PASS      sharing-014.ndjson
+PASS      sharing-015.ndjson
+PASS      sharing-016.ndjson
+PASS      sharing-017.ndjson
+MISMATCH  sharing-018.ndjson  stuck before event 17 of 53 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 26, "end": 26, "intr": false, "ts": "749325150543582"}
+MISMATCH  sharing-019.ndjson  stuck before event 27 of 55 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 43, "end": 43, "intr": false, "ts": "749325178584508"}
+PASS      sharing-020.ndjson
+PASS      sharing-021.ndjson
+PASS      sharing-022.ndjson
+PASS      sharing-023.ndjson
+PASS      sharing-024.ndjson
+PASS      sharing-025.ndjson
+PASS      sharing-026.ndjson
+PASS      sharing-027.ndjson
+PASS      sharing-028.ndjson
+PASS      sharing-029.ndjson
+MISMATCH  sharing-030.ndjson  stuck before event 21 of 55 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 30, "end": 30, "intr": false, "ts": "749325669151794"}
+PASS      sharing-031.ndjson
+MISMATCH  sharing-032.ndjson  stuck before event 49 of 55 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w2", "start": 70, "end": 70, "intr": false, "ts": "749325758696471"}
+PASS      sharing-033.ndjson
+PASS      sharing-034.ndjson
+PASS      sharing-035.ndjson
+PASS      sharing-036.ndjson
+PASS      sharing-037.ndjson
+PASS      sharing-038.ndjson
+PASS      sharing-039.ndjson
+PASS      sharing-040.ndjson
+PASS      shutdown_race-001.ndjson
+PASS      shutdown_race-002.ndjson
+PASS      shutdown_race-003.ndjson
+PASS      shutdown_race-004.ndjson
+PASS      shutdown_race-005.ndjson
+PASS      shutdown_race-006.ndjson
+PASS      shutdown_race-007.ndjson
+PASS      shutdown_race-008.ndjson
+PASS      shutdown_race-009.ndjson
+PASS      shutdown_race-010.ndjson
+PASS      shutdown_race-011.ndjson
+PASS      shutdown_race-012.ndjson
+PASS      shutdown_race-013.ndjson
+PASS      shutdown_race-014.ndjson
+PASS      shutdown_race-015.ndjson
+PASS      shutdown_race-016.ndjson
+PASS      shutdown_race-017.ndjson
+PASS      shutdown_race-018.ndjson
+PASS      shutdown_race-019.ndjson
+PASS      shutdown_race-020.ndjson
+PASS      shutdown_race-021.ndjson
+PASS      shutdown_race-022.ndjson
+PASS      shutdown_race-023.ndjson
+PASS      shutdown_race-024.ndjson
+PASS      shutdown_race-025.ndjson
+PASS      shutdown_race-026.ndjson
+PASS      shutdown_race-027.ndjson
+PASS      shutdown_race-028.ndjson
+PASS      shutdown_race-029.ndjson
+PASS      shutdown_race-030.ndjson
+MISMATCH  wrap_cancel-001.ndjson  stuck before event 15 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 17, "end": 17, "intr": false, "ts": "749316240414272"}
+PASS      wrap_cancel-002.ndjson
+PASS      wrap_cancel-003.ndjson
+PASS      wrap_cancel-004.ndjson
+PASS      wrap_cancel-005.ndjson
+PASS      wrap_cancel-006.ndjson
+PASS      wrap_cancel-007.ndjson
+PASS      wrap_cancel-008.ndjson
+MISMATCH  wrap_cancel-009.ndjson  stuck before event 14 of 48 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 16, "end": 16, "intr": false, "ts": "749316595681849"}
+MISMATCH  wrap_cancel-010.ndjson  stuck before event 19 of 48 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 21, "end": 21, "intr": false, "ts": "749316641253977"}
+MISMATCH  wrap_cancel-011.ndjson  stuck before event 16 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749316679770791"}
+MISMATCH  wrap_cancel-012.ndjson  stuck before event 14 of 48 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 16, "end": 16, "intr": false, "ts": "749316888733048"}
+MISMATCH  wrap_cancel-013.ndjson  stuck before event 17 of 34 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 19, "end": 19, "intr": false, "ts": "749316978263347"}
+PASS      wrap_cancel-014.ndjson
+PASS      wrap_cancel-015.ndjson
+PASS      wrap_cancel-016.ndjson
+PASS      wrap_cancel-017.ndjson
+MISMATCH  wrap_cancel-018.ndjson  stuck before event 15 of 48 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 17, "end": 17, "intr": false, "ts": "749317357058866"}
+MISMATCH  wrap_cancel-019.ndjson  stuck before event 16 of 48 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749317385621568"}
+PASS      wrap_cancel-020.ndjson
+PASS      wrap_cancel-021.ndjson
+PASS      wrap_cancel-022.ndjson
+PASS      wrap_cancel-023.ndjson
+PASS      wrap_cancel-024.ndjson
+PASS      wrap_cancel-025.ndjson
+PASS      wrap_cancel-026.ndjson
+MISMATCH  wrap_cancel-027.ndjson  stuck before event 16 of 50 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749317894116433"}
+PASS      wrap_cancel-028.ndjson
+PASS      wrap_cancel-029.ndjson
+PASS      wrap_cancel-030.ndjson
+PASS      wrap_cancel-031.ndjson
+MISMATCH  wrap_cancel-032.ndjson  stuck before event 18 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 20, "end": 20, "intr": false, "ts": "749318202544267"}
+PASS      wrap_cancel-033.ndjson
+MISMATCH  wrap_cancel-034.ndjson  stuck before event 16 of 36 [GAP-1 (stale cancel interrupt consumed by SynchronousQueue.poll)]: {"tag": "trace", "event": "WorkerPollBlock", "tid": "w1", "start": 18, "end": 18, "intr": false, "ts": "749318287471414"}
+PASS      wrap_cancel-035.ndjson
+PASS      wrap_cancel-036.ndjson
+PASS      wrap_cancel-037.ndjson
+PASS      wrap_cancel-038.ndjson
+PASS      wrap_cancel-039.ndjson
+PASS      wrap_cancel-040.ndjson
+PASS      wrap_samepool-001.ndjson
+PASS      wrap_samepool-002.ndjson
+SUMMARY: 379 traces, 321 pass, 58 fail (58 at a known spec gap, 0 other)
