@@ -2351,4 +2351,4 @@ tv-coverage-20261120/guava-retrying/mc/out-fixed/MC_hunt_sharing.cfg.chain.txt	m
 tv-coverage-20261120/guava-retrying/tools/cov.py	tools/cov.py	file	0664	1795766209360239778	4702	d1a6ad8c970cb4f4ef7263d6e98287311978f362dc4d784bcb077a0a00da3595		copy	run-evidence		{}
 tv-coverage-20261120/guava-retrying/tools/hunt_chain.py	tools/hunt_chain.py	file	0664	1795766364209762813	3615	2844547907269177bb5697b3ef7b1abe7a4cbd0ef89ab203f2766b0c1f408a99		copy	run-evidence		{}
 tv-coverage-20261120/guava-retrying/tools/validate_rt.py	tools/validate_rt.py	file	0664	1795765342160324671	1619	e44e64eb100cd43ecdba794fe3cf9405596ddff41216f28c8d6b68e2f7fb4277		copy	run-evidence		{}
-	README.md	file	0600	0	4480	5cb422eb70b6b1a8db5cb2a1a9764906e7b843573dac6a4ee0f6281dc1ff4b9f		generated	curated-documentation	Curated archive metadata	{}
+	README.md	file	0600	0	2677	ee5a9821f016eb908e9e47528a69d6ec2e68b84fd5893bbcf23416ccb124adb5		generated	curated-documentation	Curated archive metadata	{}

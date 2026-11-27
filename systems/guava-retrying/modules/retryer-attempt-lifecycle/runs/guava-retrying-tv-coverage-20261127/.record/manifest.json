@@ -43,18 +43,18 @@
     "copied_files": 2352,
     "copied_bytes": 22758709,
     "curated_files": 1,
-    "curated_bytes": 4480,
+    "curated_bytes": 2677,
     "payload_files": 2353,
-    "payload_bytes": 22763189
+    "payload_bytes": 22761386
   },
   "metadata_files": {
     ".record/files.tsv": {
       "bytes": 585171,
-      "sha256": "6be958d94ad36aaa81b9d18358d02f83c755fc95488a99a1c9de967954230c1e"
+      "sha256": "eeeac5447e42de80c89722dd0268d3300431c701dd8ba2b9879aedf64fd01a8b"
     },
     "README.md": {
-      "bytes": 4480,
-      "sha256": "5cb422eb70b6b1a8db5cb2a1a9764906e7b843573dac6a4ee0f6281dc1ff4b9f"
+      "bytes": 2677,
+      "sha256": "ee5a9821f016eb908e9e47528a69d6ec2e68b84fd5893bbcf23416ccb124adb5"
     }
   }
 }

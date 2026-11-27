@@ -1842,4 +1842,4 @@ guava-retrying-20261126/jpf-smoke/src/RetryCallListener.java	environment/jpf-smo
 guava-retrying-20261126/jpf-smoke/src/SmokeSingle.java	environment/jpf-smoke/src/SmokeSingle.java	file	0664	1795665754681022861	702	3dfb99f29c2a819c315578a8003c00bf465cad33a9d9e82ccde6eaea84f399bb		copy	run-evidence		{}
 guava-retrying-20261126/jpf-smoke/src/SmokeTimeLimit.java	environment/jpf-smoke/src/SmokeTimeLimit.java	file	0664	1795665754682022857	1041	e1eb324329b929f5ac0264cf3bc913cc721e08640d8a3037427dc31bde8f7fae		copy	run-evidence		{}
 scratch/guava-retrying-buildcheck/pom.xml	environment/build-check/pom.xml	file	0664	1795665558202608706	1430	34f4bb94a48095fac3604e71d6dee413fb303f29a9ce9d20a412b2419225718c		copy	run-evidence		{}
-	README.md	file	0600	0	4387	3e4347bbe903fe5a00fec942e64328b9a52bb4f322d25daf2a26b799062a6cbb		generated	curated-documentation	Curated archive metadata	{}
+	README.md	file	0600	0	3867	474807cc1749344d0544144e54b3858383a5aaf825a70ce0b904e548a8a51023		generated	curated-documentation	Curated archive metadata	{}

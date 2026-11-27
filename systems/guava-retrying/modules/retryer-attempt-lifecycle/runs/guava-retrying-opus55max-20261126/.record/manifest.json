@@ -36,26 +36,24 @@
     "bounded_model_checking_not_a_proof",
     "runtime_transcripts_and_build_scratch_excluded",
     "historical_workspace_paths_preserved",
-    "controlled_fault_and_timing_reproductions",
-    "phase1_probes_reproduced_mc_routed_defects_before_modeling",
-    "pipeline_resumed_after_report_parser_failure"
+    "controlled_fault_and_timing_reproductions"
   ],
   "counts": {
     "copied_files": 1843,
     "copied_bytes": 20953289,
     "curated_files": 1,
-    "curated_bytes": 4387,
+    "curated_bytes": 3867,
     "payload_files": 1844,
-    "payload_bytes": 20957676
+    "payload_bytes": 20957156
   },
   "metadata_files": {
     ".record/files.tsv": {
       "bytes": 591750,
-      "sha256": "b90fd37dd8ef603b2bb6d3a508dc644548ed50c3c901a7fddee0496ec5136798"
+      "sha256": "5479777ee3ce1964a78613a9a215b81fb5f3518b911cc8ecdb002e5fbbeac268"
     },
     "README.md": {
-      "bytes": 4387,
-      "sha256": "3e4347bbe903fe5a00fec942e64328b9a52bb4f322d25daf2a26b799062a6cbb"
+      "bytes": 3867,
+      "sha256": "474807cc1749344d0544144e54b3858383a5aaf825a70ce0b904e548a8a51023"
     }
   }
 }
